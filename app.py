@@ -31,7 +31,9 @@ st.markdown("""
     /* 1. Adjust Top Container Spacing */
     .block-container { padding-top: 2rem !important; }
 
+    /* GLOBAL TEXT COLOR (ต้นเหตุของปัญหา แต่จำเป็นสำหรับ Dark Mode ส่วนอื่น) */
     h1, h2, h3, h4, h5, h6, p, span, div, label { color: #ffffff !important; }
+    
     .stTextInput input { color: #ffffff !important; caret-color: white; background-color: #262730 !important; border: 1px solid #555 !important; }
     div[data-baseweb="select"] div { color: #ffffff !important; background-color: #262730 !important; }
     div[data-baseweb="select"] span { color: #ffffff !important; }
@@ -111,17 +113,11 @@ st.markdown("""
     .custom-table tbody tr:hover td { background-color: #333; }
 
     /* REPORT DAILY CSS: Lighter Backgrounds */
-    .custom-table.daily-table tbody tr:nth-child(even) td {
-        background-color: #ffffff !important;
-    }
-    .custom-table.daily-table tbody tr:nth-child(odd) td {
-        background-color: #f2f2f2 !important;
-    }
-    .custom-table.daily-table tbody tr:hover td {
-        background-color: #e6e6e6 !important;
-    }
+    .custom-table.daily-table tbody tr:nth-child(even) td { background-color: #ffffff !important; }
+    .custom-table.daily-table tbody tr:nth-child(odd) td { background-color: #f2f2f2 !important; }
+    .custom-table.daily-table tbody tr:hover td { background-color: #e6e6e6 !important; }
     
-    /* --- [REPLACED BLOCK 1] : Report Daily Total row — blue background --- */
+    /* Report Daily Total row */
     .custom-table.daily-table tbody tr.footer-row td {
         position: sticky;
         bottom: 0;
@@ -131,16 +127,13 @@ st.markdown("""
         color: white !important;
         border-top: 2px solid #f1c40f;
     }
-    /* --------------------------------------------------------------------- */
 
     .col-fix-1 { position: sticky; left: 0; z-index: 10; width: 70px; border-right: 1px solid #333; }
     .col-fix-2 { position: sticky; left: 70px; z-index: 10; width: 80px; border-right: 1px solid #333; }
     .col-fix-3 { position: sticky; left: 150px; z-index: 10; width: 70px; border-right: 2px solid #bbb !important; }
 
     .th-sku { background-color: #1e3c72 !important; color: white !important; }
-    .sku-header { font-size: 10px;
-        color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis; max-width: 100px;
-    }
+    .sku-header { font-size: 10px; color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
     .col-small { width: 70px; min-width: 70px; max-width: 70px; font-size: 11px; }
 
     /* P&L Styles */
@@ -181,6 +174,22 @@ st.markdown("""
 
     div.stButton > button { width: 100%; border-radius: 6px; height: 42px; font-weight: bold; padding: 0px 5px; background-color: #333; color: white; border: 1px solid #555; }
     div.stButton > button:hover { border-color: #00d2ff; color: #00d2ff; }
+
+    /* ============================================================ */
+    /* 🔥 CSS FIX: แก้ไขปัญหาสีตัวหนังสือในตาราง Report Month 🔥 */
+    /* ============================================================ */
+    
+    /* 1. บังคับให้ td และ th ไม่ใช้สีจาก Global div (สีขาว) แต่ให้ inherit จาก parent หรือ style ของตัวเอง */
+    td, th {
+        color: inherit !important;
+    }
+
+    /* 2. เฉพาะ Label ของ Report Month (col-fix-1) ในส่วนที่เป็น footer row (แถวสรุป) ให้เป็นสีดำ */
+    /* ใช้ tr[class*="row-"] เพื่อเจาะจงเฉพาะแถวสรุปด้านล่าง ไม่ให้กระทบ Header หรือแถวข้อมูลปกติ */
+    .month-table tr[class*="row-"] td.col-fix-1 {
+        color: #000000 !important;
+    }
+
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 """, unsafe_allow_html=True)
@@ -553,7 +562,7 @@ try:
             for _, r in df_matrix.iterrows():
                 html += f'<tr><td class="col-fix-1" style="font-weight:bold;">{fmt_n(r["รวม"])}</td>'
                 prof_color = "#c0392b" if r["กำไรสุทธิ"] < 0 else "#27ae60"
-                html += f'<td class="col-fix-2" style="font-weight:bold; color:{prof_color};">{fmt_n(r["กำไรสุทธิ"])}</td>'
+                html += f'<td class="col-fix-2" style="font-weight:bold;color:{prof_color};">{fmt_n(r["กำไรสุทธิ"])}</td>'
                 html += f'<td class="col-fix-3">{r["วันที่"]}</td>'
                 for sku in final_skus:
                     val = r.get(sku, 0)
@@ -585,6 +594,8 @@ try:
                 label_color = "#000000" if label in black_labels else "#ffffff"
 
                 # สร้างแถว (ใช้ inline style + !important เพื่อ override global CSS)
+                # NOTE: เนื่องจาก Streamlit wrap div ชั้นนอกสุดทับ เราจึงเพิ่ม CSS Patch global ไว้ด้านบนสุดแล้ว
+                # แต่ใส่ !important ใน inline style ไว้ด้วยเพื่อความชัวร์
                 row_html = (
     f'<tr class="{row_cls}">'
     f'<td class="col-fix-1" style="{style_bg} color: #000000 !important;">{label}</td>'
