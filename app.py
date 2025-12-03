@@ -121,14 +121,14 @@ st.markdown("""
         background-color: #e6e6e6 !important;
     }
     
-    /* --- [FIXED POINT 2] : Report Daily Footer Blue Background --- */
+    /* --- [FIXED POINT 2] : Report Daily Total Row Blue Background --- */
     .daily-table tbody tr.footer-row td {
         position: sticky;
         bottom: 0; z-index: 100;
         background-color: #1e3c72 !important; /* Blue Background */
         font-weight: bold; color: white !important; border-top: 2px solid #f1c40f;
     }
-    /* ------------------------------------------------------------- */
+    /* ---------------------------------------------------------------- */
 
     .col-fix-1 { position: sticky; left: 0; z-index: 10; width: 70px; border-right: 1px solid #333; }
     .col-fix-2 { position: sticky; left: 70px; z-index: 10; width: 80px; border-right: 1px solid #333; }
