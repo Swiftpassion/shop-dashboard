@@ -11,24 +11,45 @@ import calendar
 from datetime import datetime
 
 # ==========================================
-# 1. CONFIG & SETUP
+# 1. CONFIG & SETUP (DARK MODE UI)
 # ==========================================
 st.set_page_config(page_title="Shop Analytics Dashboard", layout="wide", page_icon="📊")
 
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Prompt:wght@300;400;500;600&display=swap');
+    
+    /* FORCE DARK MODE */
+    .stApp { background-color: #0e1117 !important; color: #ffffff !important; }
+    
     html, body, [class*="css"] { font-family: 'Sarabun', sans-serif; }
-    .stApp { background-color: #f4f6f9; }
     .block-container { padding-top: 2rem !important; }
     
-    .header-bar { background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%); padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; color: white; display:flex; align-items:center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .header-title { font-size: 22px; font-weight: 700; margin: 0; color: white !important; }
+    /* Header */
+    .header-bar {
+        background: linear-gradient(90deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+        padding: 15px 20px; border-radius: 10px; margin-bottom: 20px;
+        color: white; display:flex; align-items:center; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        border: 1px solid #333;
+    }
+    .header-title { font-size: 22px; font-weight: 700; margin: 0; color: #4facfe !important; }
     
+    /* Navigation Group */
+    div[role="radiogroup"] {
+        background-color: #1c1c1c; padding: 10px; border-radius: 10px;
+        border: 1px solid #333; display: flex; justify-content: center; margin-bottom: 20px;
+    }
+    
+    /* Cards */
     .metric-container { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
-    .custom-card { background: white; border-radius: 10px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex: 1; min-width: 180px; border-left: 5px solid #ddd; }
-    .card-label { color: #666; font-size: 13px; font-weight: 600; }
-    .card-value { color: #333; font-size: 24px; font-weight: 700; }
+    .custom-card {
+        background: #1c1c1c; border-radius: 10px; padding: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.5); flex: 1; min-width: 180px;
+        border-left: 5px solid #555; border: 1px solid #333;
+    }
+    .card-label { color: #aaa; font-size: 13px; font-weight: 600; }
+    .card-value { color: #fff; font-size: 24px; font-weight: 700; }
+    .card-sub { font-size: 12px; margin-top: 5px; color: #888; }
     
     .border-blue { border-left-color: #3498db; }
     .border-green { border-left-color: #27ae60; }
@@ -36,19 +57,37 @@ st.markdown("""
     .border-purple { border-left-color: #9b59b6; }
     .border-orange { border-left-color: #e67e22; }
 
-    /* Compact Table */
-    .table-wrapper { overflow: auto; width: 100%; max-height: 800px; margin-top: 10px; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); padding-bottom: 10px; }
-    .custom-table { width: 100%; min-width: 1000px; border-collapse: separate; border-spacing: 0; font-family: 'Sarabun', sans-serif; font-size: 11px; color: #333; }
-    .custom-table th, .custom-table td { padding: 3px 5px; line-height: 1.1; text-align: center; border-bottom: 1px solid #eee; border-right: 1px solid #f0f0f0; white-space: nowrap; }
-    .custom-table thead th { position: sticky; top: 0; z-index: 100; background-color: #1e3c72; color: white; font-weight: 700; }
+    /* Inputs */
+    .stTextInput input, .stSelectbox div[data-baseweb="select"] {
+        background-color: #262730 !important; color: white !important; border-color: #444 !important;
+    }
+    .stDateInput input { color: white !important; }
+
+    /* Tables (Dark) */
+    .table-wrapper {
+        overflow: auto; width: 100%; max-height: 800px;
+        margin-top: 10px; background: #1c1c1c;
+        border-radius: 8px; border: 1px solid #333; padding-bottom: 10px;
+    }
+    .custom-table {
+        width: 100%; min-width: 1000px; border-collapse: separate; border-spacing: 0;
+        font-family: 'Sarabun', sans-serif; font-size: 11px; color: #ddd;
+    }
+    .custom-table th, .custom-table td {
+        padding: 4px 6px; line-height: 1.2; text-align: center;
+        border-bottom: 1px solid #333; border-right: 1px solid #333; white-space: nowrap;
+    }
+    .custom-table thead th {
+        position: sticky; top: 0; z-index: 100;
+        background-color: #2c3e50; color: #4facfe; font-weight: 700;
+        border-bottom: 2px solid #555;
+    }
+    .custom-table tbody tr:nth-child(even) td { background-color: #262626; }
+    .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
+    .custom-table tbody tr:hover td { background-color: #333; }
     
-    /* P&L Styles */
-    .pnl-table { width: 100%; border-collapse: collapse; font-size: 14px; font-family: 'Prompt', sans-serif; margin-top:20px; background:white; border-radius:10px; overflow:hidden; }
-    .pnl-table th { text-align: left; padding: 12px 16px; color: #64748b; font-weight: 500; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; }
-    .pnl-table td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; }
-    .pnl-row-head td { font-weight: 600; color: #1e293b; background-color: #f8fafc; }
-    .num-cell { text-align: right; font-family: 'Courier New', monospace; }
-    .neg { color: #dc2626; }
+    .col-small { font-size: 10px; color: #aaa; }
+    .footer-row td { background-color: #333 !important; font-weight: bold; color: #fff !important; border-top: 2px solid #f1c40f; }
 </style>""", unsafe_allow_html=True)
 
 # ==========================================
@@ -120,34 +159,26 @@ def load_and_process_data():
     try:
         sh = gc.open_by_url(SHEET_MASTER_URL)
         df_master = pd.DataFrame(sh.worksheet("MASTER_ITEM").get_all_records())
-        
-        # --- FIX: Try FIX_COST (New) -> if fail -> try FIXED_COST (Old) ---
         try: df_fix = pd.DataFrame(sh.worksheet("FIX_COST").get_all_records())
         except: 
             try: df_fix = pd.DataFrame(sh.worksheet("FIXED_COST").get_all_records())
             except: df_fix = pd.DataFrame()
-            
-    except Exception as e:
-        print(f"Error loading sheets: {e}")
+    except: pass
 
-    # Process Data
     if df_main.empty: return pd.DataFrame(), pd.DataFrame(), [], {}
 
-    # --- ROBUST COLUMN CLEANING (แก้ปัญหาช่องว่าง) ---
+    # --- PROCESSING ---
+    
+    # 1. Clean Master & Fix Columns
     if not df_master.empty:
-        # 1. ลบช่องว่างหน้า-หลังของชื่อคอลัมน์ทั้งหมด
         df_master.columns = df_master.columns.astype(str).str.strip()
-        
-        # 2. เช็คว่ามีคอลัมน์ 'ชื่อสินค้า' ไหม? ถ้าไม่มี ใช้คอลัมน์ที่ 2 (Index 1) แทนทันที
+        # Auto-detect 'ชื่อสินค้า'
         if 'ชื่อสินค้า' not in df_master.columns:
             if len(df_master.columns) >= 2:
-                # บังคับเปลี่ยนชื่อคอลัมน์ที่ 2 เป็น 'ชื่อสินค้า' เลย
-                cols = df_master.columns.tolist()
-                cols[1] = 'ชื่อสินค้า'
-                df_master.columns = cols
+                col_b = df_master.columns[1]
+                df_master.rename(columns={col_b: 'ชื่อสินค้า'}, inplace=True)
             else:
-                # ถ้าตารางมีคอลัมน์เดียว สร้าง Dummy ขึ้นมา
-                df_master['ชื่อสินค้า'] = df_master.iloc[:, 0] if not df_master.empty else "Unknown"
+                df_master['ชื่อสินค้า'] = df_master['SKU'] if 'SKU' in df_master.columns else "Unknown"
 
     cols_money = ['ต้นทุน', 'ราคากล่อง', 'ค่าส่งเฉลี่ย']
     cols_percent = ['ค่าคอมมิชชั่น Admin', 'ค่าคอมมิชชั่น Telesale', 
@@ -157,9 +188,7 @@ def load_and_process_data():
     def clean_pct(val):
         if pd.isna(val) or val == "": return 0.0
         s = str(val).replace('%','').replace(',','').replace('฿','').strip()
-        try: 
-            f = float(s)
-            return f/100 if f > 1.0 else f 
+        try: return float(s)/100 if float(s) > 1.0 else float(s)
         except: return 0.0
 
     for c in cols_money:
@@ -171,16 +200,13 @@ def load_and_process_data():
     df_main['SKU_Main'] = df_main['รูปแบบสินค้า'].astype(str).str.split('-').str[0].str.strip()
     if 'SKU' in df_master.columns: df_master['SKU'] = df_master['SKU'].astype(str).str.strip()
 
-    # Safe Merge: Select only columns that exist
-    desired_cols = cols_money + cols_percent + ['SKU', 'ชื่อสินค้า']
-    valid_cols = [c for c in desired_cols if c in df_master.columns]
-    
-    df_merged = pd.merge(df_main, df_master[valid_cols].drop_duplicates('SKU'), left_on='SKU_Main', right_on='SKU', how='left')
+    # Merge
+    master_cols = [c for c in cols_money + cols_percent + ['SKU', 'ชื่อสินค้า'] if c in df_master.columns]
+    df_merged = pd.merge(df_main, df_master[master_cols].drop_duplicates('SKU'), left_on='SKU_Main', right_on='SKU', how='left')
 
-    # --- FINAL SAFETY NET: ถ้า Merge แล้วไม่มีชื่อสินค้า ให้ดึง SKU มาใส่แทน ---
-    if 'ชื่อสินค้า' not in df_merged.columns:
-        df_merged['ชื่อสินค้า'] = df_merged['SKU_Main']
+    if 'ชื่อสินค้า' not in df_merged.columns: df_merged['ชื่อสินค้า'] = df_merged['SKU_Main']
 
+    # --- CALCULATION ---
     df_merged['CAL_COST'] = df_merged['จำนวน'] * df_merged['ต้นทุน'].fillna(0)
 
     shipping_map = {"J&T Express": "J&T Express", "J&T": "J&T Express", "Flash Express": "Flash Express", "Flash": "Flash Express", "Kerry Express": "Kerry Express", "Kerry": "Kerry Express", "Thailand Post": "ThailandPost", "DHL Domestic": "DHL_1", "Shopee Express": "SPX Express", "SPX Express": "SPX Express", "Lazada Express": "LEX TH"}
@@ -191,6 +217,11 @@ def load_and_process_data():
 
     df_merged['SHIP_RATE'] = df_merged.apply(get_ship_rate, axis=1)
     is_cod = df_merged['วิธีการชำระเงิน'].astype(str).str.contains('COD|ปลายทาง', case=False, na=False)
+    
+    # *** KEY FIX: Force Numeric to prevent 'subtract' error ***
+    df_merged['รายละเอียดยอดที่ชำระแล้ว'] = pd.to_numeric(df_merged['รายละเอียดยอดที่ชำระแล้ว'], errors='coerce').fillna(0)
+    df_merged['SHIP_RATE'] = pd.to_numeric(df_merged['SHIP_RATE'], errors='coerce').fillna(0)
+    
     df_merged['CAL_COD_COST'] = np.where(is_cod, (df_merged['รายละเอียดยอดที่ชำระแล้ว'] * df_merged['SHIP_RATE']) * 1.07, 0)
 
     def get_role(row):
@@ -215,6 +246,7 @@ def load_and_process_data():
         else: df_ads_agg = pd.DataFrame()
     else: df_ads_agg = pd.DataFrame()
 
+    # Final Group
     df_daily = df_merged.groupby(['Date', 'SKU_Main']).agg({
         'ชื่อสินค้า': 'first', 'หมายเลขคำสั่งซื้อออนไลน์': 'count', 'จำนวน': 'sum', 'รายละเอียดยอดที่ชำระแล้ว': 'sum',
         'CAL_COST': 'sum', 'ราคากล่อง': 'sum', 'ค่าส่งเฉลี่ย': 'sum', 'CAL_COD_COST': 'sum', 'CAL_COM_ADMIN': 'sum', 'CAL_COM_TELESALE': 'sum'
@@ -223,6 +255,10 @@ def load_and_process_data():
     
     if not df_ads_agg.empty: df_daily = pd.merge(df_daily, df_ads_agg, on=['Date', 'SKU_Main'], how='outer').fillna(0)
     else: df_daily['Ads_Amount'] = 0
+
+    # *** KEY FIX: Force Numeric AGAIN before Subtraction ***
+    for col in ['BOX_COST', 'DELIV_COST', 'CAL_COD_COST', 'CAL_COM_ADMIN', 'CAL_COM_TELESALE', 'CAL_COST', 'Ads_Amount', 'รายละเอียดยอดที่ชำระแล้ว']:
+        df_daily[col] = pd.to_numeric(df_daily[col], errors='coerce').fillna(0)
 
     df_daily['Other_Costs'] = df_daily['BOX_COST'] + df_daily['DELIV_COST'] + df_daily['CAL_COD_COST'] + df_daily['CAL_COM_ADMIN'] + df_daily['CAL_COM_TELESALE']
     df_daily['Total_Cost'] = df_daily['CAL_COST'] + df_daily['Other_Costs'] + df_daily['Ads_Amount']
@@ -238,7 +274,7 @@ def load_and_process_data():
 
     name_map = df_daily.groupby('SKU_Main')['ชื่อสินค้า'].last().to_dict()
     if 'ชื่อสินค้า' in df_master.columns: name_map.update(df_master.set_index('SKU')['ชื่อสินค้า'].to_dict())
-    sku_list = sorted(list(set(df_daily['SKU_Main'].dropna().unique().tolist() + df_master['SKU'].dropna().unique().tolist())))
+    sku_list = sorted(list(set(df_daily['SKU_Main'].dropna().unique().tolist())))
     
     return df_daily, df_fix, sku_list, name_map
 
@@ -253,18 +289,54 @@ try:
         st.stop()
 
     thai_months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
+    
+    # State Management for SKU Selection
+    if 'selected_skus' not in st.session_state: st.session_state.selected_skus = []
+    
+    sku_options = [f"{sku} : {sku_name_map.get(sku, '')}" for sku in master_sku_list]
+    sku_map_rev = {f"{sku} : {sku_name_map.get(sku, '')}": sku for sku in master_sku_list}
+
+    def cb_add():
+        term = st.session_state.search_term.lower()
+        if term:
+            found = [o for o in sku_options if term in o.lower()]
+            st.session_state.selected_skus = list(set(st.session_state.selected_skus).union(set(found)))
+    
+    def cb_clear(): st.session_state.selected_skus = []
 
     page = st.radio("เลือกหน้าจอ:", ["📊 REPORT_MONTH", "📅 REPORT_DAILY", "📈 PRODUCT GRAPH", "📈 YEARLY P&L", "💰 COMMISSION"], horizontal=True)
 
     # ---------------- PAGE 1: MONTHLY ----------------
     if page == "📊 REPORT_MONTH":
         st.markdown('<div class="header-bar"><div class="header-title"><i class="fas fa-chart-line"></i> สรุปรายเดือน</div></div>', unsafe_allow_html=True)
-        c1, c2, c3 = st.columns([1,1,2])
-        sel_year = c1.selectbox("เลือกปี", sorted(df_daily['Year'].unique(), reverse=True))
-        sel_month = c2.selectbox("เลือกเดือน", thai_months, index=datetime.now().month-1)
         
+        with st.container():
+            c1, c2, c3 = st.columns([1,1,2])
+            sel_year = c1.selectbox("เลือกปี", sorted(df_daily['Year'].unique(), reverse=True))
+            sel_month = c2.selectbox("เลือกเดือน", thai_months, index=datetime.now().month-1)
+            filter_mode = c3.selectbox("เงื่อนไข", ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 เฉพาะรายการที่ขายได้", "💸 ผลาญงบ (มี Ads แต่ขายไม่ได้)", "📋 แสดง Master ทั้งหมด"])
+            
+            c4, c5, c6, c7 = st.columns([2, 3, 0.5, 0.5])
+            c4.text_input("ค้นหา SKU:", key="search_term")
+            c5.multiselect("รายการที่เลือก:", sku_options, key="selected_skus")
+            c6.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
+            c6.button("➕", on_click=cb_add, use_container_width=True)
+            c7.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
+            c7.button("🧹", on_click=cb_clear, use_container_width=True)
+
         df_view = df_daily[(df_daily['Year']==sel_year) & (df_daily['Month_Thai']==sel_month)]
         
+        # Filter Logic
+        sku_stats = df_view.groupby('SKU_Main').agg({'รายละเอียดยอดที่ชำระแล้ว':'sum', 'Ads_Amount':'sum'}).reset_index()
+        auto_skus = []
+        if "ขายได้" in filter_mode: auto_skus = sku_stats[sku_stats['รายละเอียดยอดที่ชำระแล้ว']>0]['SKU_Main'].tolist()
+        elif "ผลาญงบ" in filter_mode: auto_skus = sku_stats[(sku_stats['Ads_Amount']>0) & (sku_stats['รายละเอียดยอดที่ชำระแล้ว']==0)]['SKU_Main'].tolist()
+        elif "Master" in filter_mode: auto_skus = master_sku_list
+        else: auto_skus = sku_stats[(sku_stats['รายละเอียดยอดที่ชำระแล้ว']>0)|(sku_stats['Ads_Amount']>0)]['SKU_Main'].tolist()
+        
+        final_skus = [sku_map_rev[x] for x in st.session_state.selected_skus] if st.session_state.selected_skus else auto_skus
+        df_view = df_view[df_view['SKU_Main'].isin(final_skus)]
+
         if df_view.empty: st.info(f"ไม่มีข้อมูลในเดือน {sel_month} {sel_year}")
         else:
             days_in_m = calendar.monthrange(sel_year, thai_months.index(sel_month)+1)[1]
@@ -282,12 +354,45 @@ try:
             <div class="custom-card border-blue"><div class="card-label">ยอดขาย</div><div class="card-value">{sales:,.0f}</div></div>
             <div class="custom-card border-purple"><div class="card-label">ทุนสินค้า+ค่าใช้จ่าย</div><div class="card-value">{cost_ops:,.0f}</div></div>
             <div class="custom-card border-orange"><div class="card-label">ค่าโฆษณา</div><div class="card-value">{ads:,.0f}</div></div>
-            <div class="custom-card border-green"><div class="card-label">กำไรสุทธิ</div><div class="card-value">{profit:,.0f}</div></div>
+            <div class="custom-card border-green"><div class="card-label">กำไรสุทธิ</div><div class="card-value" style="color:{'#2ecc71' if profit>=0 else '#e74c3c'} !important;">{profit:,.0f}</div></div>
             </div>""", unsafe_allow_html=True)
             
-            pivot = df_view.groupby('SKU_Main').agg({'รายละเอียดยอดที่ชำระแล้ว':'sum', 'Net_Profit':'sum', 'Ads_Amount':'sum'}).reset_index()
-            pivot['ชื่อสินค้า'] = pivot['SKU_Main'].map(sku_name_map)
-            st.dataframe(pivot, use_container_width=True)
+            # Matrix Table Logic
+            all_days = range(1, days_in_m + 1)
+            fix_daily = fix_c / days_in_m if days_in_m > 0 else 0
+            matrix = []
+            for d in all_days:
+                dd = df_view[df_view['Day'] == d]
+                row = {'วันที่': str(d), 'รวม': dd['รายละเอียดยอดที่ชำระแล้ว'].sum(), 'กำไร': dd['Net_Profit'].sum() - fix_daily}
+                for s in final_skus:
+                    row[s] = dd[dd['SKU_Main']==s]['Net_Profit'].sum()
+                matrix.append(row)
+            
+            df_mat = pd.DataFrame(matrix)
+            
+            def fmt(v): return f"{v:,.0f}" if v!=0 else "-"
+            
+            # HTML Table
+            h = '<div class="table-wrapper"><table class="custom-table"><thead><tr>'
+            h += '<th style="position:sticky;left:0;z-index:10;background:#2c3e50;color:white;">รวม</th>'
+            h += '<th style="position:sticky;left:60px;z-index:10;background:#2c3e50;color:white;">กำไร</th>'
+            h += '<th>วันที่</th>'
+            for s in final_skus: h += f'<th>{s}<br><span class="col-small">{sku_name_map.get(s,"")[:10]}..</span></th>'
+            h += '</tr></thead><tbody>'
+            
+            for _, r in df_mat.iterrows():
+                pc = "#2ecc71" if r['กำไร'] >= 0 else "#e74c3c"
+                h += f'<tr><td style="position:sticky;left:0;background:#333;font-weight:bold;">{fmt(r["รวม"])}</td>'
+                h += f'<td style="position:sticky;left:60px;background:#333;font-weight:bold;color:{pc};">{fmt(r["กำไร"])}</td>'
+                h += f'<td>{r["วันที่"]}</td>'
+                for s in final_skus:
+                    v = r.get(s, 0)
+                    c = "#ddd" if v >= 0 else "#e74c3c"
+                    if v==0: c="#555"
+                    h += f'<td style="color:{c};">{fmt(v)}</td>'
+                h += '</tr>'
+            h += '</tbody></table></div>'
+            st.markdown(h, unsafe_allow_html=True)
 
     # ---------------- PAGE 2: DAILY ----------------
     elif page == "📅 REPORT_DAILY":
@@ -343,9 +448,9 @@ try:
             net = gross - ship - cod - admin - tele - ads - fix
             
             def row(label, val, is_h=False, is_sub=False):
-                style = "font-weight:bold; background:#f0f2f6;" if is_h else ""
+                style = "font-weight:bold; background:#333;" if is_h else ""
                 pad = "padding-left:30px;" if is_sub else ""
-                col = "red" if val < 0 else "black"
+                col = "#e74c3c" if val < 0 else "#ddd"
                 return f"<tr style='{style}'> <td style='{pad}'>{label}</td> <td style='text-align:right; color:{col};'>{val:,.0f}</td> </tr>"
             
             html = f"""<table class='pnl-table'>
