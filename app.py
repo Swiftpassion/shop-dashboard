@@ -121,14 +121,17 @@ st.markdown("""
         background-color: #e6e6e6 !important;
     }
     
-    /* --- [FIXED POINT 2] : Report Daily Total Row Blue Background --- */
-    .daily-table tbody tr.footer-row td {
+    /* --- [REPLACED BLOCK 1] : Report Daily Total row — blue background --- */
+    .custom-table.daily-table tbody tr.footer-row td {
         position: sticky;
-        bottom: 0; z-index: 100;
+        bottom: 0;
+        z-index: 100;
         background-color: #1e3c72 !important; /* Blue Background */
-        font-weight: bold; color: white !important; border-top: 2px solid #f1c40f;
+        font-weight: bold;
+        color: white !important;
+        border-top: 2px solid #f1c40f;
     }
-    /* ---------------------------------------------------------------- */
+    /* --------------------------------------------------------------------- */
 
     .col-fix-1 { position: sticky; left: 0; z-index: 10; width: 70px; border-right: 1px solid #333; }
     .col-fix-2 { position: sticky; left: 70px; z-index: 10; width: 80px; border-right: 1px solid #333; }
@@ -559,9 +562,8 @@ try:
                 html += '</tr>'
             g_sales = total_sales; g_ads = total_ads; g_cost = total_cost_ops; g_profit = net_profit
 
-            # --- [FIXED POINT 1] : Report Month Label Text Black ---
+            # --- [REPLACED BLOCK 2] : Report Month Footer - Black Labels ---
             def create_footer_row(row_cls, label, data_dict, val_type='num', dark_bg=False):
-
                 # 🎨 สีแถวสรุปท้ายตาราง
                 if "row-cost" in row_cls: bg_color = "#e8f8f5"
                 elif "row-sales" in row_cls: bg_color = "#d4efdf"
@@ -573,13 +575,18 @@ try:
                 else:
                     bg_color = "#ffffff"
 
-                # Removed !important from Python string as requested
-                # (Note: Also removed !important from global CSS above so this takes effect)
                 style_bg = f"background-color:{bg_color};"
 
-                # *** Added: color: #000000 !important; to ensure label text is black ***
-                row_html = f'<tr class="{row_cls}"><td class="col-fix-1" style="{style_bg} color: #000000 !important;">{label}</td>'
-                
+                # เฉพาะ labels ที่ต้องการ ให้เป็นสีดำ (label cell ทางซ้ายสุด)
+                black_labels = {
+                    "รวมทุนสินค้า", "รวมยอดขาย", "รวมกำไร", "รวมค่าแอด",
+                    "กำไร / ยอดขาย", "ค่าแอด / ยอดขาย", "ทุน/ยอดขาย"
+                }
+                label_color = "#000000" if label in black_labels else "#ffffff"
+
+                # สร้างแถว (ใช้ inline style + !important เพื่อ override global CSS)
+                row_html = f'<tr class="{row_cls}"><td class="col-fix-1" style="{style_bg} color: {label_color} !important;">{label}</td>'
+
                 grand_val = 0
                 if label == "รวมทุนสินค้า": grand_val = g_cost
                 elif label == "รวมยอดขาย": grand_val = g_sales
@@ -622,7 +629,7 @@ try:
                     row_html += f'<td style="{style_bg} color:{cell_text_col};">{txt}</td>'
                 row_html += '</tr>'
                 return row_html
-            # ----------------------------------------------------
+            # ----------------------------------------------------------------------
 
             html += create_footer_row("row-cost", "รวมทุนสินค้า", footer_sums, 'num')
             html += create_footer_row("row-sales", "รวมยอดขาย", footer_sums, 'num')
