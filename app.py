@@ -585,7 +585,10 @@ try:
                 label_color = "#000000" if label in black_labels else "#ffffff"
 
                 # สร้างแถว (ใช้ inline style + !important เพื่อ override global CSS)
-                row_html = f'<tr class="{row_cls}"><td class="col-fix-1" style="{style_bg} color: {label_color} !important;">{label}</td>'
+                row_html = (
+    f'<tr class="{row_cls}">'
+    f'<td class="col-fix-1" style="{style_bg} color: #000000 !important;">{label}</td>'
+)
 
                 grand_val = 0
                 if label == "รวมทุนสินค้า": grand_val = g_cost
