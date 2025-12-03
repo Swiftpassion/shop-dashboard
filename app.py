@@ -105,26 +105,23 @@ st.markdown("""
         box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
     }
     
-    /* DEFAULT TABLE COLORS (For Month Table etc) */
+    /* DEFAULT TABLE COLORS */
     .custom-table tbody tr:nth-child(even) td { background-color: #262626 !important; }
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c !important; }
     .custom-table tbody tr:hover td { background-color: #333 !important; }
 
-    /* --- [MODIFIED] 2. REPORT DAILY TABLE COLORS --- */
-    /* รายวัน — แถวสลับโทนเทา (เฉพาะ daily-table) */
+    /* --- [FIXED POINT 2] : Report Daily Specific CSS --- */
+    /* Only change background color, DO NOT touch text color so red/green stays visible */
     .custom-table.daily-table tbody tr:nth-child(even) td {
-        background-color: #d9d9d9 !important;   /* เทาอ่อน */
-        color: #000 !important;
+        background-color: #2e2e2e !important;   /* Light Gray (Relative to dark theme) */
     }
     .custom-table.daily-table tbody tr:nth-child(odd) td {
-        background-color: #bfbfbf !important;  /* เทาเข้ม */
-        color: #000 !important;
+        background-color: #1a1a1a !important;  /* Dark Gray */
     }
     .custom-table.daily-table tbody tr:hover td {
-        background-color: #999 !important;     /* hover */
-        color: #000 !important;
+        background-color: #444 !important;     /* Hover Highlight */
     }
-    /* ----------------------------------------------- */
+    /* --------------------------------------------------- */
     
     .daily-table tbody tr.footer-row td {
         position: sticky;
@@ -497,21 +494,13 @@ try:
             df_view = df_base[df_base['SKU_Main'].isin(final_skus)]
             days_in_month = calendar.monthrange(sel_year, thai_months.index(sel_month)+1)[1]
         
-            # --- [MODIFIED] 3. Remove Fix Cost ---
-            # fix_cost_total = 0
-            # if not df_fix_cost.empty and 'Key' in df_fix_cost.columns:
-            #     match = df_fix_cost[df_fix_cost['Key'] == f"{sel_month}-{sel_year}"]
-            #     if not match.empty: fix_cost_total = safe_float(match['Fix_Cost'].iloc[0])
-            # fix_cost_daily = fix_cost_total / days_in_month if days_in_month > 0 else 0
-            # -------------------------------------
-
+            # Removed Fix Cost as requested
             total_sales = df_view['รายละเอียดยอดที่ชำระแล้ว'].sum()
             total_ads = df_view['Ads_Amount'].sum()
             total_cost_ops = df_view['Total_Cost'].sum() - total_ads
             
-            # --- [MODIFIED] Net Profit (Removed Fix Cost) ---
+            # Net Profit (Removed Fix Cost)
             net_profit = total_sales - df_view['Total_Cost'].sum()
-            # ------------------------------------------------
 
             pct_cost = (total_cost_ops / total_sales * 100) if total_sales > 0 else 0
             pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
@@ -531,10 +520,7 @@ try:
             for day in all_days:
                 day_data = df_view[df_view['Day'] == day]
                 d_sales = day_data['รายละเอียดยอดที่ชำระแล้ว'].sum()
-                
-                # --- [MODIFIED] d_profit (Removed Fix Cost) ---
                 d_profit = day_data['Net_Profit'].sum()
-                # ----------------------------------------------
                 
                 row = {'วันที่': f"{day}", 'รวม': d_sales, 'กำไรสุทธิ': d_profit}
             
@@ -572,10 +558,10 @@ try:
                 html += '</tr>'
             g_sales = total_sales; g_ads = total_ads; g_cost = total_cost_ops; g_profit = net_profit
 
-            # --- [MODIFIED] 1. New Footer Color Function ---
+            # --- [FIXED POINT 1] : Updated Footer Colors to force display ---
             def create_footer_row(row_cls, label, data_dict, val_type='num', dark_bg=False):
 
-                # 🎨 สีแถวสรุปท้ายตาราง
+                # 🎨 สีแถวสรุปท้ายตาราง (Added !important to ensure color shows)
                 if "row-cost" in row_cls: bg_color = "#e8f8f5"
                 elif "row-sales" in row_cls: bg_color = "#d4efdf"
                 elif "row-profit" in row_cls: bg_color = "#a9dfbf"
@@ -584,9 +570,12 @@ try:
                 elif "row-pct-ads" in row_cls: bg_color = "#884ea0"
                 elif "row-pct-cost" in row_cls: bg_color = "#154360"
                 else:
-                    bg_color = "#ffffff"   # fallback
+                    bg_color = "#ffffff"
 
-                row_html = f'<tr class="{row_cls}"><td class="col-fix-1" style="background-color:{bg_color};">{label}</td>'
+                # Inject !important into the style string
+                style_bg = f"background-color:{bg_color} !important;"
+
+                row_html = f'<tr class="{row_cls}"><td class="col-fix-1" style="{style_bg}">{label}</td>'
                 grand_val = 0
                 if label == "รวมทุนสินค้า": grand_val = g_cost
                 elif label == "รวมยอดขาย": grand_val = g_sales
@@ -601,8 +590,8 @@ try:
                 if grand_val < 0: grand_text_col = "#c0392b"
                 elif dark_bg: grand_text_col = "#ffffff"
 
-                row_html += f'<td class="col-fix-2" style="background-color:{bg_color}; color:{grand_text_col};">{txt_val}</td>'
-                row_html += f'<td class="col-fix-3" style="background-color:{bg_color};"></td>'
+                row_html += f'<td class="col-fix-2" style="{style_bg} color:{grand_text_col};">{txt_val}</td>'
+                row_html += f'<td class="col-fix-3" style="{style_bg}"></td>'
 
                 for sku in final_skus:
                     val = 0
@@ -626,7 +615,7 @@ try:
                     if val < 0: cell_text_col = "#c0392b"
                     elif dark_bg: cell_text_col = "#ffffff"
 
-                    row_html += f'<td style="background-color:{bg_color}; color:{cell_text_col};">{txt}</td>'
+                    row_html += f'<td style="{style_bg} color:{cell_text_col};">{txt}</td>'
                 row_html += '</tr>'
                 return row_html
             # ----------------------------------------------------
@@ -689,27 +678,12 @@ try:
 
         if df_final_d.empty: st.warning("⚠️ ไม่พบข้อมูลตามเงื่อนไขในช่วงเวลานี้")
         else:
-            # --- [MODIFIED] 3. Remove Fix Cost Calculation ---
-            # estimated_fix_cost = 0
-            # if not df_fix_cost.empty and 'Key' in df_fix_cost.columns:
-            #     sel_month_name = thai_months[start_d.month-1]
-            #     fix_match = df_fix_cost[df_fix_cost['Key'] == f"{sel_month_name}-{start_d.year}"]
-            #     if not fix_match.empty:
-            #         monthly_fix = safe_float(fix_match['Fix_Cost'].iloc[0])
-            #         days_in_range = (end_d - start_d).days + 1
-            #         days_in_m = calendar.monthrange(start_d.year, start_d.month)[1]
-            #         estimated_fix_cost = (monthly_fix / days_in_m) * days_in_range
-            # -------------------------------------------------
-
             sum_sales = df_final_d['รายละเอียดยอดที่ชำระแล้ว'].sum()
             sum_ads = df_final_d['Ads_Amount'].sum()
             sum_ops = df_final_d['BOX_COST'].sum() + df_final_d['DELIV_COST'].sum() + df_final_d['CAL_COD_COST'].sum() + df_final_d['CAL_COM_ADMIN'].sum() + df_final_d['CAL_COM_TELESALE'].sum()
             sum_cost_prod = df_final_d['CAL_COST'].sum()
             sum_total_cost_ops = sum_cost_prod + sum_ops
-            
-            # --- [MODIFIED] Sum Profit (No fix cost) ---
             sum_profit = df_final_d['Net_Profit'].sum()
-            # -------------------------------------------
             
             p_cost = (sum_total_cost_ops / sum_sales * 100) if sum_sales > 0 else 0
             p_ads = (sum_ads / sum_sales * 100) if sum_sales > 0 else 0
@@ -926,13 +900,7 @@ try:
 
             monthly_fix = []
             for m in range(1, 13):
-                # --- [MODIFIED] Force Fix Cost = 0 ---
                 f_cost = 0 
-                # m_name = thai_months[m-1]
-                # if not df_fix_cost.empty and 'Key' in df_fix_cost.columns:
-                #     match = df_fix_cost[df_fix_cost['Key'] == f"{m_name}-{sel_year_pnl}"]
-                #     if not match.empty: f_cost = safe_float(match['Fix_Cost'].iloc[0])
-                # -------------------------------------
                 monthly_fix.append(f_cost)
 
             df_template = pd.DataFrame({'Month_Num': range(1, 13)})
@@ -943,11 +911,7 @@ try:
             # Calculate Aggregates
             df_merged['COGS_Total'] = df_merged['CAL_COST'] + df_merged['BOX_COST']
             df_merged['Selling_Exp'] = df_merged['DELIV_COST'] + df_merged['CAL_COD_COST'] + df_merged['CAL_COM_ADMIN'] + df_merged['CAL_COM_TELESALE'] + df_merged['Ads_Amount']
-            
-            # --- [MODIFIED] Total Exp exclude fix cost (which is 0 now anyway) ---
             df_merged['Total_Exp'] = df_merged['COGS_Total'] + df_merged['Selling_Exp'] + df_merged['Fix_Cost']
-            # ---------------------------------------------------------------------
-
             df_merged['Net_Profit_Final'] = df_merged['รายละเอียดยอดที่ชำระแล้ว'] - df_merged['Total_Exp']
 
             total_sales = df_merged['รายละเอียดยอดที่ชำระแล้ว'].sum()
@@ -1056,6 +1020,7 @@ try:
                 val_cls = "neg" if val < 0 else ""
                 return f'<tr class="{cls}"><td>{label}</td><td class="num-cell {val_cls}">{fmt(val)}</td></tr>'
 
+            # --- [FIXED POINT 3] : Removed Fixed Cost Row ---
             table_html = f"""
             <table class="pnl-table">
                 <thead><tr><th>รายการ (Accounts)</th><th style="text-align:right">จำนวนเงิน (THB)</th></tr></thead>
@@ -1069,7 +1034,6 @@ try:
                     {row_html("หัก ค่าคอม Admin", -t_admin, is_sub=True)}
                     {row_html("หัก ค่าคอม Telesale", -t_tele, is_sub=True)}
                     {row_html("หัก ค่า ADS", -t_ads, is_sub=True)}
-                    {row_html("หัก ค่าใช้จ่ายคงที่ (Fixed Cost)", -t_fix, is_sub=True)}
                     {row_html("กำไร(ขาดทุน) สุทธิ (Net Profit)", t_net, True, t_net<0)}
                 </tbody>
             </table>
@@ -1100,12 +1064,7 @@ try:
         days_in_m = calendar.monthrange(sel_y_m, thai_months.index(sel_m_m)+1)[1]
         df_full_days = pd.DataFrame({'Day': range(1, days_in_m + 1)})
 
-        # --- [MODIFIED] Force Fix Cost = 0 ---
         fix_cost_month = 0
-        # if not df_fix_cost.empty and 'Key' in df_fix_cost.columns:
-        #     match = df_fix_cost[df_fix_cost['Key'] == f"{sel_m_m}-{sel_y_m}"]
-        #     if not match.empty: fix_cost_month = safe_float(match['Fix_Cost'].iloc[0])
-        # -------------------------------------
         fix_cost_daily = fix_cost_month / days_in_m if days_in_m > 0 else 0
 
         if df_m_data.empty:
@@ -1259,6 +1218,7 @@ try:
             val_cls = "neg" if val < 0 else ""
             return f'<tr class="{cls}"><td>{label}</td><td class="num-cell {val_cls}">{fmt(val)}</td></tr>'
 
+        # --- [FIXED POINT 3] : Removed Fixed Cost Row ---
         table_html_m = f"""
         <table class="pnl-table">
             <thead><tr><th>รายการ (Accounts)</th><th style="text-align:right">จำนวนเงิน (THB)</th></tr></thead>
@@ -1272,7 +1232,6 @@ try:
                 {row_html("หัก ค่าคอม Admin", -m_admin, is_sub=True)}
                 {row_html("หัก ค่าคอม Telesale", -m_tele, is_sub=True)}
                 {row_html("หัก ค่า ADS", -m_ads, is_sub=True)}
-                {row_html("หัก ค่าใช้จ่ายคงที่ (Fix Cost)", -fix_cost_month, is_sub=True)}
                 {row_html("กำไร(ขาดทุน) สุทธิ (Net Profit)", m_net, True, m_net<0)}
             </tbody>
         </table>
