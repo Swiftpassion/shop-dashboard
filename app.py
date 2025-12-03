@@ -31,9 +31,7 @@ st.markdown("""
     /* 1. Adjust Top Container Spacing */
     .block-container { padding-top: 2rem !important; }
 
-    /* GLOBAL TEXT COLOR (ต้นเหตุของปัญหา แต่จำเป็นสำหรับ Dark Mode ส่วนอื่น) */
     h1, h2, h3, h4, h5, h6, p, span, div, label { color: #ffffff !important; }
-    
     .stTextInput input { color: #ffffff !important; caret-color: white; background-color: #262730 !important; border: 1px solid #555 !important; }
     div[data-baseweb="select"] div { color: #ffffff !important; background-color: #262730 !important; }
     div[data-baseweb="select"] span { color: #ffffff !important; }
@@ -174,21 +172,6 @@ st.markdown("""
 
     div.stButton > button { width: 100%; border-radius: 6px; height: 42px; font-weight: bold; padding: 0px 5px; background-color: #333; color: white; border: 1px solid #555; }
     div.stButton > button:hover { border-color: #00d2ff; color: #00d2ff; }
-
-    /* ============================================================ */
-    /* 🔥 CSS FIX: แก้ไขปัญหาสีตัวหนังสือในตาราง Report Month 🔥 */
-    /* ============================================================ */
-    
-    /* 1. บังคับให้ td และ th ไม่ใช้สีจาก Global div (สีขาว) แต่ให้ inherit จาก parent หรือ style ของตัวเอง */
-    td, th {
-        color: inherit !important;
-    }
-
-    /* 2. เฉพาะ Label ของ Report Month (col-fix-1) ในส่วนที่เป็น footer row (แถวสรุป) ให้เป็นสีดำ */
-    /* ใช้ tr[class*="row-"] เพื่อเจาะจงเฉพาะแถวสรุปด้านล่าง ไม่ให้กระทบ Header หรือแถวข้อมูลปกติ */
-    .month-table tr[class*="row-"] td.col-fix-1 {
-        color: #000000 !important;
-    }
 
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -571,35 +554,29 @@ try:
                 html += '</tr>'
             g_sales = total_sales; g_ads = total_ads; g_cost = total_cost_ops; g_profit = net_profit
 
-            # --- [REPLACED BLOCK 2] : Report Month Footer - Black Labels ---
+            # --- [REPLACED BLOCK 2] : Report Month Footer - Colored Backgrounds ---
             def create_footer_row(row_cls, label, data_dict, val_type='num', dark_bg=False):
-                # 🎨 สีแถวสรุปท้ายตาราง
-                if "row-cost" in row_cls: bg_color = "#e8f8f5"
-                elif "row-sales" in row_cls: bg_color = "#d4efdf"
-                elif "row-profit" in row_cls: bg_color = "#a9dfbf"
-                elif "row-ads" in row_cls: bg_color = "#abebc6"
-                elif "row-pct-profit" in row_cls: bg_color = "#e1bee7"
-                elif "row-pct-ads" in row_cls: bg_color = "#884ea0"
-                elif "row-pct-cost" in row_cls: bg_color = "#154360"
+                # 🎨 กำหนดสีพื้นหลัง (Background Colors) ตามที่ต้องการ
+                if label == "รวมทุนสินค้า": bg_color = "#0000FF"       # Blue
+                elif label == "รวมยอดขาย": bg_color = "#000080"       # Navy
+                elif label == "รวมกำไร": bg_color = "#006400"         # DarkGreen
+                elif label == "รวมค่าแอด": bg_color = "#8B4513"       # SaddleBrown
+                elif label == "กำไร / ยอดขาย": bg_color = "#D2691E"   # Chocolate
+                elif label == "ค่าแอด / ยอดขาย": bg_color = "#D2691E"  # Chocolate
+                elif label == "ทุน/ยอดขาย": bg_color = "#191970"      # MidnightBlue
                 else:
                     bg_color = "#ffffff"
 
                 style_bg = f"background-color:{bg_color};"
+                
+                # ถ้าพื้นหลังเป็นสีเข้ม ให้ตัวอักษรเป็นสีขาว (ใช้ !important เพื่อความชัวร์)
+                text_color_style = "color: #ffffff !important;" if bg_color != "#ffffff" else ""
 
-                # เฉพาะ labels ที่ต้องการ ให้เป็นสีดำ (label cell ทางซ้ายสุด)
-                black_labels = {
-                    "รวมทุนสินค้า", "รวมยอดขาย", "รวมกำไร", "รวมค่าแอด",
-                    "กำไร / ยอดขาย", "ค่าแอด / ยอดขาย", "ทุน/ยอดขาย"
-                }
-                label_color = "#000000" if label in black_labels else "#ffffff"
-
-                # สร้างแถว (ใช้ inline style + !important เพื่อ override global CSS)
-                # NOTE: เนื่องจาก Streamlit wrap div ชั้นนอกสุดทับ เราจึงเพิ่ม CSS Patch global ไว้ด้านบนสุดแล้ว
-                # แต่ใส่ !important ใน inline style ไว้ด้วยเพื่อความชัวร์
+                # สร้างแถว
                 row_html = (
-    f'<tr class="{row_cls}">'
-    f'<td class="col-fix-1" style="{style_bg} color: #000000 !important;">{label}</td>'
-)
+                    f'<tr class="{row_cls}">'
+                    f'<td class="col-fix-1" style="{style_bg} {text_color_style}">{label}</td>'
+                )
 
                 grand_val = 0
                 if label == "รวมทุนสินค้า": grand_val = g_cost
@@ -611,11 +588,16 @@ try:
                 elif label == "ทุน/ยอดขาย": grand_val = (g_cost/g_sales*100) if g_sales else 0
 
                 txt_val = fmt_p(grand_val) if val_type=='pct' else fmt_n(grand_val)
-                grand_text_col = "#333333"
-                if grand_val < 0: grand_text_col = "#c0392b"
-                elif dark_bg: grand_text_col = "#ffffff"
+                
+                # จัดการสีตัวอักษรของคอลัมน์ "รวม"
+                if bg_color != "#ffffff":
+                     grand_text_col = "#ffffff" # บังคับขาวถ้าพื้นหลังเข้ม
+                elif grand_val < 0:
+                     grand_text_col = "#c0392b" # แดงถ้าติดลบ (และพื้นหลังขาว)
+                else:
+                     grand_text_col = "#333333"
 
-                row_html += f'<td class="col-fix-2" style="{style_bg} color:{grand_text_col};">{txt_val}</td>'
+                row_html += f'<td class="col-fix-2" style="{style_bg} color:{grand_text_col} !important;">{txt_val}</td>'
                 row_html += f'<td class="col-fix-3" style="{style_bg}"></td>'
 
                 for sku in final_skus:
@@ -636,11 +618,16 @@ try:
                         val = (cost/s*100) if s else 0
 
                     txt = fmt_p(val) if val_type=='pct' else fmt_n(val)
-                    cell_text_col = "#333333"
-                    if val < 0: cell_text_col = "#c0392b"
-                    elif dark_bg: cell_text_col = "#ffffff"
+                    
+                    # จัดการสีตัวอักษรของเซลล์ข้อมูล SKU
+                    if bg_color != "#ffffff":
+                         cell_text_col = "#ffffff" # บังคับขาวถ้าพื้นหลังเข้ม
+                    elif val < 0:
+                         cell_text_col = "#c0392b" # แดงถ้าติดลบ
+                    else:
+                         cell_text_col = "#333333" # ดำปกติ
 
-                    row_html += f'<td style="{style_bg} color:{cell_text_col};">{txt}</td>'
+                    row_html += f'<td style="{style_bg} color:{cell_text_col} !important;">{txt}</td>'
                 row_html += '</tr>'
                 return row_html
             # ----------------------------------------------------------------------
