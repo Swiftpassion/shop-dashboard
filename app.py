@@ -105,23 +105,23 @@ st.markdown("""
         box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
     }
     
-    /* DEFAULT TABLE COLORS */
-    .custom-table tbody tr:nth-child(even) td { background-color: #262626 !important; }
-    .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c !important; }
-    .custom-table tbody tr:hover td { background-color: #333 !important; }
+    /* DEFAULT TABLE COLORS (For Report Month) - Removed !important to allow footer colors */
+    .custom-table tbody tr:nth-child(even) td { background-color: #262626; }
+    .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
+    .custom-table tbody tr:hover td { background-color: #333; }
 
-    /* --- [FIXED POINT 2] : Report Daily Specific CSS --- */
-    /* Only change background color, DO NOT touch text color so red/green stays visible */
+    /* --- [FIXED] 2. REPORT DAILY CSS: Lighter Backgrounds --- */
+    /* Light background to make dark text visible */
     .custom-table.daily-table tbody tr:nth-child(even) td {
-        background-color: #2e2e2e !important;   /* Light Gray (Relative to dark theme) */
+        background-color: #ffffff !important; /* White */
     }
     .custom-table.daily-table tbody tr:nth-child(odd) td {
-        background-color: #1a1a1a !important;  /* Dark Gray */
+        background-color: #f2f2f2 !important; /* Very Light Gray */
     }
     .custom-table.daily-table tbody tr:hover td {
-        background-color: #444 !important;     /* Hover Highlight */
+        background-color: #e6e6e6 !important; /* Light Hover */
     }
-    /* --------------------------------------------------- */
+    /* -------------------------------------------------------- */
     
     .daily-table tbody tr.footer-row td {
         position: sticky;
@@ -558,10 +558,10 @@ try:
                 html += '</tr>'
             g_sales = total_sales; g_ads = total_ads; g_cost = total_cost_ops; g_profit = net_profit
 
-            # --- [FIXED POINT 1] : Updated Footer Colors to force display ---
+            # --- [FIXED] 1. New Footer Color Function (With !important removed from inline style) ---
             def create_footer_row(row_cls, label, data_dict, val_type='num', dark_bg=False):
 
-                # 🎨 สีแถวสรุปท้ายตาราง (Added !important to ensure color shows)
+                # 🎨 สีแถวสรุปท้ายตาราง
                 if "row-cost" in row_cls: bg_color = "#e8f8f5"
                 elif "row-sales" in row_cls: bg_color = "#d4efdf"
                 elif "row-profit" in row_cls: bg_color = "#a9dfbf"
@@ -572,8 +572,9 @@ try:
                 else:
                     bg_color = "#ffffff"
 
-                # Inject !important into the style string
-                style_bg = f"background-color:{bg_color} !important;"
+                # Removed !important from Python string as requested
+                # (Note: Also removed !important from global CSS above so this takes effect)
+                style_bg = f"background-color:{bg_color};"
 
                 row_html = f'<tr class="{row_cls}"><td class="col-fix-1" style="{style_bg}">{label}</td>'
                 grand_val = 0
