@@ -568,12 +568,12 @@ try:
             def create_footer_row(row_cls, label, data_dict, val_type='num', dark_bg=False):
                 # 🎨 สีแถวสรุปท้ายตาราง (Updated Colors)
                 if "row-cost" in row_cls: bg_color = "#0000FF"       # รวมทุนสินค้า (Blue)
-                elif "row-sales" in row_cls: bg_color = "#0000CD"      # รวมยอดขาย (MediumBlue)
-                elif "row-profit" in row_cls: bg_color = "#191970"     # รวมกำไร (MidnightBlue)
-                elif "row-ads" in row_cls: bg_color = "#000080"        # รวมค่าแอด (Navy)
-                elif "row-pct-profit" in row_cls: bg_color = "#D2691E" # กำไร / ยอดขาย (Chocolate)
-                elif "row-pct-ads" in row_cls: bg_color = "#A0522D"    # ค่าแอด / ยอดขาย (Sienna)
-                elif "row-pct-cost" in row_cls: bg_color = "#8B4513"   # ทุน/ยอดขาย (SaddleBrown)
+                elif "row-sales" in row_cls: bg_color = "#000080"      # รวมยอดขาย (MediumBlue)
+                elif "row-profit" in row_cls: bg_color = "#006400"     # รวมกำไร (MidnightBlue)
+                elif "row-ads" in row_cls: bg_color = "#B8860B"        # รวมค่าแอด (Navy)
+                elif "row-pct-profit" in row_cls: bg_color = "#228B22" # กำไร / ยอดขาย (Chocolate)
+                elif "row-pct-ads" in row_cls: bg_color = "#8A2BE2"    # ค่าแอด / ยอดขาย (Sienna)
+                elif "row-pct-cost" in row_cls: bg_color = "#9400D3"   # ทุน/ยอดขาย (SaddleBrown)
                 else: bg_color = "#ffffff"
 
                 # ถ้า Background ไม่ใช่สีขาว ให้ถือว่าเป็น Dark Mode โดยอัตโนมัติ เพื่อเปลี่ยนตัวหนังสือเป็นสีขาว
