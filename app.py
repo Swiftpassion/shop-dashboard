@@ -10,8 +10,12 @@ import altair as alt
 import calendar
 from datetime import datetime, date
 
+# --- GLOBAL VARIABLES ---
+thai_months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+               "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
+
 # ==========================================
-# 1. CONFIG & CSS (DARK MODE)
+# 1. CONFIG & CSS (UI จาก Cell 2 + Dark Mode)
 # ==========================================
 st.set_page_config(page_title="Shop Analytics Dashboard", layout="wide", page_icon="📊")
 
@@ -19,7 +23,7 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Prompt:wght@300;400;500;600&display=swap');
     
-    /* FORCE DARK MODE */
+    /* FORCE DARK MODE BACKGROUND */
     .stApp { background-color: #0e1117 !important; color: #ffffff !important; }
     
     html, body, [class*="css"] { font-family: 'Sarabun', sans-serif; }
@@ -175,7 +179,7 @@ def load_raw_files():
         except: pass
         return None
 
-    # Load Data
+    # Load DATA
     files_data = get_files(FOLDER_ID_DATA)
     df_list = []
     for f in files_data:
@@ -327,7 +331,6 @@ def process_all_data():
     df_daily['Date'] = pd.to_datetime(df_daily['Date'])
     df_daily['Year'] = df_daily['Date'].dt.year
     df_daily['Month_Num'] = df_daily['Date'].dt.month
-    thai_months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
     df_daily['Month_Thai'] = df_daily['Month_Num'].apply(lambda x: thai_months[x-1] if 1<=x<=12 else "")
     df_daily['Day'] = df_daily['Date'].dt.day
     df_daily['Date'] = df_daily['Date'].dt.date 
@@ -384,34 +387,38 @@ try:
     # ---------------- PAGE 1: MONTHLY ----------------
     if selected_page == "📊 REPORT_MONTH":
         st.markdown('<div class="header-bar"><div class="header-title"><i class="fas fa-chart-line"></i> สรุปยอดขายรายเดือน</div></div>', unsafe_allow_html=True)
-        
+        all_years = sorted(df_daily['Year'].unique(), reverse=True)
         with st.container():
-            c1, c2, c3 = st.columns([1,1,2])
-            sel_year = c1.selectbox("เลือกปี", sorted(df_daily['Year'].unique(), reverse=True), key='m_y')
-            sel_month = c2.selectbox("เลือกเดือน", thai_months, index=datetime.now().month-1, key='m_m')
-            filter_mode = c3.selectbox("เงื่อนไข", ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 เฉพาะรายการที่ขายได้", "💸 ผลาญงบ (มี Ads แต่ขายไม่ได้)", "📋 แสดง Master ทั้งหมด"], key='m_f')
-            
-            c4, c5, c6, c7, c8 = st.columns([1.5, 3.5, 0.4, 0.4, 0.8])
-            c4.text_input("ค้นหา SKU:", key="search_m")
-            c5.multiselect("รายการที่เลือก:", sku_options, key="selected_skus")
-            c6.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
-            c6.button("➕", on_click=cb_add_m, use_container_width=True)
-            c7.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
-            c7.button("🧹", on_click=cb_clear_m, use_container_width=True)
-            c8.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
-            c8.button("🚀 ประมวลผล", type="primary", use_container_width=True)
+            c_y, c_m, c_type = st.columns([1, 1, 2])
+            with c_y: sel_year = st.selectbox("เลือกปี", all_years, key="m_y")
+            with c_m: sel_month = st.selectbox("เลือกเดือน", thai_months, index=datetime.now().month-1, key="m_m")
+            with c_type:
+                filter_mode = st.selectbox("เงื่อนไขสินค้า (Fast Filter)",
+                    ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 เฉพาะรายการที่ขายได้", "💸 ผลาญงบ (มี Ads แต่ขายไม่ได้)", "📋 แสดง Master ทั้งหมด"], key='m_f')
 
-        df_view = df_daily[(df_daily['Year']==sel_year) & (df_daily['Month_Thai']==sel_month)]
-        
-        sku_stats = df_view.groupby('SKU_Main').agg({'รายละเอียดยอดที่ชำระแล้ว':'sum', 'Ads_Amount':'sum'}).reset_index()
+            c1, c2, c3, c4, c5 = st.columns([1.5, 3.5, 0.4, 0.4, 0.8])
+            with c1: st.text_input("ค้นหา SKU / ชื่อสินค้า:", placeholder="...", key="search_m")
+            with c2: st.multiselect("รายการที่เลือก (Choose options):", sku_options, key="selected_skus")
+            with c3:
+                st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
+                st.button("➕", use_container_width=True, key="btn_add_m", on_click=cb_add_m)
+            with c4:
+                st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
+                st.button("🧹", type="secondary", use_container_width=True, key="btn_clear_m", on_click=cb_clear_m)
+            with c5:
+                st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
+                st.button("🚀 ประมวลผล", type="primary", use_container_width=True, key="btn_run_m")
+
+        df_base = df_daily[(df_daily['Year'] == sel_year) & (df_daily['Month_Thai'] == sel_month)]
+        sku_summary = df_base.groupby('SKU_Main').agg({'รายละเอียดยอดที่ชำระแล้ว': 'sum', 'Ads_Amount': 'sum'}).reset_index()
         auto_skus = []
-        if "ขายได้" in filter_mode: auto_skus = sku_stats[sku_stats['รายละเอียดยอดที่ชำระแล้ว']>0]['SKU_Main'].tolist()
-        elif "ผลาญงบ" in filter_mode: auto_skus = sku_stats[(sku_stats['Ads_Amount']>0) & (sku_stats['รายละเอียดยอดที่ชำระแล้ว']==0)]['SKU_Main'].tolist()
-        elif "Master" in filter_mode: auto_skus = daily_skus
-        else: auto_skus = sku_stats[(sku_stats['รายละเอียดยอดที่ชำระแล้ว']>0)|(sku_stats['Ads_Amount']>0)]['SKU_Main'].tolist()
-        
+        if "เฉพาะรายการที่ขายได้" in filter_mode: auto_skus = sku_summary[sku_summary['รายละเอียดยอดที่ชำระแล้ว'] > 0]['SKU_Main'].tolist()
+        elif "ผลาญงบ" in filter_mode: auto_skus = sku_summary[(sku_summary['Ads_Amount'] > 0) & (sku_summary['รายละเอียดยอดที่ชำระแล้ว'] == 0)]['SKU_Main'].tolist()
+        elif "แสดง Master ทั้งหมด" in filter_mode: auto_skus = daily_skus
+        else: auto_skus = sku_summary[(sku_summary['รายละเอียดยอดที่ชำระแล้ว'] > 0) | (sku_summary['Ads_Amount'] > 0)]['SKU_Main'].tolist()
+
         final_skus = [sku_map_rev[x] for x in st.session_state.selected_skus] if st.session_state.selected_skus else auto_skus
-        df_view = df_view[df_view['SKU_Main'].isin(final_skus)]
+        df_view = df_view = df_base[df_base['SKU_Main'].isin(final_skus)]
 
         if df_view.empty: st.info(f"ไม่มีข้อมูลในเดือน {sel_month} {sel_year}")
         else:
@@ -463,7 +470,12 @@ try:
                     h += f'<td style="color:{color};">{fmt_n(val)}</td>'
                 h += '</tr>'
             
-            # Footer with Colors
+            # Footer
+            g_sales = df_view['รายละเอียดยอดที่ชำระแล้ว'].sum()
+            g_profit = df_view['Net_Profit'].sum()
+            g_ads = df_view['Ads_Amount'].sum()
+            g_cost = df_view['Total_Cost'].sum() - g_ads
+            
             def create_footer_row(row_cls, label, data_dict, val_type='num', dark_bg=False):
                 bg_color = "#ffffff"
                 if "row-cost" in row_cls: bg_color = "#e8f8f5"
@@ -475,11 +487,6 @@ try:
                 elif "row-pct-cost" in row_cls: bg_color = "#154360"
 
                 grand_val = 0
-                g_ads = df_view['Ads_Amount'].sum()
-                g_cost = df_view['Total_Cost'].sum() - g_ads
-                g_sales = df_view['รายละเอียดยอดที่ชำระแล้ว'].sum()
-                g_profit = df_view['Net_Profit'].sum()
-
                 if label == "รวมทุนสินค้า": grand_val = g_cost
                 elif label == "รวมยอดขาย": grand_val = g_sales
                 elif label == "รวมกำไร": grand_val = g_profit
@@ -489,7 +496,7 @@ try:
                 elif label == "ทุน/ยอดขาย": grand_val = (g_cost/g_sales*100) if g_sales else 0
 
                 txt_val = fmt_p(grand_val) if val_type=='pct' else fmt_n(grand_val)
-                grand_text_col = "#000000"
+                grand_text_col = "#333333"
                 if grand_val < 0: grand_text_col = "#c0392b"
                 elif dark_bg: grand_text_col = "#ffffff"
 
@@ -541,7 +548,7 @@ try:
 
             c1_d, c2_d, c3_d, c4_d, c5_d = st.columns([1.5, 3.5, 0.4, 0.4, 0.8])
             with c1_d: st.text_input("ค้นหา SKU / ชื่อสินค้า (Daily):", placeholder="...", key="search_d")
-            with c2_d: st.multiselect("รายการที่เลือก (Choose options):", sku_options_list_global, key="selected_skus_d")
+            with c2_d: st.multiselect("รายการที่เลือก (Choose options):", sku_options, key="selected_skus_d")
             with c3_d:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
                 st.button("➕", use_container_width=True, key="btn_add_d", on_click=cb_add_d)
@@ -565,13 +572,10 @@ try:
         auto_skus_d = []
         if "เฉพาะรายการที่ขายได้" in filter_mode_d: auto_skus_d = df_grouped[df_grouped['รายละเอียดยอดที่ชำระแล้ว'] > 0]['SKU_Main'].tolist()
         elif "ผลาญงบ" in filter_mode_d: auto_skus_d = df_grouped[(df_grouped['Ads_Amount'] > 0) & (df_grouped['รายละเอียดยอดที่ชำระแล้ว'] == 0)]['SKU_Main'].tolist()
-        elif "แสดง Master ทั้งหมด" in filter_mode_d: auto_skus_d = all_skus_global
+        elif "แสดง Master ทั้งหมด" in filter_mode_d: auto_skus_d = daily_skus
         else: auto_skus_d = df_grouped[(df_grouped['รายละเอียดยอดที่ชำระแล้ว'] > 0) | (df_grouped['Ads_Amount'] > 0)]['SKU_Main'].tolist()
 
-        selected_labels_d = st.session_state.selected_skus_d
-        selected_skus_real_d = [sku_map_reverse_global[l] for l in selected_labels_d]
-        final_skus_d = sorted(selected_skus_real_d) if selected_skus_real_d else sorted(auto_skus_d)
-
+        final_skus_d = [sku_map_rev[x] for x in st.session_state.selected_skus_d] if st.session_state.selected_skus_d else auto_skus_d
         df_final_d = df_grouped[df_grouped['SKU_Main'].isin(final_skus_d)].copy()
 
         if df_final_d.empty: st.warning("⚠️ ไม่พบข้อมูลตามเงื่อนไขในช่วงเวลานี้")
@@ -622,6 +626,7 @@ try:
                 html += '<tr>'
                 html += f'<td style="font-weight:bold;color:#1e3c72;">{r["SKU_Main"]}</td>'
                 html += f'<td style="text-align:left;font-size:11px;color:#1e3c72;">{r["ชื่อสินค้า"]}</td>'
+
                 html += f'<td style="color:{get_color(r["จำนวน"])};">{fmt(r["จำนวน"])}</td>'
                 html += f'<td style="color:{get_color(r["รายละเอียดยอดที่ชำระแล้ว"])};">{fmt(r["รายละเอียดยอดที่ชำระแล้ว"])}</td>'
                 html += f'<td style="color:{get_color(r["CAL_COST"])};">{fmt(r["CAL_COST"])}</td>'
@@ -630,8 +635,10 @@ try:
                 html += f'<td style="color:{get_color(r["CAL_COD_COST"])};">{fmt(r["CAL_COD_COST"])}</td>'
                 html += f'<td style="color:{get_color(r["CAL_COM_ADMIN"])};">{fmt(r["CAL_COM_ADMIN"])}</td>'
                 html += f'<td style="color:{get_color(r["CAL_COM_TELESALE"])};">{fmt(r["CAL_COM_TELESALE"])}</td>'
+
                 html += f'<td style="color:#e67e22;">{fmt(r["Ads_Amount"])}</td>'
                 html += f'<td style="color:{get_color(r["Net_Profit"])};">{fmt(r["Net_Profit"])}</td>'
+
                 html += f'<td class="col-small" style="color:#1e3c72;">{fmt(r["ROAS"])}</td>'
                 html += f'<td class="col-small" style="color:#1e3c72;">{fmt(r["% ทุนสินค้า"],True)}</td>'
                 html += f'<td class="col-small" style="color:#1e3c72;">{fmt(r["% ทุนอื่น"],True)}</td>'
@@ -680,7 +687,7 @@ try:
             # Layout Input Row 2: SKU Selector
             c1_g, c2_g, c3_g, c4_g, c5_g = st.columns([1.5, 3.5, 0.4, 0.4, 0.8])
             with c1_g: st.text_input("ค้นหา SKU / ชื่อสินค้า (Graph):", placeholder="...", key="search_g")
-            with c2_g: st.multiselect("เลือกสินค้าที่ต้องการดูกราฟ:", sku_options_list_global, key="selected_skus_g")
+            with c2_g: st.multiselect("เลือกสินค้าที่ต้องการดูกราฟ:", sku_options, key="selected_skus_g")
             with c3_g:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
                 st.button("➕", use_container_width=True, key="btn_add_g", on_click=cb_add_g)
@@ -702,14 +709,11 @@ try:
         elif "ผลาญงบ" in filter_mode_g:
             auto_skus_g = sku_stats_g[(sku_stats_g['Ads_Amount'] > 0) & (sku_stats_g['รายละเอียดยอดที่ชำระแล้ว'] == 0)]['SKU_Main'].tolist()
         elif "แสดง Master ทั้งหมด" in filter_mode_g:
-            auto_skus_g = all_skus_global
+            auto_skus_g = daily_skus
         else: # แสดงรายการที่มีการเคลื่อนไหว
             auto_skus_g = sku_stats_g[(sku_stats_g['รายละเอียดยอดที่ชำระแล้ว'] > 0) | (sku_stats_g['Ads_Amount'] > 0)]['SKU_Main'].tolist()
 
-        selected_labels_g = st.session_state.selected_skus_g
-        real_selected_g = [sku_map_reverse_global[l] for l in selected_labels_g]
-
-        final_skus_g = sorted(real_selected_g) if real_selected_g else sorted(auto_skus_g)
+        final_skus_g = [sku_map_rev[x] for x in st.session_state.selected_skus_g] if st.session_state.selected_skus_g else auto_skus_g
 
         if not final_skus_g:
             st.info("👈 ไม่พบข้อมูลตามเงื่อนไข หรือกรุณาเลือกสินค้า")
@@ -730,7 +734,7 @@ try:
 
                 st.markdown("##### 📈 แนวโน้มยอดขายรายวัน (Sales Trend)")
                 chart_line = alt.Chart(df_chart).mark_line(point=True).encode(
-                    x=alt.X('DateStr', title='วันที่', axis=alt.Axis(format='%d/%m')),
+                    x=alt.X('DateStr', title='วันที่'),
                     y=alt.Y('รายละเอียดยอดที่ชำระแล้ว', title='ยอดขาย (บาท)'),
                     color=alt.Color('Product_Name', title='สินค้า'),
                     tooltip=['DateStr', 'Product_Name', alt.Tooltip('รายละเอียดยอดที่ชำระแล้ว', format=',.0f'), 'จำนวน']
@@ -826,7 +830,7 @@ try:
                     <div class="kpi-sub-pnl t-teal">คิดเป็น {fmt_p(pct_net_income)} ของยอดขาย</div>
                 </div>
                 <div class="kpi-card-pnl b-red">
-                    <div class="kpi-label-pnl">ค่าใช้จ่ายรวม (No FixCost)</div>
+                    <div class="kpi-label-pnl">ค่าใช้จ่ายรวม</div>
                     <div class="kpi-value-pnl">{fmt(total_exp)}</div>
                     <div class="kpi-sub-pnl t-red">คิดเป็น {fmt_p(pct_exp)} ของรายได้</div>
                 </div>
