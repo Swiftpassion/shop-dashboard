@@ -11,7 +11,7 @@ import calendar
 from datetime import datetime
 
 # ==========================================
-# 1. CONFIG & SETUP (DARK MODE UI)
+# 1. CONFIG & CSS (DARK MODE & UI SETUP)
 # ==========================================
 st.set_page_config(page_title="Shop Analytics Dashboard", layout="wide", page_icon="📊")
 
@@ -62,6 +62,7 @@ st.markdown("""
         background-color: #262730 !important; color: white !important; border-color: #444 !important;
     }
     .stDateInput input { color: white !important; }
+    div[role="listbox"] li { background-color: #262730 !important; color: white !important; }
 
     /* Tables (Dark) */
     .table-wrapper {
@@ -98,7 +99,7 @@ FOLDER_ID_ADS = "1ZE76TXNA_vNeXjhAZfLgBQQGIV0GY7w8"
 SHEET_MASTER_URL = "https://docs.google.com/spreadsheets/d/1Q3akHm1GKkDI2eilGfujsd9pO7aOjJvyYJNuXd98lzo/edit"
 
 # ==========================================
-# 3. GOOGLE DRIVE CONNECTION
+# 3. GOOGLE DRIVE CONNECTION (BACKEND)
 # ==========================================
 @st.cache_resource
 def get_drive_service():
@@ -167,7 +168,7 @@ def load_and_process_data():
 
     if df_main.empty: return pd.DataFrame(), pd.DataFrame(), [], {}
 
-    # --- PROCESSING ---
+    # --- PROCESSING LOGIC (Cell 1 Equivalent) ---
     
     # 1. Clean Master & Fix Columns
     if not df_master.empty:
@@ -279,7 +280,7 @@ def load_and_process_data():
     return df_daily, df_fix, sku_list, name_map
 
 # ==========================================
-# 4. DASHBOARD UI
+# 4. DASHBOARD UI (Cell 2 Equivalent)
 # ==========================================
 try:
     df_daily, df_fix_cost, master_sku_list, sku_name_map = load_and_process_data()
@@ -290,7 +291,7 @@ try:
 
     thai_months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
     
-    # State Management for SKU Selection
+    # --- State Management for SKU Selection ---
     if 'selected_skus' not in st.session_state: st.session_state.selected_skus = []
     
     sku_options = [f"{sku} : {sku_name_map.get(sku, '')}" for sku in master_sku_list]
