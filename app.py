@@ -11,7 +11,7 @@ import calendar
 from datetime import datetime, date
 
 # ==========================================
-# 1. CONFIG & CSS (DARK MODE & UI)
+# 1. CONFIG & CSS (DARK MODE)
 # ==========================================
 st.set_page_config(page_title="Shop Analytics Dashboard", layout="wide", page_icon="📊")
 
@@ -19,7 +19,7 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Prompt:wght@300;400;500;600&display=swap');
     
-    /* 1. FORCE DARK BACKGROUND */
+    /* FORCE DARK MODE */
     .stApp { background-color: #0e1117 !important; color: #ffffff !important; }
     
     html, body, [class*="css"] { font-family: 'Sarabun', sans-serif; }
@@ -27,7 +27,7 @@ st.markdown("""
     
     h1, h2, h3, h4, h5, h6, p, span, label, div { color: #ffffff !important; }
     
-    /* 2. Header Bar */
+    /* Header */
     .header-bar {
         background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
         padding: 15px 20px; border-radius: 10px; margin-bottom: 20px;
@@ -36,23 +36,14 @@ st.markdown("""
     }
     .header-title { font-size: 22px; font-weight: 700; margin: 0; color: white !important; }
     
-    /* 3. Navigation Group */
+    /* Navigation Group */
     div[role="radiogroup"] {
         background-color: #1c1c1c; padding: 5px; border-radius: 10px;
         border: 1px solid #444; display: flex; justify-content: center;
         margin-top: 10px; margin-bottom: 20px;
     }
     
-    /* 4. Inputs & Selectbox */
-    .stTextInput input, .stSelectbox div[data-baseweb="select"], .stDateInput input {
-        background-color: #262730 !important;
-        color: white !important;
-        border: 1px solid #555 !important;
-    }
-    div[role="listbox"] ul { background-color: #262730 !important; }
-    div[role="listbox"] li { color: white !important; }
-
-    /* 5. Metrics Cards */
+    /* Metric Cards */
     .metric-container { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
     .custom-card {
         background: #1c1c1c; border-radius: 10px; padding: 15px;
@@ -61,13 +52,15 @@ st.markdown("""
     }
     .card-label { color: #aaa !important; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
     .card-value { color: #fff !important; font-size: 24px; font-weight: 700; }
+    .card-sub { font-size: 12px; margin-top: 5px; color: #888 !important; }
     
     .border-blue { border-left-color: #3498db; }
+    .border-green { border-left-color: #27ae60; }
+    .border-red { border-left-color: #e74c3c; }
     .border-purple { border-left-color: #9b59b6; }
     .border-orange { border-left-color: #e67e22; }
-    .border-green { border-left-color: #27ae60; }
 
-    /* 6. Tables */
+    /* Tables */
     .table-wrapper {
         overflow: auto; width: 100%; max-height: 800px;
         margin-top: 10px; background: #1c1c1c;
@@ -90,12 +83,19 @@ st.markdown("""
     }
     .custom-table tbody tr:nth-child(even) td { background-color: #262626 !important; }
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c !important; }
+    .custom-table tbody tr:hover td { background-color: #333 !important; }
     
     /* Footer */
     .footer-row td {
         position: sticky; bottom: 0; z-index: 100;
         background-color: #333 !important; font-weight: bold; color: white !important; border-top: 2px solid #f1c40f;
     }
+    
+    /* Inputs */
+    .stTextInput input, .stSelectbox div[data-baseweb="select"], .stDateInput input {
+        background-color: #262730 !important; color: white !important; border: 1px solid #555 !important;
+    }
+    div[role="listbox"] ul { background-color: #262730 !important; }
     
     /* Buttons */
     div.stButton > button {
@@ -120,28 +120,22 @@ FOLDER_ID_ADS = "1ZE76TXNA_vNeXjhAZfLgBQQGIV0GY7w8"
 SHEET_MASTER_URL = "https://docs.google.com/spreadsheets/d/1Q3akHm1GKkDI2eilGfujsd9pO7aOjJvyYJNuXd98lzo/edit"
 
 # ==========================================
-# 3. HELPER FUNCTIONS (Safe Type Conversion)
+# 3. HELPER FUNCTIONS
 # ==========================================
 def safe_float(val):
-    """บังคับแปลงเป็นตัวเลข ถ้ามี , หรือ - ให้จัดการก่อน"""
-    if pd.isna(val) or val == "" or val is None:
-        return 0.0
+    """แปลงค่าเป็นตัวเลขอย่างปลอดภัย (แก้ Error ufunc subtract)"""
+    if pd.isna(val) or val == "" or val is None: return 0.0
     s = str(val).strip().replace(',', '').replace('฿', '').replace(' ', '')
-    if s == '-' or s == 'nan':
-        return 0.0
+    if s in ['-', 'nan', 'NaN', 'None']: return 0.0
     try:
-        if '%' in s:
-            return float(s.replace('%', '')) / 100
+        if '%' in s: return float(s.replace('%', '')) / 100
         return float(s)
-    except:
-        return 0.0
+    except: return 0.0
 
 def safe_date(val):
-    """บังคับแปลงเป็น datetime.date"""
-    try:
-        return pd.to_datetime(val).date()
-    except:
-        return None
+    """แปลงวันที่ให้เป็น datetime.date"""
+    try: return pd.to_datetime(val).date()
+    except: return None
 
 # ==========================================
 # 4. BACKEND: LOAD & PROCESS DATA
@@ -234,27 +228,39 @@ def process_all_data():
                     'J&T Express', 'Flash Express', 'ThailandPost', 'DHL_1', 'LEX TH', 'SPX Express',
                     'Express Delivery - ส่งด่วน', 'Standard Delivery - ส่งธรรมดาในประเทศ']
 
-    # Apply Safe Float
     for col in cols_money:
-        if col in df_master.columns:
-            df_master[col] = df_master[col].apply(safe_float)
+        if col in df_master.columns: df_master[col] = df_master[col].apply(safe_float)
     for col in cols_percent:
-        if col in df_master.columns:
-            df_master[col] = df_master[col].apply(safe_float)
+        if col in df_master.columns: df_master[col] = df_master[col].apply(safe_float)
 
-    if 'SKU' in df_master.columns:
-        df_master['SKU'] = df_master['SKU'].astype(str).str.strip()
+    if 'SKU' in df_master.columns: df_master['SKU'] = df_master['SKU'].astype(str).str.strip()
 
-    # --- 2. CLEAN & PROCESS TRANSACTIONS ---
+    # --- 2. PROCESS ADS ---
+    # Init empty to prevent NameError
+    df_ads_agg = pd.DataFrame(columns=['Date', 'SKU_Main', 'Ads_Amount'])
+    
+    if not df_ads_raw.empty:
+        col_cost = next((c for c in ['จำนวนเงินที่ใช้จ่ายไป (THB)', 'Cost', 'Amount'] if c in df_ads_raw.columns), None)
+        col_date = next((c for c in ['วัน', 'Date'] if c in df_ads_raw.columns), None)
+        col_camp = next((c for c in ['ชื่อแคมเปญ', 'Campaign'] if c in df_ads_raw.columns), None)
+
+        if col_cost and col_date and col_camp:
+            df_ads_raw['Date'] = df_ads_raw[col_date].apply(safe_date)
+            df_ads_raw = df_ads_raw.dropna(subset=['Date'])
+            df_ads_raw[col_cost] = df_ads_raw[col_cost].apply(safe_float)
+            df_ads_raw['SKU_Main'] = df_ads_raw[col_camp].astype(str).str.extract(r'\[(.*?)\]')
+            df_ads_agg = df_ads_raw.groupby(['Date', 'SKU_Main'])[col_cost].sum().reset_index(name='Ads_Amount')
+
+    # --- 3. PROCESS TRANSACTIONS ---
     cols = [c for c in ['หมายเลขคำสั่งซื้อออนไลน์', 'สถานะคำสั่งซื้อ', 'บริษัทขนส่ง', 'เวลาสั่งซื้อ', 'รูปแบบสินค้า', 'จำนวน', 'รายละเอียดยอดที่ชำระแล้ว', 'ผู้สร้างคำสั่งซื้อ', 'วิธีการชำระเงิน', 'ชื่อสินค้า', 'ประเภทการทำงาน'] if c in df_data.columns]
     df = df_data[cols].copy()
 
     if 'สถานะคำสั่งซื้อ' in df.columns:
         df = df[~df['สถานะคำสั่งซื้อ'].isin(['ยกเลิก'])]
 
-    # FIX DATE TYPE HERE (IMPORTANT)
+    # Safe Date
     df['Date'] = df['เวลาสั่งซื้อ'].apply(safe_date)
-    df = df.dropna(subset=['Date']) # Remove invalid dates
+    df = df.dropna(subset=['Date'])
     
     df['SKU_Main'] = df['รูปแบบสินค้า'].astype(str).str.split('-').str[0].str.strip()
 
@@ -265,7 +271,7 @@ def process_all_data():
     if 'ชื่อสินค้า_y' in df_merged.columns: df_merged.rename(columns={'ชื่อสินค้า_y': 'ชื่อสินค้า'}, inplace=True)
     if 'ชื่อสินค้า' not in df_merged.columns: df_merged['ชื่อสินค้า'] = df_merged['SKU_Main']
 
-    # Force Numeric for Calculation
+    # Force Numeric (Key Fix)
     df_merged['จำนวน'] = df_merged['จำนวน'].apply(safe_float)
     df_merged['ต้นทุน'] = df_merged['ต้นทุน'].fillna(0).apply(safe_float)
     df_merged['รายละเอียดยอดที่ชำระแล้ว'] = df_merged['รายละเอียดยอดที่ชำระแล้ว'].apply(safe_float)
@@ -293,27 +299,12 @@ def process_all_data():
     
     df_merged['Calculated_Role'] = df_merged.apply(get_role, axis=1)
     
-    # Safe float for Commissions
+    # Commissions
     com_admin = df_merged.get('ค่าคอมมิชชั่น Admin', 0).fillna(0).apply(safe_float)
     com_tele = df_merged.get('ค่าคอมมิชชั่น Telesale', 0).fillna(0).apply(safe_float)
 
     df_merged['CAL_COM_ADMIN'] = np.where((df_merged['Calculated_Role'] == 'Admin'), df_merged['รายละเอียดยอดที่ชำระแล้ว'] * com_admin, 0)
     df_merged['CAL_COM_TELESALE'] = np.where((df_merged['Calculated_Role'] == 'Telesale'), df_merged['รายละเอียดยอดที่ชำระแล้ว'] * com_tele, 0)
-
-    # --- 3. PROCESS ADS ---
-    if not df_ads_raw.empty:
-        col_cost = next((c for c in ['จำนวนเงินที่ใช้จ่ายไป (THB)', 'Cost', 'Amount'] if c in df_ads_raw.columns), None)
-        col_date = next((c for c in ['วัน', 'Date'] if c in df_ads_raw.columns), None)
-        col_camp = next((c for c in ['ชื่อแคมเปญ', 'Campaign'] if c in df_ads_raw.columns), None)
-
-        if cost_col and date_col and camp_col:
-            df_ads_raw['Date'] = df_ads_raw[col_date].apply(safe_date)
-            df_ads_raw = df_ads_raw.dropna(subset=['Date'])
-            df_ads_raw[cost_col] = df_ads_raw[cost_col].apply(safe_float)
-            df_ads_raw['SKU_Main'] = df_ads_raw[col_camp].astype(str).str.extract(r'\[(.*?)\]')
-            df_ads_agg = df_ads_raw.groupby(['Date', 'SKU_Main'])[cost_col].sum().reset_index(name='Ads_Amount')
-        else: df_ads_agg = pd.DataFrame()
-    else: df_ads_agg = pd.DataFrame()
 
     # --- 4. FINAL GROUPING ---
     agg_dict = {
@@ -322,7 +313,7 @@ def process_all_data():
         'CAL_COM_ADMIN': 'sum', 'CAL_COM_TELESALE': 'sum'
     }
     
-    # Ensure all columns in agg_dict exist
+    # Check if cols exist before agg
     for c in agg_dict.keys():
         if c not in df_merged.columns: df_merged[c] = 0
 
@@ -335,7 +326,7 @@ def process_all_data():
 
     df_daily = df_daily.fillna(0)
     
-    # *** FINAL NUMERIC FORCE (The Real Fix) ***
+    # *** FINAL NUMERIC FORCE ***
     num_cols = ['BOX_COST', 'DELIV_COST', 'CAL_COD_COST', 'CAL_COM_ADMIN', 'CAL_COM_TELESALE', 'CAL_COST', 'Ads_Amount', 'รายละเอียดยอดที่ชำระแล้ว']
     for c in num_cols: df_daily[c] = df_daily[c].apply(safe_float)
 
@@ -344,13 +335,13 @@ def process_all_data():
     df_daily['Net_Profit'] = df_daily['รายละเอียดยอดที่ชำระแล้ว'] - df_daily['Total_Cost']
 
     # Date Helpers
-    df_daily['Date'] = pd.to_datetime(df_daily['Date']) # Convert to timestamp for .dt accessor
+    df_daily['Date'] = pd.to_datetime(df_daily['Date'])
     df_daily['Year'] = df_daily['Date'].dt.year
     df_daily['Month_Num'] = df_daily['Date'].dt.month
     thai_months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
     df_daily['Month_Thai'] = df_daily['Month_Num'].apply(lambda x: thai_months[x-1] if 1<=x<=12 else "")
     df_daily['Day'] = df_daily['Date'].dt.day
-    df_daily['Date'] = df_daily['Date'].dt.date # Convert back to date object for comparison
+    df_daily['Date'] = df_daily['Date'].dt.date 
 
     if not df_fix_cost.empty and 'เดือน' in df_fix_cost.columns: df_fix_cost['Key'] = df_fix_cost['เดือน'].astype(str).str.strip() + "-" + df_fix_cost['ปี'].astype(str)
 
@@ -422,8 +413,10 @@ try:
             days_in_m = calendar.monthrange(sel_year, thai_months.index(sel_month)+1)[1]
             fix_c = 0
             if not df_fix_cost.empty:
-                match = df_fix_cost[df_fix_cost['Key'] == f"{sel_month}-{sel_year}"]
-                if not match.empty: fix_c = match['Fix_Cost'].iloc[0]
+                try:
+                    match = df_fix_cost[df_fix_cost['Key'] == f"{sel_month}-{sel_year}"]
+                    if not match.empty: fix_c = safe_float(match['Fix_Cost'].iloc[0])
+                except: pass
             
             sales = df_view['รายละเอียดยอดที่ชำระแล้ว'].sum()
             ads = df_view['Ads_Amount'].sum()
@@ -473,7 +466,7 @@ try:
     # ---------------- PAGE 2: DAILY ----------------
     elif page == "📅 REPORT_DAILY":
         st.markdown('<div class="header-bar"><div class="header-title">สรุปรายวัน</div></div>', unsafe_allow_html=True)
-        c1, c2, c3 = st.columns([1,1,2])
+        c1, c2, c3, c4 = st.columns([1,1,2,2])
         d_start = c1.date_input("เริ่ม", datetime.now().replace(day=1))
         d_end = c2.date_input("ถึง", datetime.now())
         
@@ -506,7 +499,6 @@ try:
             real_skus = [sku_map_rev[x] for x in skus]
             df_g = df_g[df_g['SKU_Main'].isin(real_skus)]
             
-            # Convert date to string for Altair to avoid serialization errors
             df_g['DateStr'] = df_g['Date'].astype(str)
             
             chart = alt.Chart(df_g).mark_line(point=True).encode(
@@ -534,7 +526,6 @@ try:
             
             fix = 0
             if not df_fix_cost.empty:
-                # Try to filter fix cost by year string
                 try: fix = df_fix_cost[df_fix_cost['Key'].str.contains(str(sel_year_pnl), na=False)]['Fix_Cost'].apply(safe_float).sum()
                 except: fix = 0
             
