@@ -111,11 +111,17 @@ st.markdown("""
     .custom-table tbody tr:hover td { background-color: #333; }
 
     /* REPORT DAILY CSS: Lighter Backgrounds */
-    .custom-table.daily-table tbody tr:nth-child(even) td { background-color: #ffffff !important; }
-    .custom-table.daily-table tbody tr:nth-child(odd) td { background-color: #f2f2f2 !important; }
-    .custom-table.daily-table tbody tr:hover td { background-color: #e6e6e6 !important; }
+    .custom-table.daily-table tbody tr:nth-child(even) td {
+        background-color: #ffffff !important;
+    }
+    .custom-table.daily-table tbody tr:nth-child(odd) td {
+        background-color: #f2f2f2 !important;
+    }
+    .custom-table.daily-table tbody tr:hover td {
+        background-color: #e6e6e6 !important;
+    }
     
-    /* Report Daily Total row */
+    /* --- [UPDATED FIXED POINT 2] : Report Daily Total Row Blue Background --- */
     .custom-table.daily-table tbody tr.footer-row td {
         position: sticky;
         bottom: 0;
@@ -125,13 +131,17 @@ st.markdown("""
         color: white !important;
         border-top: 2px solid #f1c40f;
     }
+    /* ---------------------------------------------------------------- */
 
     .col-fix-1 { position: sticky; left: 0; z-index: 10; width: 70px; border-right: 1px solid #333; }
     .col-fix-2 { position: sticky; left: 70px; z-index: 10; width: 80px; border-right: 1px solid #333; }
     .col-fix-3 { position: sticky; left: 150px; z-index: 10; width: 70px; border-right: 2px solid #bbb !important; }
 
     .th-sku { background-color: #1e3c72 !important; color: white !important; }
-    .sku-header { font-size: 10px; color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
+    .sku-header { font-size: 10px;
+        color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis;
+        max-width: 100px;
+    }
     .col-small { width: 70px; min-width: 70px; max-width: 70px; font-size: 11px; }
 
     /* P&L Styles */
@@ -172,7 +182,6 @@ st.markdown("""
 
     div.stButton > button { width: 100%; border-radius: 6px; height: 42px; font-weight: bold; padding: 0px 5px; background-color: #333; color: white; border: 1px solid #555; }
     div.stButton > button:hover { border-color: #00d2ff; color: #00d2ff; }
-
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 """, unsafe_allow_html=True)
@@ -308,7 +317,8 @@ def process_data():
             df_ads_agg = df_ads_raw.groupby(['Date', 'SKU_Main'])[col_cost].sum().reset_index(name='Ads_Amount')
 
     # Process Transactions
-    cols = [c for c in ['หมายเลขคำสั่งซื้อออนไลน์', 'สถานะคำสั่งซื้อ', 'บริษัทขนส่ง', 'เวลาสั่งซื้อ', 'รูปแบบสินค้า', 'จำนวน', 'รายละเอียดยอดที่ชำระแล้ว', 'ผู้สร้างคำสั่งซื้อ', 'วิธีการชำระเงิน', 'ชื่อสินค้า', 'ประเภทการทำงาน'] if c in df_data.columns]
+    cols = [c for c in ['หมายเลขคำสั่งซื้อออนไลน์', 'สถานะคำสั่งซื้อ', 
+        'บริษัทขนส่ง', 'เวลาสั่งซื้อ', 'รูปแบบสินค้า', 'จำนวน', 'รายละเอียดยอดที่ชำระแล้ว', 'ผู้สร้างคำสั่งซื้อ', 'วิธีการชำระเงิน', 'ชื่อสินค้า', 'ประเภทการทำงาน'] if c in df_data.columns]
     df = df_data[cols].copy()
 
     if 'สถานะคำสั่งซื้อ' in df.columns:
@@ -545,7 +555,7 @@ try:
             for _, r in df_matrix.iterrows():
                 html += f'<tr><td class="col-fix-1" style="font-weight:bold;">{fmt_n(r["รวม"])}</td>'
                 prof_color = "#c0392b" if r["กำไรสุทธิ"] < 0 else "#27ae60"
-                html += f'<td class="col-fix-2" style="font-weight:bold;color:{prof_color};">{fmt_n(r["กำไรสุทธิ"])}</td>'
+                html += f'<td class="col-fix-2" style="font-weight:bold; color:{prof_color};">{fmt_n(r["กำไรสุทธิ"])}</td>'
                 html += f'<td class="col-fix-3">{r["วันที่"]}</td>'
                 for sku in final_skus:
                     val = r.get(sku, 0)
@@ -554,30 +564,29 @@ try:
                 html += '</tr>'
             g_sales = total_sales; g_ads = total_ads; g_cost = total_cost_ops; g_profit = net_profit
 
-            # --- [REPLACED BLOCK 2] : Report Month Footer - Colored Backgrounds ---
+            # --- [UPDATED POINT 1] : Report Month Color Mapping ---
             def create_footer_row(row_cls, label, data_dict, val_type='num', dark_bg=False):
-                # 🎨 กำหนดสีพื้นหลัง (Background Colors) ตามที่ต้องการ
-                if label == "รวมทุนสินค้า": bg_color = "#0000FF"       # Blue
-                elif label == "รวมยอดขาย": bg_color = "#000080"       # Navy
-                elif label == "รวมกำไร": bg_color = "#006400"         # DarkGreen
-                elif label == "รวมค่าแอด": bg_color = "#8B4513"       # SaddleBrown
-                elif label == "กำไร / ยอดขาย": bg_color = "#D2691E"   # Chocolate
-                elif label == "ค่าแอด / ยอดขาย": bg_color = "#D2691E"  # Chocolate
-                elif label == "ทุน/ยอดขาย": bg_color = "#191970"      # MidnightBlue
-                else:
-                    bg_color = "#ffffff"
+                # 🎨 สีแถวสรุปท้ายตาราง (Updated Colors)
+                if "row-cost" in row_cls: bg_color = "#0000FF"       # รวมทุนสินค้า (Blue)
+                elif "row-sales" in row_cls: bg_color = "#0000CD"      # รวมยอดขาย (MediumBlue)
+                elif "row-profit" in row_cls: bg_color = "#191970"     # รวมกำไร (MidnightBlue)
+                elif "row-ads" in row_cls: bg_color = "#000080"        # รวมค่าแอด (Navy)
+                elif "row-pct-profit" in row_cls: bg_color = "#D2691E" # กำไร / ยอดขาย (Chocolate)
+                elif "row-pct-ads" in row_cls: bg_color = "#A0522D"    # ค่าแอด / ยอดขาย (Sienna)
+                elif "row-pct-cost" in row_cls: bg_color = "#8B4513"   # ทุน/ยอดขาย (SaddleBrown)
+                else: bg_color = "#ffffff"
+
+                # ถ้า Background ไม่ใช่สีขาว ให้ถือว่าเป็น Dark Mode โดยอัตโนมัติ เพื่อเปลี่ยนตัวหนังสือเป็นสีขาว
+                if bg_color != "#ffffff":
+                    dark_bg = True
 
                 style_bg = f"background-color:{bg_color};"
+
+                # *** Label Text Color: White if dark bg, else black/default ***
+                lbl_color = "#ffffff" if dark_bg else "#000000"
                 
-                # ถ้าพื้นหลังเป็นสีเข้ม ให้ตัวอักษรเป็นสีขาว (ใช้ !important เพื่อความชัวร์)
-                text_color_style = "color: #ffffff !important;" if bg_color != "#ffffff" else ""
-
-                # สร้างแถว
-                row_html = (
-                    f'<tr class="{row_cls}">'
-                    f'<td class="col-fix-1" style="{style_bg} {text_color_style}">{label}</td>'
-                )
-
+                row_html = f'<tr class="{row_cls}"><td class="col-fix-1" style="{style_bg} color: {lbl_color} !important;">{label}</td>'
+                
                 grand_val = 0
                 if label == "รวมทุนสินค้า": grand_val = g_cost
                 elif label == "รวมยอดขาย": grand_val = g_sales
@@ -588,16 +597,11 @@ try:
                 elif label == "ทุน/ยอดขาย": grand_val = (g_cost/g_sales*100) if g_sales else 0
 
                 txt_val = fmt_p(grand_val) if val_type=='pct' else fmt_n(grand_val)
-                
-                # จัดการสีตัวอักษรของคอลัมน์ "รวม"
-                if bg_color != "#ffffff":
-                     grand_text_col = "#ffffff" # บังคับขาวถ้าพื้นหลังเข้ม
-                elif grand_val < 0:
-                     grand_text_col = "#c0392b" # แดงถ้าติดลบ (และพื้นหลังขาว)
-                else:
-                     grand_text_col = "#333333"
+                grand_text_col = "#333333"
+                if grand_val < 0: grand_text_col = "#c0392b"
+                elif dark_bg: grand_text_col = "#ffffff"
 
-                row_html += f'<td class="col-fix-2" style="{style_bg} color:{grand_text_col} !important;">{txt_val}</td>'
+                row_html += f'<td class="col-fix-2" style="{style_bg} color:{grand_text_col};">{txt_val}</td>'
                 row_html += f'<td class="col-fix-3" style="{style_bg}"></td>'
 
                 for sku in final_skus:
@@ -618,27 +622,22 @@ try:
                         val = (cost/s*100) if s else 0
 
                     txt = fmt_p(val) if val_type=='pct' else fmt_n(val)
-                    
-                    # จัดการสีตัวอักษรของเซลล์ข้อมูล SKU
-                    if bg_color != "#ffffff":
-                         cell_text_col = "#ffffff" # บังคับขาวถ้าพื้นหลังเข้ม
-                    elif val < 0:
-                         cell_text_col = "#c0392b" # แดงถ้าติดลบ
-                    else:
-                         cell_text_col = "#333333" # ดำปกติ
+                    cell_text_col = "#333333"
+                    if val < 0: cell_text_col = "#c0392b"
+                    elif dark_bg: cell_text_col = "#ffffff"
 
-                    row_html += f'<td style="{style_bg} color:{cell_text_col} !important;">{txt}</td>'
+                    row_html += f'<td style="{style_bg} color:{cell_text_col};">{txt}</td>'
                 row_html += '</tr>'
                 return row_html
-            # ----------------------------------------------------------------------
+            # ----------------------------------------------------
 
             html += create_footer_row("row-cost", "รวมทุนสินค้า", footer_sums, 'num')
             html += create_footer_row("row-sales", "รวมยอดขาย", footer_sums, 'num')
             html += create_footer_row("row-profit", "รวมกำไร", footer_sums, 'num')
             html += create_footer_row("row-ads", "รวมค่าแอด", footer_sums, 'num')
             html += create_footer_row("row-pct-profit", "กำไร / ยอดขาย", footer_sums, 'pct')
-            html += create_footer_row("row-pct-ads", "ค่าแอด / ยอดขาย", footer_sums, 'pct', dark_bg=True)
-            html += create_footer_row("row-pct-cost", "ทุน/ยอดขาย", footer_sums, 'pct', dark_bg=True)
+            html += create_footer_row("row-pct-ads", "ค่าแอด / ยอดขาย", footer_sums, 'pct')
+            html += create_footer_row("row-pct-cost", "ทุน/ยอดขาย", footer_sums, 'pct')
             html += '</tbody></table></div>'
             st.markdown(html, unsafe_allow_html=True)
 
