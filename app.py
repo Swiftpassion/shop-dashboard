@@ -477,9 +477,6 @@ try:
             g_ads = df_view['Ads_Amount'].sum()
             g_cost = df_view['Total_Cost'].sum() - g_ads
             
-            def foot(lbl, val, pct, bg="#333"):
-                return f'<tr style="background:{bg};font-weight:bold;"><td class="col-fix-1">{lbl}</td><td class="col-fix-2">{fmt(val)}</td><td>{pct}</td>' + ''.join([f'<td>{fmt(df_view[df_view["SKU_Main"]==s][lbl_map[lbl]].sum())}</td>' for s in final_skus]) + '</tr>'
-            
             lbl_map = {"รวมยอดขาย":"รายละเอียดยอดที่ชำระแล้ว", "รวมกำไร":"Net_Profit", "รวมค่าแอด":"Ads_Amount"}
             # Simple Footer due to complexity
             h += f'<tr class="footer-row"><td class="col-fix-1">TOTAL</td><td class="col-fix-2">{fmt(g_profit)}</td><td></td>'
@@ -492,52 +489,33 @@ try:
     # ---------------- PAGE 2: DAILY ----------------
     elif page == "📅 REPORT_DAILY":
         st.markdown('<div class="header-bar"><div class="header-title">สรุปรายวัน</div></div>', unsafe_allow_html=True)
+        c1, c2, c3, c4 = st.columns([1,1,2,2])
+        sel_year_d = c1.selectbox("เลือกปี", sorted(df_daily['Year'].unique(), reverse=True), key="d_y")
+        d_start = c2.date_input("เริ่ม", datetime.now().replace(day=1))
+        d_end = c3.date_input("ถึง", datetime.now())
+        filter_mode_d = c4.selectbox("เงื่อนไข", ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 เฉพาะรายการที่ขายได้", "💸 ผลาญงบ", "📋 Master ทั้งหมด"], key="d_m")
         
-        with st.container():
-            c1, c2, c3, c4 = st.columns([1, 1, 1, 2])
-            sel_year_d = c1.selectbox("เลือกปี", sorted(df_daily['Year'].unique(), reverse=True), key="d_y")
-            start_d = c2.date_input("เริ่มวันที่", datetime.now().replace(day=1))
-            end_d = c3.date_input("ถึงวันที่", datetime.now())
-            filter_mode_d = c4.selectbox("เงื่อนไขสินค้า", ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 เฉพาะรายการที่ขายได้", "💸 ผลาญงบ (มี Ads แต่ขายไม่ได้)", "📋 แสดง Master ทั้งหมด"], key="d_m")
-            
-            c1_d, c2_d, c5_d = st.columns([1.5, 3.5, 0.8])
-            c1_d.text_input("ค้นหา SKU:", key="search_d")
-            c2_d.multiselect("รายการที่เลือก:", sku_options, key="selected_skus_d")
-            c5_d.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
-            c5_d.button("🚀 ประมวลผล", type="primary", key="btn_run_d")
+        c1_d, c2_d, c5_d = st.columns([1.5, 3.5, 0.8])
+        c1_d.text_input("ค้นหา SKU:", key="search_d")
+        c2_d.multiselect("รายการที่เลือก:", sku_options, key="selected_skus_d")
+        c5_d.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
+        c5_d.button("🚀 ประมวลผล", type="primary", key="btn_run_d")
 
-        mask = (df_daily['Date'] >= start_d) & (df_daily['Date'] <= end_d)
+        # Safe Date Comparison
+        mask = (df_daily['Date'] >= d_start) & (df_daily['Date'] <= d_end)
         df_d = df_daily[mask]
         
         if df_d.empty: st.warning("ไม่พบข้อมูล")
         else:
-            g = df_d.groupby('SKU_Main').agg({'ชื่อสินค้า':'last','จำนวน':'sum','รายละเอียดยอดที่ชำระแล้ว':'sum', 'CAL_COST':'sum', 'BOX_COST':'sum', 'DELIV_COST':'sum', 'CAL_COD_COST':'sum', 'CAL_COM_ADMIN':'sum', 'CAL_COM_TELESALE':'sum', 'Ads_Amount':'sum', 'Net_Profit':'sum'}).reset_index()
+            sum_sales = df_d['รายละเอียดยอดที่ชำระแล้ว'].sum()
+            sum_profit = df_d['Net_Profit'].sum()
+            st.markdown(f"**ยอดขายรวม:** {sum_sales:,.0f} | **กำไรสุทธิ:** {sum_profit:,.0f}")
+            
+            g = df_d.groupby('SKU_Main').agg({'ชื่อสินค้า':'last','จำนวน':'sum','รายละเอียดยอดที่ชำระแล้ว':'sum', 'Ads_Amount':'sum', 'Net_Profit':'sum'}).reset_index()
             g['ชื่อสินค้า'] = g['SKU_Main'].map(sku_name_lookup)
             
-            # Logic Filter
             if "ขายได้" in filter_mode_d: g = g[g['รายละเอียดยอดที่ชำระแล้ว']>0]
-            
-            # Table HTML
-            cols_cfg = [('SKU','SKU_Main'), ('ชื่อสินค้า','ชื่อสินค้า'), ('จำนวน','จำนวน'), ('ยอดขาย','รายละเอียดยอดที่ชำระแล้ว'), ('ต้นทุน','CAL_COST'), ('ค่ากล่อง','BOX_COST'), ('ค่าส่ง','DELIV_COST'), ('COD','CAL_COD_COST'), ('Admin','CAL_COM_ADMIN'), ('Tele','CAL_COM_TELESALE'), ('ค่า Ads','Ads_Amount'), ('กำไร','Net_Profit')]
-            
-            def fmt(v): return f"{v:,.0f}" if v!=0 else "-"
-            
-            h = '<div class="table-wrapper"><table class="custom-table daily-table"><thead><tr>'
-            for t, _ in cols_cfg: h += f'<th>{t}</th>'
-            h += '</tr></thead><tbody>'
-            
-            for _, r in g.iterrows():
-                h += '<tr>'
-                for t, k in cols_cfg:
-                    val = r[k]
-                    c = "#ddd"
-                    if k in ['Net_Profit']: c = "#2ecc71" if val>=0 else "#e74c3c"
-                    if k=='SKU_Main': c="#3498db;font-weight:bold"
-                    if isinstance(val, (int, float)): val = fmt(val)
-                    h += f'<td style="color:{c}">{val}</td>'
-                h += '</tr>'
-            h += '</tbody></table></div>'
-            st.markdown(h, unsafe_allow_html=True)
+            st.dataframe(g.style.format("{:,.0f}", subset=['จำนวน','รายละเอียดยอดที่ชำระแล้ว','Ads_Amount','Net_Profit']), use_container_width=True)
 
     # ---------------- PAGE 3: GRAPH ----------------
     elif page == "📈 PRODUCT GRAPH":
@@ -553,6 +531,8 @@ try:
         if skus:
             real_skus = [sku_map_rev[x] for x in skus]
             df_g = df_g[df_g['SKU_Main'].isin(real_skus)]
+            
+            # Convert date to string for Altair to avoid serialization errors
             df_g['DateStr'] = df_g['Date'].astype(str)
             
             chart = alt.Chart(df_g).mark_line(point=True).encode(
