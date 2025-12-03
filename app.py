@@ -105,29 +105,30 @@ st.markdown("""
         box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
     }
     
-    /* DEFAULT TABLE COLORS (For Report Month) - Removed !important to allow footer colors */
+    /* DEFAULT TABLE COLORS (For Report Month) */
     .custom-table tbody tr:nth-child(even) td { background-color: #262626; }
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
     .custom-table tbody tr:hover td { background-color: #333; }
 
-    /* --- [FIXED] 2. REPORT DAILY CSS: Lighter Backgrounds --- */
-    /* Light background to make dark text visible */
+    /* REPORT DAILY CSS: Lighter Backgrounds */
     .custom-table.daily-table tbody tr:nth-child(even) td {
-        background-color: #ffffff !important; /* White */
+        background-color: #ffffff !important;
     }
     .custom-table.daily-table tbody tr:nth-child(odd) td {
-        background-color: #f2f2f2 !important; /* Very Light Gray */
+        background-color: #f2f2f2 !important;
     }
     .custom-table.daily-table tbody tr:hover td {
-        background-color: #e6e6e6 !important; /* Light Hover */
+        background-color: #e6e6e6 !important;
     }
-    /* -------------------------------------------------------- */
     
+    /* --- [FIXED POINT 2] : Report Daily Footer Blue Background --- */
     .daily-table tbody tr.footer-row td {
         position: sticky;
         bottom: 0; z-index: 100;
-        background-color: #333 !important; font-weight: bold; color: white !important; border-top: 2px solid #f1c40f;
+        background-color: #1e3c72 !important; /* Blue Background */
+        font-weight: bold; color: white !important; border-top: 2px solid #f1c40f;
     }
+    /* ------------------------------------------------------------- */
 
     .col-fix-1 { position: sticky; left: 0; z-index: 10; width: 70px; border-right: 1px solid #333; }
     .col-fix-2 { position: sticky; left: 70px; z-index: 10; width: 80px; border-right: 1px solid #333; }
@@ -558,7 +559,7 @@ try:
                 html += '</tr>'
             g_sales = total_sales; g_ads = total_ads; g_cost = total_cost_ops; g_profit = net_profit
 
-            # --- [FIXED] 1. New Footer Color Function (With !important removed from inline style) ---
+            # --- [FIXED POINT 1] : Report Month Label Text Black ---
             def create_footer_row(row_cls, label, data_dict, val_type='num', dark_bg=False):
 
                 # 🎨 สีแถวสรุปท้ายตาราง
@@ -576,7 +577,9 @@ try:
                 # (Note: Also removed !important from global CSS above so this takes effect)
                 style_bg = f"background-color:{bg_color};"
 
-                row_html = f'<tr class="{row_cls}"><td class="col-fix-1" style="{style_bg}">{label}</td>'
+                # *** Added: color: #000000 !important; to ensure label text is black ***
+                row_html = f'<tr class="{row_cls}"><td class="col-fix-1" style="{style_bg} color: #000000 !important;">{label}</td>'
+                
                 grand_val = 0
                 if label == "รวมทุนสินค้า": grand_val = g_cost
                 elif label == "รวมยอดขาย": grand_val = g_sales
