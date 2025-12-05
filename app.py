@@ -14,13 +14,6 @@ from datetime import datetime, date
 thai_months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
                "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
 
-# --- COLOR SETTINGS (สีที่คุณต้องการ) ---
-COLOR_SALES = "#33FFFF"     # ฟ้า (ยอดขาย)
-COLOR_COST = "#9400D3"      # ม่วง (ทุน)
-COLOR_ADS = "#FF6633"       # ส้ม (Ads)
-COLOR_PROFIT = "#7CFC00"    # เขียว (กำไร)
-COLOR_NEGATIVE = "#FF0000"  # แดง (เมื่อติดลบ)
-
 # ==========================================
 # 1. CONFIG & CSS
 # ==========================================
@@ -31,28 +24,31 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Prompt:wght@300;400;500;600&display=swap');
 
     html, body, [class*="css"] { font-family: 'Sarabun', sans-serif; }
-    
     .block-container { padding-top: 2rem !important; }
 
-    /* --- [จุดสำคัญที่แก้] ลบบรรทัด h1...label { color: #ffffff } ทิ้งไปแล้ว --- */
-
-    /* Inputs: ให้สีขาวเฉพาะในช่องกรอก ไม่เกี่ยวกับป้าย Text อื่น */
-    .stTextInput input { color: #ffffff !important; caret-color: white; background-color: #262730 !important; border: 1px solid #555 !important; }
-    div[data-baseweb="select"] div { color: #ffffff !important; background-color: #262730 !important; }
-    div[data-baseweb="select"] span { color: #ffffff !important; }
-    div[role="listbox"] li { color: #ffffff !important; background-color: #262730; }
-
-    /* Header Bar */
-    .header-bar {
-        background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
-        padding: 15px 20px; border-radius: 10px;
-        margin-bottom: 20px; display: flex; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    }
-    .header-title { font-size: 22px; font-weight: 700; margin: 0; color: white !important; }
-
-    /* Metric Cards Container */
-    .metric-container { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+    /* --- [ส่วนสำคัญ] บังคับสีที่ CSS Class โดยตรง (ชนะทุก Theme) --- */
     
+    /* สีฟ้า: ยอดขาย */
+    .val-sales { color: #33FFFF !important; font-size: 24px; font-weight: 700; }
+    .sub-sales { color: #33FFFF !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
+
+    /* สีม่วง: ทุน */
+    .val-cost { color: #9400D3 !important; font-size: 24px; font-weight: 700; }
+    .sub-cost { color: #9400D3 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
+
+    /* สีส้ม: แอด */
+    .val-ads { color: #FF6633 !important; font-size: 24px; font-weight: 700; }
+    .sub-ads { color: #FF6633 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
+
+    /* สีเขียว: กำไร */
+    .val-profit { color: #7CFC00 !important; font-size: 24px; font-weight: 700; }
+    .sub-profit { color: #7CFC00 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
+
+    /* สีแดง: ติดลบ (เอาไว้ใช้ override) */
+    .val-neg { color: #FF0000 !important; font-size: 24px; font-weight: 700; }
+    .sub-neg { color: #FF0000 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
+
+    /* การ์ดพื้นหลัง */
     .custom-card {
         background: #1c1c1c;
         border-radius: 10px; padding: 15px;
@@ -60,123 +56,66 @@ st.markdown("""
         border-left: 5px solid #ddd;
         border: 1px solid #333;
     }
-    
     .card-label { color: #aaa !important; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
-    
-    /* ลบการบังคับสีขาวออกจาก Class นี้ เพื่อให้ Inline Style ทำงาน */
-    .card-value { font-size: 24px; font-weight: 700; }
-    .card-sub { font-size: 13px; margin-top: 5px; font-weight: 600; }
-
-    .neg { color: #FF0000 !important; }
-    .pos { color: #ffffff !important; }
-
     .border-blue { border-left-color: #3498db; }
     .border-purple { border-left-color: #9b59b6; }
     .border-orange { border-left-color: #e67e22; }
     .border-green { border-left-color: #27ae60; }
 
+    /* Inputs */
+    .stTextInput input { color: #ffffff !important; caret-color: white; background-color: #262730 !important; border: 1px solid #555 !important; }
+    div[data-baseweb="select"] div { color: #ffffff !important; background-color: #262730 !important; }
+    div[role="listbox"] li { color: #ffffff !important; background-color: #262730; }
+
     /* Table Styling */
-    .table-wrapper {
-        overflow: auto;
-        width: 100%; max-height: 800px;
-        margin-top: 10px; background: #1c1c1c;
-        border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        padding-bottom: 10px; position: relative;
-        border: 1px solid #444;
-    }
-    .custom-table {
-        width: 100%;
-        min-width: 1000px;
-        border-collapse: separate; border-spacing: 0;
-        font-family: 'Sarabun', sans-serif; font-size: 11px; color: #ddd;
-    }
-    .custom-table th, .custom-table td {
-        padding: 3px 5px;
-        line-height: 1.1;
-        text-align: center; border-bottom: 1px solid #333; border-right: 1px solid #333; white-space: nowrap;
-    }
-    
-    /* Sticky Headers */
-    .daily-table thead th, .month-table thead th {
-        position: sticky; top: 0; z-index: 100;
-        background-color: #1e3c72; color: white !important;
-        font-weight: 700; border-bottom: 2px solid #555;
-    }
-    
-    /* Table Colors */
+    .table-wrapper { overflow: auto; width: 100%; max-height: 800px; margin-top: 10px; background: #1c1c1c; border-radius: 8px; border: 1px solid #444; }
+    .custom-table { width: 100%; min-width: 1000px; border-collapse: separate; border-spacing: 0; font-family: 'Sarabun', sans-serif; font-size: 11px; color: #ddd; }
+    .custom-table th, .custom-table td { padding: 3px 5px; line-height: 1.1; text-align: center; border-bottom: 1px solid #333; border-right: 1px solid #333; white-space: nowrap; }
+    .daily-table thead th, .month-table thead th { position: sticky; top: 0; z-index: 100; background-color: #1e3c72; color: white !important; font-weight: 700; border-bottom: 2px solid #555; }
     .custom-table tbody tr:nth-child(even) td { background-color: #262626; }
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
     .custom-table tbody tr:hover td { background-color: #333; }
 
-    /* Report Daily Specific */
+    /* Report Daily Colors */
     .custom-table.daily-table tbody tr:nth-child(even) td { background-color: #ffffff !important; }
     .custom-table.daily-table tbody tr:nth-child(odd) td { background-color: #f2f2f2 !important; }
     .custom-table.daily-table tbody tr:hover td { background-color: #e6e6e6 !important; }
-    .custom-table.daily-table tbody tr.footer-row td {
-        position: sticky; bottom: 0; z-index: 100;
-        background-color: #1e3c72 !important; 
-        font-weight: bold; color: white !important;
-        border-top: 2px solid #f1c40f;
-    }
-
-    .col-fix-1 { position: sticky; left: 0; z-index: 10; width: 70px; border-right: 1px solid #333; }
-    .col-fix-2 { position: sticky; left: 70px; z-index: 10; width: 80px; border-right: 1px solid #333; }
-    .col-fix-3 { position: sticky; left: 150px; z-index: 10; width: 70px; border-right: 2px solid #bbb !important; }
-    .th-sku { background-color: #1e3c72 !important; color: white !important; }
-    .sku-header { font-size: 10px; color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
-    .col-small { width: 70px; min-width: 70px; max-width: 70px; font-size: 11px; }
-
-    /* P&L Styles */
+    .custom-table.daily-table tbody tr.footer-row td { position: sticky; bottom: 0; z-index: 100; background-color: #1e3c72 !important; font-weight: bold; color: white !important; border-top: 2px solid #f1c40f; }
+    
+    /* Header & Utils */
+    .header-bar { background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%); padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; }
+    .header-title { font-size: 22px; font-weight: 700; margin: 0; color: white !important; }
+    div[role="radiogroup"] { background-color: #1c1c1c; padding: 8px; border-radius: 10px; margin-top: 30px; margin-bottom: -15px; border: 1px solid #444; display: flex; justify-content: center; }
+    
+    /* P&L Specific */
     .pnl-container { font-family: 'Prompt', sans-serif; color: #ffffff; }
-    .header-gradient-pnl {
-        background-image: linear-gradient(135deg, #0f172a 0%, #334155 100%);
-        padding: 20px 25px; border-radius: 12px; color: white;
-        margin-bottom: 25px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
+    .header-gradient-pnl { background-image: linear-gradient(135deg, #0f172a 0%, #334155 100%); padding: 20px 25px; border-radius: 12px; color: white; margin-bottom: 25px; }
     .header-title-pnl { font-size: 24px; font-weight: 600; margin: 0; color: white !important; }
     .header-sub-pnl { font-size: 14px; color: #cbd5e1; font-weight: 300; margin-top: 5px; }
-    
-    .kpi-card-pnl {
-        background-color: #1c1c1c; border: 1px solid #333;
-        border-radius: 12px; padding: 20px;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); border-left-width: 4px; height: 100%;
-    }
-    .kpi-label-pnl { font-size: 12px; color: #aaa; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; }
-    .kpi-value-pnl { font-size: 28px; font-weight: 700; color: #fff; margin-top: 8px; }
-    .kpi-sub-pnl { font-size: 12px; margin-top: 8px; font-weight: 500; }
-
-    .chart-box {
-        background-color: #1c1c1c; border: 1px solid #333;
-        border-radius: 12px; padding: 20px;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); margin-bottom: 20px;
-        display: flex; flex-direction: column;
-    }
+    .chart-box { background-color: #1c1c1c; border: 1px solid #333; border-radius: 12px; padding: 20px; margin-bottom: 20px; display: flex; flex-direction: column; }
     .chart-header { font-size: 16px; font-weight: 600; color: #ddd; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
     .pill { width: 4px; height: 16px; border-radius: 4px; display: inline-block; }
-
     .pnl-table { width: 100%; border-collapse: collapse; font-size: 14px; font-family: 'Prompt', sans-serif; background: #1c1c1c; }
     .pnl-table th { text-align: left; padding: 12px 16px; color: #aaa; font-weight: 500; background-color: #2c2c2c; border-bottom: 1px solid #444; }
     .pnl-table td { padding: 12px 16px; border-bottom: 1px solid #333; color: #ddd; }
     .pnl-row-head td { font-weight: 600; color: #fff; background-color: #2c2c2c; }
     .num-cell { text-align: right; font-family: 'Courier New', monospace; }
     .sub-item td:first-child { padding-left: 35px; color: #aaa; font-size: 13px; }
-
+    
     div.stButton > button { width: 100%; border-radius: 6px; height: 42px; font-weight: bold; padding: 0px 5px; background-color: #333; color: white; border: 1px solid #555; }
     div.stButton > button:hover { border-color: #00d2ff; color: #00d2ff; }
+
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. SETTINGS (IDs)
+# 2. SETTINGS & HELPERS
 # ==========================================
 FOLDER_ID_DATA = "1ciI_X2m8pVcsjRsPuUf5sg--6uPSPPDp"
 FOLDER_ID_ADS = "1ZE76TXNA_vNeXjhAZfLgBQQGIV0GY7w8"
 SHEET_MASTER_URL = "https://docs.google.com/spreadsheets/d/1Q3akHm1GKkDI2eilGfujsd9pO7aOjJvyYJNuXd98lzo/edit"
 
-# ==========================================
-# 3. BACKEND & HELPERS
-# ==========================================
 def safe_float(val):
     if pd.isna(val) or val == "" or val is None: return 0.0
     s = str(val).strip().replace(',', '').replace('฿', '').replace(' ', '')
@@ -190,57 +129,64 @@ def safe_date(val):
     try: return pd.to_datetime(val).date()
     except: return None
 
-def get_val_color(val, default_hex):
-    """Returns RED (#FF0000) if negative, else default_hex."""
-    if val < 0:
-        return COLOR_NEGATIVE
-    return default_hex
-
-# ------------------------------
-# GLOBAL METRIC CARD COMPONENT
-# ------------------------------
 def render_metric_row(total_sales, total_cost, total_ads, total_profit):
-    """Render summary metrics with unified colors and auto-negative detection."""
-
-    # ระบบกำหนดสีตามที่ลูกค้ากำหนด
-    c_sales = get_val_color(total_sales, COLOR_SALES)
-    c_cost = get_val_color(total_cost, COLOR_COST)
-    c_ads = get_val_color(total_ads, COLOR_ADS)
-    c_profit = get_val_color(total_profit, COLOR_PROFIT)
-
-    # คำนวณ % ทั้งหมด
+    """
+    Render summary metrics using explicit CSS classes to guarantee color.
+    Logic:
+      - Sales: .val-sales (Blue)
+      - Cost:  .val-cost (Purple)
+      - Ads:   .val-ads (Orange)
+      - Profit: .val-profit (Green) unless negative then .val-neg (Red)
+    """
+    # คำนวณ %
     pct_sales = 100
     pct_cost = (total_cost / total_sales * 100) if total_sales > 0 else 0
     pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
     pct_profit = (total_profit / total_sales * 100) if total_sales > 0 else 0
 
-    # HTML (ชิดซ้ายสุดเพื่อแก้บัคแสดงผลเป็น Code Block)
+    # กำหนด Class สี (ถ้าติดลบ ให้ใช้ class 'val-neg' แทน)
+    cls_sales_v = "val-neg" if total_sales < 0 else "val-sales"
+    cls_sales_s = "sub-neg" if total_sales < 0 else "sub-sales"
+
+    cls_cost_v = "val-neg" if total_cost < 0 else "val-cost"
+    cls_cost_s = "sub-neg" if total_cost < 0 else "sub-cost"
+
+    cls_ads_v = "val-neg" if total_ads < 0 else "val-ads"
+    cls_ads_s = "sub-neg" if total_ads < 0 else "sub-ads"
+
+    cls_prof_v = "val-neg" if total_profit < 0 else "val-profit"
+    cls_prof_s = "sub-neg" if total_profit < 0 else "sub-profit"
+
+    # HTML แบบชิดซ้ายสุด (แก้ปัญหา Code Block)
     html = f"""
 <div class="metric-container">
 <div class="custom-card border-blue">
 <div class="card-label">ยอดขายรวม</div>
-<div class="card-value" style="color:{c_sales} !important;">{total_sales:,.0f}</div>
-<div class="card-sub" style="color:{c_sales} !important;">{pct_sales:.0f}%</div>
+<div class="{cls_sales_v}">{total_sales:,.0f}</div>
+<div class="{cls_sales_s}">{pct_sales:.0f}%</div>
 </div>
 <div class="custom-card border-purple">
 <div class="card-label">ทุนสินค้า + ค่าใช้จ่าย</div>
-<div class="card-value" style="color:{c_cost} !important;">{total_cost:,.0f}</div>
-<div class="card-sub" style="color:{c_cost} !important;">{pct_cost:.1f}% ของยอดขาย</div>
+<div class="{cls_cost_v}">{total_cost:,.0f}</div>
+<div class="{cls_cost_s}">{pct_cost:.1f}% ของยอดขาย</div>
 </div>
 <div class="custom-card border-orange">
 <div class="card-label">ค่าโฆษณา</div>
-<div class="card-value" style="color:{c_ads} !important;">{total_ads:,.0f}</div>
-<div class="card-sub" style="color:{c_ads} !important;">{pct_ads:.1f}% ของยอดขาย</div>
+<div class="{cls_ads_v}">{total_ads:,.0f}</div>
+<div class="{cls_ads_s}">{pct_ads:.1f}% ของยอดขาย</div>
 </div>
 <div class="custom-card border-green">
 <div class="card-label">กำไรสุทธิ</div>
-<div class="card-value" style="color:{c_profit} !important;">{total_profit:,.0f}</div>
-<div class="card-sub" style="color:{c_profit} !important;">{pct_profit:.1f}% ของยอดขาย</div>
+<div class="{cls_prof_v}">{total_profit:,.0f}</div>
+<div class="{cls_prof_s}">{pct_profit:.1f}% ของยอดขาย</div>
 </div>
 </div>
 """
     st.markdown(html, unsafe_allow_html=True)
 
+# ==========================================
+# 3. DATA LOADING
+# ==========================================
 @st.cache_resource
 def get_drive_service():
     if "gcp_service_account" not in st.secrets:
