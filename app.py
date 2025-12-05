@@ -96,7 +96,7 @@ st.markdown("""
     /* Table Styling */
     .table-wrapper { overflow: auto; width: 100%; max-height: 800px; margin-top: 10px; background: #1c1c1c; border-radius: 8px; border: 1px solid #444; }
     .custom-table { width: 100%; min-width: 1000px; border-collapse: separate; border-spacing: 0; font-family: 'Sarabun', sans-serif; font-size: 11px; color: #ddd; }
-    .custom-table th, .custom-table td { padding: 3px 5px; line-height: 1.1; text-align: center; border-bottom: 1px solid #333; border-right: 1px solid #333; white-space: nowrap; }
+    .custom-table th, .custom-table td { padding: 4px 6px; line-height: 1.2; text-align: center; border-bottom: 1px solid #333; border-right: 1px solid #333; white-space: nowrap; }
     .daily-table thead th, .month-table thead th { position: sticky; top: 0; z-index: 100; background-color: #1e3c72; color: white !important; font-weight: 700; border-bottom: 2px solid #555; }
     
     .custom-table tbody tr:nth-child(even) td { background-color: #262626; }
@@ -109,21 +109,37 @@ st.markdown("""
     .custom-table.daily-table tbody tr:hover td { background-color: #555555 !important; color: #ffffff; }
     .custom-table.daily-table tbody tr.footer-row td { position: sticky; bottom: 0; z-index: 100; background-color: #1e3c72 !important; font-weight: bold; color: white !important; border-top: 2px solid #f1c40f; }
 
-    /* --- OLD STICKY COLS (Used in Report Daily if any) --- */
-    .col-fix-1 { position: sticky; left: 0; z-index: 10; width: 150px; border-right: 1px solid #333; }
-    .col-fix-2 { position: sticky; left: 150px; z-index: 10; width: 80px; border-right: 1px solid #333; }
-    .col-fix-3 { position: sticky; left: 230px; z-index: 10; width: 70px; border-right: 2px solid #bbb !important; }
+    /* --- [FIX] REPORT MONTH STICKY COLS (Wider & Recalculated) --- */
+    /* Total Fixed Width = 125 + 95 + 95 + 60 + 95 + 60 = 530px 
+       เพิ่มความกว้างเพื่อให้ตัวหนังสือไม่ทับซ้อนกัน 
+    */
+    .fix-m-1 { position: sticky; left: 0; z-index: 20; width: 125px; min-width: 125px; border-right: 1px solid #444; }
+    .fix-m-2 { position: sticky; left: 125px; z-index: 20; width: 95px; min-width: 95px; border-right: 1px solid #444; }
+    .fix-m-3 { position: sticky; left: 220px; z-index: 20; width: 95px; min-width: 95px; border-right: 1px solid #444; }
+    .fix-m-4 { position: sticky; left: 315px; z-index: 20; width: 60px; min-width: 60px; border-right: 1px solid #444; }
+    .fix-m-5 { position: sticky; left: 375px; z-index: 20; width: 95px; min-width: 95px; border-right: 1px solid #444; }
+    .fix-m-6 { position: sticky; left: 470px; z-index: 20; width: 60px; min-width: 60px; border-right: 2px solid #bbb !important; }
 
-    /* --- [NEW] REPORT MONTH STICKY COLS (6 Columns) --- */
-    /* Widths: Date(100), Sales(80), Profit(80), %(50), Ads(80), %(50) -> Total Left ~440px */
-    .fix-m-1 { position: sticky; left: 0; z-index: 10; width: 110px; border-right: 1px solid #444; }
-    .fix-m-2 { position: sticky; left: 110px; z-index: 10; width: 80px; border-right: 1px solid #444; }
-    .fix-m-3 { position: sticky; left: 190px; z-index: 10; width: 80px; border-right: 1px solid #444; }
-    .fix-m-4 { position: sticky; left: 270px; z-index: 10; width: 50px; border-right: 1px solid #444; }
-    .fix-m-5 { position: sticky; left: 320px; z-index: 10; width: 80px; border-right: 1px solid #444; }
-    .fix-m-6 { position: sticky; left: 400px; z-index: 10; width: 50px; border-right: 2px solid #bbb !important; }
+    /* Fix z-index for headers to be above body sticky cols */
+    .month-table thead th.fix-m-1, .month-table thead th.fix-m-2, 
+    .month-table thead th.fix-m-3, .month-table thead th.fix-m-4,
+    .month-table thead th.fix-m-5, .month-table thead th.fix-m-6 {
+        z-index: 30 !important;
+    }
 
-    .th-sku { background-color: #1e3c72 !important; color: white !important; }
+    /* Force background for sticky cols to prevent see-through */
+    .custom-table tbody tr td.fix-m-1, .custom-table tbody tr td.fix-m-2,
+    .custom-table tbody tr td.fix-m-3, .custom-table tbody tr td.fix-m-4,
+    .custom-table tbody tr td.fix-m-5, .custom-table tbody tr td.fix-m-6 {
+        background-color: #1c1c1c; /* Default dark */
+    }
+    .custom-table tbody tr:nth-child(even) td.fix-m-1, .custom-table tbody tr:nth-child(even) td.fix-m-2,
+    .custom-table tbody tr:nth-child(even) td.fix-m-3, .custom-table tbody tr:nth-child(even) td.fix-m-4,
+    .custom-table tbody tr:nth-child(even) td.fix-m-5, .custom-table tbody tr:nth-child(even) td.fix-m-6 {
+        background-color: #262626; /* Alternating dark */
+    }
+
+    .th-sku { background-color: #1e3c72 !important; color: white !important; min-width: 80px; }
     .sku-header { font-size: 10px; color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
     .col-small { width: 70px; min-width: 70px; max-width: 70px; font-size: 11px; }
 
@@ -465,17 +481,14 @@ try:
         st.markdown('<div class="header-bar"><div class="header-title"><i class="fas fa-chart-line"></i> สรุปยอดขายรายเดือน</div></div>', unsafe_allow_html=True)
         all_years = sorted(df_daily['Year'].unique(), reverse=True)
         
-        # Determine defaults for date pickers based on current date
         today = datetime.now().date()
         first_day_curr = today.replace(day=1)
 
         with st.container():
-            # UI Row 1: Select Date Range (Replacing Month/Year only selector)
             c_y, c_m, c_s, c_e = st.columns([1, 1, 1, 1])
             with c_y: sel_year = st.selectbox("เลือกปี (ตั้งค่าเริ่มต้น)", all_years, key="m_y")
             with c_m: sel_month = st.selectbox("เลือกเดือน (ตั้งค่าเริ่มต้น)", thai_months, index=today.month-1, key="m_m")
             
-            # Logic to set date pickers based on dropdowns (optional convenience)
             try:
                 m_idx = thai_months.index(sel_month) + 1
                 days_in_m = calendar.monthrange(sel_year, m_idx)[1]
@@ -488,17 +501,15 @@ try:
             with c_s: start_date_m = st.date_input("วันที่เริ่มต้น", default_start, key="m_d_start")
             with c_e: end_date_m = st.date_input("วันที่สิ้นสุด", default_end, key="m_d_end")
 
-            # UI Row 2: Filters & Actions
             c_type, c2, c3, c4, c5 = st.columns([1.5, 3.5, 0.4, 0.4, 0.8])
             with c_type:
                 filter_mode = st.selectbox("เงื่อนไขสินค้า (Fast Filter)",
                     ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 เฉพาะรายการที่ขายได้", "💸 ผลาญงบ (มี Ads แต่ขายไม่ได้)", "📋 แสดง Master ทั้งหมด"])
             
-            # Removed Search Input as requested
             with c2: st.multiselect("รายการที่เลือก (Choose options):", sku_options_list_global, key="selected_skus")
             with c3:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
-                st.button("➕", use_container_width=True, disabled=True, key="btn_add_m_fake") # Placeholder or remove
+                st.button("➕", use_container_width=True, disabled=True, key="btn_add_m_fake")
             with c4:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
                 st.button("🧹", type="secondary", use_container_width=True, key="btn_clear_m", on_click=cb_clear_m)
@@ -506,7 +517,6 @@ try:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
                 st.button("🚀 ประมวลผล", type="primary", use_container_width=True, key="btn_run_m")
 
-        # FILTER DATA BY DATE RANGE
         mask_date = (df_daily['Date'] >= start_date_m) & (df_daily['Date'] <= end_date_m)
         df_base = df_daily[mask_date]
 
@@ -530,10 +540,8 @@ try:
             total_cost_ops = df_view['Total_Cost'].sum() - total_ads
             net_profit = total_sales - df_view['Total_Cost'].sum()
 
-            # --- RENDER METRICS ---
             render_metric_row(total_sales, total_cost_ops, total_ads, net_profit)
 
-            # Generate Date Range List
             date_list = pd.date_range(start_date_m, end_date_m)
             matrix_data = []
         
@@ -541,7 +549,6 @@ try:
                 d_date = d.date()
                 day_data = df_view[df_view['Date'] == d_date]
                 
-                # Daily Totals for Left Columns
                 d_sales = day_data['รายละเอียดยอดที่ชำระแล้ว'].sum()
                 d_profit = day_data['Net_Profit'].sum()
                 d_ads = day_data['Ads_Amount'].sum()
@@ -549,8 +556,6 @@ try:
                 d_pct_profit = (d_profit / d_sales * 100) if d_sales != 0 else 0
                 d_pct_ads = (d_ads / d_sales * 100) if d_sales != 0 else 0
 
-                # Format Date: "Sun. 6/12/2025"
-                # %a = Sun, %d = 06 (strip 0 if needed), %m = 12, %Y = 2025
                 day_str = d.strftime("%a. %d/%m/%Y")
 
                 row = {
@@ -570,7 +575,6 @@ try:
 
             df_matrix = pd.DataFrame(matrix_data)
             
-            # Grand Totals for Footer
             footer_sums = df_view.groupby('SKU_Main').agg({'รายละเอียดยอดที่ชำระแล้ว': 'sum', 'CAL_COST': 'sum', 'Other_Costs': 'sum', 'Ads_Amount': 'sum', 'Net_Profit': 'sum',
                                                             'CAL_COM_ADMIN': 'sum', 'CAL_COM_TELESALE': 'sum'})
             footer_sums = footer_sums.reindex(final_skus, fill_value=0)
@@ -578,11 +582,8 @@ try:
             def fmt_n(v): return f"{v:,.0f}" if v!=0 else "-"
             def fmt_p(v): return f"{v:,.1f}%" if v!=0 else "-"
 
-            # --- GENERATE TABLE HTML ---
-            # Columns: [Date | Sales | Profit | % | Ads | %]  + [SKU 1 | SKU 2 ...]
             html = '<div class="table-wrapper"><table class="custom-table month-table"><thead><tr>'
             
-            # Left Fixed Header
             html += '<th class="fix-m-1" style="background-color:#2c3e50;color:white;">วันที่</th>'
             html += '<th class="fix-m-2" style="background-color:#2c3e50;color:white;">ยอดขาย</th>'
             html += '<th class="fix-m-3" style="background-color:#27ae60;color:white;">กำไร</th>'
@@ -596,7 +597,6 @@ try:
             html += '</tr></thead><tbody>'
             
             for _, r in df_matrix.iterrows():
-                # Color logic
                 color_profit = "#FF0000" if r["กำไร"] < 0 else "#27ae60"
                 color_pct_profit = "#FF0000" if r["%กำไร"] < 0 else "#27ae60"
                 
@@ -630,7 +630,6 @@ try:
                 style_bg = f"background-color:{bg_color};"
                 lbl_color = "#ffffff" if dark_bg else "#000000"
                 
-                # Calculate Grand Value for the Label Row
                 grand_val = 0
                 if label == "รวมทุนสินค้า": grand_val = g_cost
                 elif label == "รวมยอดขาย": grand_val = g_sales
@@ -645,8 +644,6 @@ try:
                 if grand_val < 0: grand_text_col = "#FF0000"
                 elif dark_bg: grand_text_col = "#ffffff"
 
-                # Construct Row: Must align with 6 fixed columns
-                # Col 1 (Label), Col 2 (Value), Col 3-6 (Empty/Spacers)
                 row_html = f'<tr class="{row_cls}">'
                 row_html += f'<td class="fix-m-1" style="{style_bg} color: {lbl_color} !important;">{label}</td>'
                 row_html += f'<td class="fix-m-2" style="{style_bg} color:{grand_text_col};">{txt_val}</td>'
