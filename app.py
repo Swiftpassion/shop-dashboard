@@ -101,21 +101,20 @@ st.markdown("""
     .custom-table th, .custom-table td { padding: 3px 5px; line-height: 1.1; text-align: center; border-bottom: 1px solid #333; border-right: 1px solid #333; white-space: nowrap; }
     .daily-table thead th, .month-table thead th { position: sticky; top: 0; z-index: 100; background-color: #1e3c72; color: white !important; font-weight: 700; border-bottom: 2px solid #555; }
     
-    /* Default Table Colors (For Monthly Report) */
     .custom-table tbody tr:nth-child(even) td { background-color: #262626; }
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
     .custom-table tbody tr:hover td { background-color: #333; }
 
-    /* --- [EDITED] REPORT DAILY CSS : New Colors #636363 & #999999 --- */
-    /* Even Rows: Darker Grey (#636363) -> Text White */
+    /* --- [EDITED] REPORT DAILY SPECIFIC COLORS --- */
+    /* Even Rows: #636363 -> Text White (Default, can be overridden by inline style) */
     .custom-table.daily-table tbody tr:nth-child(even) td { 
         background-color: #636363 !important; 
-        color: #ffffff; /* Default to white, allow override by inline style */
+        color: #ffffff; 
     }
-    /* Odd Rows: Lighter Grey (#999999) -> Text Black */
+    /* Odd Rows: #999999 -> Text Black (Default, can be overridden by inline style) */
     .custom-table.daily-table tbody tr:nth-child(odd) td { 
         background-color: #999999 !important; 
-        color: #000000; /* Default to black, allow override by inline style */
+        color: #000000; 
     }
     /* Hover */
     .custom-table.daily-table tbody tr:hover td { 
@@ -130,11 +129,11 @@ st.markdown("""
         border-top: 2px solid #f1c40f; 
     }
 
-    /* --- [EDITED] Column Widths: Expand First Column to 100px --- */
+    /* --- [EDITED] COLUMN WIDTHS (Widen First Column to 100px) --- */
     .col-fix-1 { position: sticky; left: 0; z-index: 10; width: 100px; border-right: 1px solid #333; }
     .col-fix-2 { position: sticky; left: 100px; z-index: 10; width: 80px; border-right: 1px solid #333; }
     .col-fix-3 { position: sticky; left: 180px; z-index: 10; width: 70px; border-right: 2px solid #bbb !important; }
-    /* ------------------------------------------------------------- */
+    /* ------------------------------------------------------------ */
 
     .th-sku { background-color: #1e3c72 !important; color: white !important; }
     .sku-header { font-size: 10px; color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
@@ -728,10 +727,14 @@ try:
             for title, _, cls in cols_cfg: html += f'<th class="{cls}">{title}</th>'
             html += '</tr></thead><tbody>'
 
+            # --- [FIXED] Python handles red color logic here ---
             def get_cell_style(val):
+                # ถ้าติดลบ ให้บังคับสีแดง
                 if isinstance(val, (int, float)) and val < 0:
                     return ' style="color: #FF0000 !important;"'
                 return '' 
+
+            def get_color(val): return "#FF0000" if val < 0 else "#1e3c72"
 
             for i, (_, r) in enumerate(df_final_d.iterrows()):
                 html += '<tr>'
@@ -748,12 +751,14 @@ try:
                 html += f'<td{get_cell_style(r["CAL_COM_TELESALE"])}>{fmt(r["CAL_COM_TELESALE"])}</td>'
 
                 html += f'<td style="color:#e67e22;">{fmt(r["Ads_Amount"])}</td>'
+                # กำไรสุทธิ (บังคับแดงถ้าลบ)
                 html += f'<td{get_cell_style(r["Net_Profit"])}>{fmt(r["Net_Profit"])}</td>'
 
                 html += f'<td class="col-small" style="color:#1e3c72;">{fmt(r["ROAS"])}</td>'
                 html += f'<td class="col-small" style="color:#1e3c72;">{fmt(r["% ทุนสินค้า"],True)}</td>'
                 html += f'<td class="col-small" style="color:#1e3c72;">{fmt(r["% ทุนอื่น"],True)}</td>'
                 html += f'<td class="col-small" style="color:#1e3c72;">{fmt(r["% Ads"],True)}</td>'
+                # % กำไร (บังคับแดงถ้าลบ)
                 html += f'<td class="col-small"{get_cell_style(r["% กำไร"])}>{fmt(r["% กำไร"],True)}</td>'
                 html += '</tr>'
 
@@ -762,6 +767,7 @@ try:
             ta = df_final_d['Ads_Amount'].sum(); tc = df_final_d['CAL_COST'].sum()
             t_oth = df_final_d['BOX_COST'].sum() + df_final_d['DELIV_COST'].sum() + df_final_d['CAL_COD_COST'].sum() + df_final_d['CAL_COM_ADMIN'].sum() + df_final_d['CAL_COM_TELESALE'].sum()
 
+            # Footer logic using same helper
             html += f'<td{get_cell_style(df_final_d["จำนวน"].sum())}>{fmt(df_final_d["จำนวน"].sum())}</td>'
             html += f'<td{get_cell_style(ts)}>{fmt(ts)}</td>'
             html += f'<td{get_cell_style(tc)}>{fmt(tc)}</td>'
