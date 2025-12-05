@@ -33,6 +33,9 @@ st.markdown("""
     
     .block-container { padding-top: 2rem !important; }
 
+    /* --- [FIXED] Removed the global color override that was forcing white text on divs --- */
+    /* h1, h2, h3, h4, h5, h6, p, span, div, label { color: #ffffff; } */ 
+    
     /* Inputs */
     .stTextInput input { color: #ffffff !important; caret-color: white; background-color: #262730 !important; border: 1px solid #555 !important; }
     div[data-baseweb="select"] div { color: #ffffff !important; background-color: #262730 !important; }
@@ -50,7 +53,6 @@ st.markdown("""
     /* Metric Cards Container */
     .metric-container { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
     
-    /* Card Base Style - REMOVED BACKGROUND !important TO ALLOW TRANSPARENCY/INHERITANCE */
     .custom-card {
         background: #1c1c1c;
         border-radius: 10px; padding: 15px;
@@ -61,19 +63,9 @@ st.markdown("""
     
     .card-label { color: #aaa !important; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
     
-    /* --- [FIXED] REMOVED COLOR RULES HERE TO LET INLINE STYLES WIN --- */
-    .card-value { 
-        font-size: 24px; 
-        font-weight: 700;
-        /* No color definition here */
-    }
-    .card-sub { 
-        font-size: 13px; 
-        margin-top: 5px; 
-        font-weight: 600;
-        /* No color definition here */
-    }
-    /* --------------------------------------------------------------- */
+    /* Ensure no color is forced here, so inline styles work */
+    .card-value { font-size: 24px; font-weight: 700; }
+    .card-sub { font-size: 13px; margin-top: 5px; font-weight: 600; }
 
     .border-blue { border-left-color: #3498db; }
     .border-purple { border-left-color: #9b59b6; }
@@ -217,7 +209,7 @@ def render_metric_row(total_sales, total_cost, total_ads, total_profit):
     pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
     pct_profit = (total_profit / total_sales * 100) if total_sales > 0 else 0
 
-    # HTML ส่วนกลาง ใช้ได้ทุกหน้า (Direct Style injection into DIV, no spans)
+    # HTML ส่วนกลาง ใช้ได้ทุกหน้า (Direct Style injection into DIV, no spans needed as CSS is cleaned)
     html = f"""
     <div class="metric-container">
         <div class="custom-card border-blue">
