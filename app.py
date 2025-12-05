@@ -33,9 +33,6 @@ st.markdown("""
     
     .block-container { padding-top: 2rem !important; }
 
-    /* --- [FIXED] Removed the global color override that was forcing white text on divs --- */
-    /* h1, h2, h3, h4, h5, h6, p, span, div, label { color: #ffffff; } */ 
-    
     /* Inputs */
     .stTextInput input { color: #ffffff !important; caret-color: white; background-color: #262730 !important; border: 1px solid #555 !important; }
     div[data-baseweb="select"] div { color: #ffffff !important; background-color: #262730 !important; }
@@ -62,8 +59,6 @@ st.markdown("""
     }
     
     .card-label { color: #aaa !important; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
-    
-    /* Ensure no color is forced here, so inline styles work */
     .card-value { font-size: 24px; font-weight: 700; }
     .card-sub { font-size: 13px; margin-top: 5px; font-weight: 600; }
 
@@ -209,34 +204,31 @@ def render_metric_row(total_sales, total_cost, total_ads, total_profit):
     pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
     pct_profit = (total_profit / total_sales * 100) if total_sales > 0 else 0
 
-    # HTML ส่วนกลาง ใช้ได้ทุกหน้า (Direct Style injection into DIV, no spans needed as CSS is cleaned)
+    # HTML ส่วนกลาง ใช้ได้ทุกหน้า (No indentation inside HTML string to prevent Code Block rendering)
     html = f"""
-    <div class="metric-container">
-        <div class="custom-card border-blue">
-            <div class="card-label">ยอดขายรวม</div>
-            <div class="card-value" style="color:{c_sales} !important;">{total_sales:,.0f}</div>
-            <div class="card-sub" style="color:{c_sales} !important;">{pct_sales:.0f}%</div>
-        </div>
-
-        <div class="custom-card border-purple">
-            <div class="card-label">ทุนสินค้า + ค่าใช้จ่าย</div>
-            <div class="card-value" style="color:{c_cost} !important;">{total_cost:,.0f}</div>
-            <div class="card-sub" style="color:{c_cost} !important;">{pct_cost:.1f}% ของยอดขาย</div>
-        </div>
-
-        <div class="custom-card border-orange">
-            <div class="card-label">ค่าโฆษณา</div>
-            <div class="card-value" style="color:{c_ads} !important;">{total_ads:,.0f}</div>
-            <div class="card-sub" style="color:{c_ads} !important;">{pct_ads:.1f}% ของยอดขาย</div>
-        </div>
-
-        <div class="custom-card border-green">
-            <div class="card-label">กำไรสุทธิ</div>
-            <div class="card-value" style="color:{c_profit} !important;">{total_profit:,.0f}</div>
-            <div class="card-sub" style="color:{c_profit} !important;">{pct_profit:.1f}% ของยอดขาย</div>
-        </div>
-    </div>
-    """
+<div class="metric-container">
+<div class="custom-card border-blue">
+<div class="card-label">ยอดขายรวม</div>
+<div class="card-value" style="color:{c_sales} !important;">{total_sales:,.0f}</div>
+<div class="card-sub" style="color:{c_sales} !important;">{pct_sales:.0f}%</div>
+</div>
+<div class="custom-card border-purple">
+<div class="card-label">ทุนสินค้า + ค่าใช้จ่าย</div>
+<div class="card-value" style="color:{c_cost} !important;">{total_cost:,.0f}</div>
+<div class="card-sub" style="color:{c_cost} !important;">{pct_cost:.1f}% ของยอดขาย</div>
+</div>
+<div class="custom-card border-orange">
+<div class="card-label">ค่าโฆษณา</div>
+<div class="card-value" style="color:{c_ads} !important;">{total_ads:,.0f}</div>
+<div class="card-sub" style="color:{c_ads} !important;">{pct_ads:.1f}% ของยอดขาย</div>
+</div>
+<div class="custom-card border-green">
+<div class="card-label">กำไรสุทธิ</div>
+<div class="card-value" style="color:{c_profit} !important;">{total_profit:,.0f}</div>
+<div class="card-sub" style="color:{c_profit} !important;">{pct_profit:.1f}% ของยอดขาย</div>
+</div>
+</div>
+"""
     st.markdown(html, unsafe_allow_html=True)
 
 @st.cache_resource
