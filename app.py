@@ -14,6 +14,13 @@ from datetime import datetime, date
 thai_months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
                "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
 
+# --- COLOR SETTINGS ---
+COLOR_SALES = "#33FFFF"
+COLOR_COST = "#9400D3"
+COLOR_ADS = "#FF6633"
+COLOR_PROFIT = "#7CFC00"
+COLOR_NEGATIVE = "#FF0000"
+
 # ==========================================
 # 1. CONFIG & CSS
 # ==========================================
@@ -27,33 +34,27 @@ st.markdown("""
     
     .block-container { padding-top: 2rem !important; }
 
-    /* --- 1. สีตัวอักษร (ใช้ Class บังคับตามโค้ดของคุณ เพื่อให้สีติดชัวร์) --- */
-    
-    /* สีฟ้า: ยอดขาย */
+    /* --- 1. สีตัวอักษร (ใช้ Class บังคับเพื่อให้สีติดชัวร์) --- */
     .val-sales { color: #33FFFF !important; font-size: 24px; font-weight: 700; }
     .sub-sales { color: #33FFFF !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
 
-    /* สีม่วง: ทุน */
     .val-cost { color: #9400D3 !important; font-size: 24px; font-weight: 700; }
     .sub-cost { color: #9400D3 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
 
-    /* สีส้ม: แอด */
     .val-ads { color: #FF6633 !important; font-size: 24px; font-weight: 700; }
     .sub-ads { color: #FF6633 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
 
-    /* สีเขียว: กำไร */
     .val-profit { color: #7CFC00 !important; font-size: 24px; font-weight: 700; }
     .sub-profit { color: #7CFC00 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
 
-    /* สีแดง: ติดลบ (Override) */
     .val-neg { color: #FF0000 !important; font-size: 24px; font-weight: 700; }
     .sub-neg { color: #FF0000 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
 
 
-    /* --- 2. การจัดวาง (LAYOUT FIX) เปลี่ยนเป็น Grid 4 ช่อง --- */
+    /* --- 2. การจัดวาง (LAYOUT FIX) บังคับ Grid 4 ช่อง --- */
     .metric-container { 
         display: grid !important; 
-        grid-template-columns: repeat(4, 1fr) !important; /* แบ่ง 4 ส่วนเท่ากัน */
+        grid-template-columns: repeat(4, 1fr) !important; 
         gap: 15px !important; 
         margin-bottom: 20px; 
         width: 100%;
@@ -63,16 +64,13 @@ st.markdown("""
         background: #1c1c1c;
         border-radius: 10px; padding: 15px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.5); 
-        /* ลบ flex และ min-width เดิมออก */
         min-width: 0; 
         border-left: 5px solid #ddd;
         border: 1px solid #333;
     }
-    /* ------------------------------------------------------- */
 
     .card-label { color: #aaa !important; font-size: 13px; font-weight: 600; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* Table Colors */
     .neg { color: #FF0000 !important; }
     .pos { color: #ffffff !important; }
 
@@ -101,22 +99,22 @@ st.markdown("""
     .custom-table th, .custom-table td { padding: 3px 5px; line-height: 1.1; text-align: center; border-bottom: 1px solid #333; border-right: 1px solid #333; white-space: nowrap; }
     .daily-table thead th, .month-table thead th { position: sticky; top: 0; z-index: 100; background-color: #1e3c72; color: white !important; font-weight: 700; border-bottom: 2px solid #555; }
     
+    /* Default Table Colors */
     .custom-table tbody tr:nth-child(even) td { background-color: #262626; }
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
     .custom-table tbody tr:hover td { background-color: #333; }
 
-    /* --- [EDITED] REPORT DAILY SPECIFIC COLORS --- */
-    /* Even Rows: #636363 -> Text White (Default, can be overridden by inline style) */
+    /* --- [EDITED] REPORT DAILY SPECIFIC COLORS & COLUMN WIDTHS --- */
+    
+    /* Colors: Dark Grey (#636363) / Light Grey (#999999) */
     .custom-table.daily-table tbody tr:nth-child(even) td { 
         background-color: #636363 !important; 
-        color: #ffffff; 
+        color: #ffffff; /* Text White for contrast */
     }
-    /* Odd Rows: #999999 -> Text Black (Default, can be overridden by inline style) */
     .custom-table.daily-table tbody tr:nth-child(odd) td { 
         background-color: #999999 !important; 
-        color: #000000; 
+        color: #000000; /* Text Black for contrast */
     }
-    /* Hover */
     .custom-table.daily-table tbody tr:hover td { 
         background-color: #555555 !important; 
         color: #ffffff;
@@ -129,11 +127,11 @@ st.markdown("""
         border-top: 2px solid #f1c40f; 
     }
 
-    /* --- [EDITED] COLUMN WIDTHS (Widen First Column to 100px) --- */
-    .col-fix-1 { position: sticky; left: 0; z-index: 10; width: 100px; border-right: 1px solid #333; }
-    .col-fix-2 { position: sticky; left: 100px; z-index: 10; width: 80px; border-right: 1px solid #333; }
-    .col-fix-3 { position: sticky; left: 180px; z-index: 10; width: 70px; border-right: 2px solid #bbb !important; }
-    /* ------------------------------------------------------------ */
+    /* Widths: Expanded First Column to 150px */
+    .col-fix-1 { position: sticky; left: 0; z-index: 10; width: 150px; border-right: 1px solid #333; }
+    .col-fix-2 { position: sticky; left: 150px; z-index: 10; width: 80px; border-right: 1px solid #333; }
+    .col-fix-3 { position: sticky; left: 230px; z-index: 10; width: 70px; border-right: 2px solid #bbb !important; }
+    /* ------------------------------------------------------------- */
 
     .th-sku { background-color: #1e3c72 !important; color: white !important; }
     .sku-header { font-size: 10px; color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
@@ -184,6 +182,11 @@ def safe_date(val):
     try: return pd.to_datetime(val).date()
     except: return None
 
+def get_val_color(val, default_hex):
+    """Returns RED (#FF0000) if negative, else default_hex."""
+    if val < 0: return COLOR_NEGATIVE
+    return default_hex
+
 # ------------------------------
 # GLOBAL METRIC CARD COMPONENT
 # ------------------------------
@@ -209,7 +212,7 @@ def render_metric_row(total_sales, total_cost, total_ads, total_profit):
     cls_prof_v = "val-neg" if total_profit < 0 else "val-profit"
     cls_prof_s = "sub-neg" if total_profit < 0 else "sub-profit"
 
-    # HTML (ชิดซ้ายสุด แก้บัค Code Block) - ใช้ Grid Layout
+    # HTML (Grid Layout)
     html = f"""
 <div class="metric-container">
 <div class="custom-card border-blue">
@@ -734,8 +737,6 @@ try:
                     return ' style="color: #FF0000 !important;"'
                 return '' 
 
-            def get_color(val): return "#FF0000" if val < 0 else "#1e3c72"
-
             for i, (_, r) in enumerate(df_final_d.iterrows()):
                 html += '<tr>'
                 html += f'<td style="font-weight:bold;color:#1e3c72;">{r["SKU_Main"]}</td>'
@@ -1236,6 +1237,7 @@ try:
 
         if df_comm.empty:
             st.warning(f"⚠️ ไม่พบข้อมูลสำหรับเดือน {sel_month_c} {sel_year_c}")
+            # Create empty chart data for visual consistency if needed, or just stop
             df_merged_c = df_full_days.copy()
             df_merged_c['CAL_COM_ADMIN'] = 0
             df_merged_c['CAL_COM_TELESALE'] = 0
@@ -1248,8 +1250,13 @@ try:
             total_tele = df_comm['CAL_COM_TELESALE'].sum()
             total_all = total_admin + total_tele
 
-            # Metric Cards (Custom for Commission but consistent style if preferred, otherwise can use render_metric_row for specific mapping)
-            render_metric_row(total_all, total_admin + total_tele, 0, total_all)
+            # Metric Cards
+            st.markdown(f"""
+            <div class="metric-container">
+                <div class="custom-card border-blue"><div class="card-label">ค่าคอมรวมทั้งหมด</div><div class="card-value">{total_all:,.0f}</div><div class="card-sub txt-gray">บาท</div></div>
+                <div class="custom-card border-purple"><div class="card-label">Admin Commission</div><div class="card-value">{total_admin:,.0f}</div><div class="card-sub txt-gray">{(total_admin/total_all*100) if total_all else 0:.1f}% ของทั้งหมด</div></div>
+                <div class="custom-card border-orange"><div class="card-label">Telesale Commission</div><div class="card-value">{total_tele:,.0f}</div><div class="card-sub txt-gray">{(total_tele/total_all*100) if total_all else 0:.1f}% ของทั้งหมด</div></div>
+            </div>""", unsafe_allow_html=True)
 
             c_chart, c_table = st.columns([2, 1])
 
