@@ -14,12 +14,12 @@ from datetime import datetime, date
 thai_months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
                "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
 
-# --- COLOR SETTINGS (สีตามที่คุณต้องการ) ---
+# --- COLOR SETTINGS (ตั้งค่าสีตรงนี้) ---
 COLOR_SALES = "#33FFFF"     # ฟ้า (Cyan/Aqua)
 COLOR_COST = "#9400D3"      # ม่วง (Dark Violet)
-COLOR_ADS = "#FF6633"       # ส้มแดง (Orange-Red)
+COLOR_ADS = "#FF6633"       # ส้ม (Orange-Red)
 COLOR_PROFIT = "#7CFC00"    # เขียว (Lawn Green)
-COLOR_NEGATIVE = "#FF0000"  # แดง (เมื่อติดลบ)
+COLOR_NEGATIVE = "#FF0000"  # แดง (เมื่อยอดติดลบ)
 
 # ==========================================
 # 1. CONFIG & CSS
@@ -34,8 +34,7 @@ st.markdown("""
     
     .block-container { padding-top: 2rem !important; }
 
-    /* --- [แก้ไข] ลบบรรทัดที่บังคับสีขาว global ออก เพื่อให้สีที่เรากำหนดเองทำงานได้ --- */
-    /* h1, h2, h3... { color: #ffffff; }  <-- ลบออกแล้ว */
+    /* --- [แก้ไขจุดสำคัญ] ลบบรรทัดที่บังคับสีขาวทิ้งไปแล้ว --- */
 
     /* Inputs: บังคับสีขาวเฉพาะในช่องกรอก */
     .stTextInput input { color: #ffffff !important; caret-color: white; background-color: #262730 !important; border: 1px solid #555 !important; }
@@ -64,11 +63,10 @@ st.markdown("""
     
     .card-label { color: #aaa !important; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
     
-    /* Font Size Styles */
+    /* ลบสีออกจาก Class เพื่อให้ Inline Style ทำงาน */
     .card-value { font-size: 24px; font-weight: 700; }
     .card-sub { font-size: 13px; margin-top: 5px; font-weight: 600; }
 
-    /* Table Colors */
     .neg { color: #FF0000 !important; }
     .pos { color: #ffffff !important; }
 
@@ -105,7 +103,7 @@ st.markdown("""
         font-weight: 700; border-bottom: 2px solid #555;
     }
     
-    /* Table Rows */
+    /* Table Colors */
     .custom-table tbody tr:nth-child(even) td { background-color: #262626; }
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
     .custom-table tbody tr:hover td { background-color: #333; }
@@ -204,7 +202,7 @@ def get_val_color(val, default_hex):
 def render_metric_row(total_sales, total_cost, total_ads, total_profit):
     """Render summary metrics with unified colors and auto-negative detection."""
 
-    # ระบบกำหนดสี (จะเปลี่ยนเป็นสีแดงถ้าติดลบ)
+    # ระบบกำหนดสีตามที่ลูกค้ากำหนด (และเช็คติดลบ)
     c_sales = get_val_color(total_sales, COLOR_SALES)
     c_cost = get_val_color(total_cost, COLOR_COST)
     c_ads = get_val_color(total_ads, COLOR_ADS)
@@ -216,7 +214,7 @@ def render_metric_row(total_sales, total_cost, total_ads, total_profit):
     pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
     pct_profit = (total_profit / total_sales * 100) if total_sales > 0 else 0
 
-    # HTML ส่วนกลาง (ชิดซ้ายสุด ห้ามย่อหน้า! เพื่อป้องกันบัค Code Block)
+    # --- [CRITICAL FIX] HTML ชิดซ้ายสุด เพื่อแก้บัค Code Block ---
     html = f"""
 <div class="metric-container">
 <div class="custom-card border-blue">
