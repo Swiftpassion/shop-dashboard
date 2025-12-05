@@ -14,7 +14,7 @@ from datetime import datetime, date
 thai_months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
                "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
 
-# --- COLOR SETTINGS (สีที่ต้องการ) ---
+# --- COLOR SETTINGS (สีที่คุณต้องการ) ---
 COLOR_SALES = "#33FFFF"     # ฟ้า (ยอดขาย)
 COLOR_COST = "#9400D3"      # ม่วง (ทุน)
 COLOR_ADS = "#FF6633"       # ส้ม (Ads)
@@ -34,9 +34,9 @@ st.markdown("""
     
     .block-container { padding-top: 2rem !important; }
 
-    /* --- [แก้ไข] ลบบรรทัดที่บังคับสีขาว global ออกแล้ว (ตัวการปัญหา) --- */
+    /* --- [จุดสำคัญที่แก้] ลบบรรทัด h1...label { color: #ffffff } ทิ้งไปแล้ว --- */
 
-    /* Inputs: บังคับสีขาวเฉพาะในช่องกรอก */
+    /* Inputs: ให้สีขาวเฉพาะในช่องกรอก ไม่เกี่ยวกับป้าย Text อื่น */
     .stTextInput input { color: #ffffff !important; caret-color: white; background-color: #262730 !important; border: 1px solid #555 !important; }
     div[data-baseweb="select"] div { color: #ffffff !important; background-color: #262730 !important; }
     div[data-baseweb="select"] span { color: #ffffff !important; }
@@ -63,7 +63,7 @@ st.markdown("""
     
     .card-label { color: #aaa !important; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
     
-    /* ลบสีออกจาก Class เพื่อให้ Inline Style ทำงาน */
+    /* ลบการบังคับสีขาวออกจาก Class นี้ เพื่อให้ Inline Style ทำงาน */
     .card-value { font-size: 24px; font-weight: 700; }
     .card-sub { font-size: 13px; margin-top: 5px; font-weight: 600; }
 
@@ -214,7 +214,7 @@ def render_metric_row(total_sales, total_cost, total_ads, total_profit):
     pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
     pct_profit = (total_profit / total_sales * 100) if total_sales > 0 else 0
 
-    # HTML ส่วนกลาง (ชิดซ้ายสุด ห้ามย่อหน้า! เพื่อป้องกันบัค Code Block)
+    # HTML (ชิดซ้ายสุดเพื่อแก้บัคแสดงผลเป็น Code Block)
     html = f"""
 <div class="metric-container">
 <div class="custom-card border-blue">
