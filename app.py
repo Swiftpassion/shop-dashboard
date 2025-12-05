@@ -14,7 +14,7 @@ from datetime import datetime, date
 thai_months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
                "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
 
-# --- COLOR SETTINGS (USER DEFINED) ---
+# --- COLOR SETTINGS ---
 COLOR_SALES = "#33FFFF"     # Cyan/Aqua
 COLOR_COST = "#9400D3"      # Dark Violet
 COLOR_ADS = "#FF6633"       # Orange-Red
@@ -33,8 +33,6 @@ st.markdown("""
     
     .block-container { padding-top: 2rem !important; }
 
-    /* --- REMOVED THE GLOBAL TEXT COLOR OVERRIDE TO FIX INLINE STYLES --- */
-    
     /* Inputs */
     .stTextInput input { color: #ffffff !important; caret-color: white; background-color: #262730 !important; border: 1px solid #555 !important; }
     div[data-baseweb="select"] div { color: #ffffff !important; background-color: #262730 !important; }
@@ -49,8 +47,10 @@ st.markdown("""
     }
     .header-title { font-size: 22px; font-weight: 700; margin: 0; color: white !important; }
 
-    /* Metric Cards */
+    /* Metric Cards Container */
     .metric-container { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+    
+    /* Card Base Style - REMOVED BACKGROUND !important TO ALLOW TRANSPARENCY/INHERITANCE */
     .custom-card {
         background: #1c1c1c;
         border-radius: 10px; padding: 15px;
@@ -58,10 +58,22 @@ st.markdown("""
         border-left: 5px solid #ddd;
         border: 1px solid #333;
     }
+    
     .card-label { color: #aaa !important; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
     
-    .card-value { font-size: 24px; font-weight: 700; }
-    .card-sub { font-size: 13px; margin-top: 5px; font-weight: 600; }
+    /* --- [FIXED] REMOVED COLOR RULES HERE TO LET INLINE STYLES WIN --- */
+    .card-value { 
+        font-size: 24px; 
+        font-weight: 700;
+        /* No color definition here */
+    }
+    .card-sub { 
+        font-size: 13px; 
+        margin-top: 5px; 
+        font-weight: 600;
+        /* No color definition here */
+    }
+    /* --------------------------------------------------------------- */
 
     .border-blue { border-left-color: #3498db; }
     .border-purple { border-left-color: #9b59b6; }
@@ -205,31 +217,31 @@ def render_metric_row(total_sales, total_cost, total_ads, total_profit):
     pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
     pct_profit = (total_profit / total_sales * 100) if total_sales > 0 else 0
 
-    # HTML ส่วนกลาง ใช้ได้ทุกหน้า (เพิ่ม <span> เพื่อความแน่นอนในการแสดงสี)
+    # HTML ส่วนกลาง ใช้ได้ทุกหน้า (Direct Style injection into DIV, no spans)
     html = f"""
     <div class="metric-container">
         <div class="custom-card border-blue">
             <div class="card-label">ยอดขายรวม</div>
-            <div class="card-value"><span style="color:{c_sales} !important;">{total_sales:,.0f}</span></div>
-            <div class="card-sub"><span style="color:{c_sales} !important;">{pct_sales:.0f}%</span></div>
+            <div class="card-value" style="color:{c_sales} !important;">{total_sales:,.0f}</div>
+            <div class="card-sub" style="color:{c_sales} !important;">{pct_sales:.0f}%</div>
         </div>
 
         <div class="custom-card border-purple">
             <div class="card-label">ทุนสินค้า + ค่าใช้จ่าย</div>
-            <div class="card-value"><span style="color:{c_cost} !important;">{total_cost:,.0f}</span></div>
-            <div class="card-sub"><span style="color:{c_cost} !important;">{pct_cost:.1f}% ของยอดขาย</span></div>
+            <div class="card-value" style="color:{c_cost} !important;">{total_cost:,.0f}</div>
+            <div class="card-sub" style="color:{c_cost} !important;">{pct_cost:.1f}% ของยอดขาย</div>
         </div>
 
         <div class="custom-card border-orange">
             <div class="card-label">ค่าโฆษณา</div>
-            <div class="card-value"><span style="color:{c_ads} !important;">{total_ads:,.0f}</span></div>
-            <div class="card-sub"><span style="color:{c_ads} !important;">{pct_ads:.1f}% ของยอดขาย</span></div>
+            <div class="card-value" style="color:{c_ads} !important;">{total_ads:,.0f}</div>
+            <div class="card-sub" style="color:{c_ads} !important;">{pct_ads:.1f}% ของยอดขาย</div>
         </div>
 
         <div class="custom-card border-green">
             <div class="card-label">กำไรสุทธิ</div>
-            <div class="card-value"><span style="color:{c_profit} !important;">{total_profit:,.0f}</span></div>
-            <div class="card-sub"><span style="color:{c_profit} !important;">{pct_profit:.1f}% ของยอดขาย</span></div>
+            <div class="card-value" style="color:{c_profit} !important;">{total_profit:,.0f}</div>
+            <div class="card-sub" style="color:{c_profit} !important;">{pct_profit:.1f}% ของยอดขาย</div>
         </div>
     </div>
     """
