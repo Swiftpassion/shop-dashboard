@@ -15,11 +15,11 @@ thai_months = ["มกราคม", "กุมภาพันธ์", "มี�
                "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
 
 # --- COLOR SETTINGS ---
-COLOR_SALES = "#33FFFF"     # ฟ้า (Cyan/Aqua)
-COLOR_COST = "#9400D3"      # ม่วง (Dark Violet)
-COLOR_ADS = "#FF6633"       # ส้ม (Orange-Red)
-COLOR_PROFIT = "#7CFC00"    # เขียว (Lawn Green)
-COLOR_NEGATIVE = "#FF0000"  # แดง (เมื่อติดลบ)
+COLOR_SALES = "#33FFFF"
+COLOR_COST = "#9400D3"
+COLOR_ADS = "#FF6633"
+COLOR_PROFIT = "#7CFC00"
+COLOR_NEGATIVE = "#FF0000"
 
 # ==========================================
 # 1. CONFIG & CSS
@@ -31,7 +31,6 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Prompt:wght@300;400;500;600&display=swap');
 
     html, body, [class*="css"] { font-family: 'Sarabun', sans-serif; }
-    
     .block-container { padding-top: 2rem !important; }
 
     /* Inputs */
@@ -48,7 +47,7 @@ st.markdown("""
     }
     .header-title { font-size: 22px; font-weight: 700; margin: 0; color: white !important; }
 
-    /* --- [LAYOUT FIX] บังคับ Grid 4 คอลัมน์ --- */
+    /* Metric Cards (Grid Layout) */
     .metric-container { 
         display: grid !important; 
         grid-template-columns: repeat(4, 1fr) !important; 
@@ -56,7 +55,6 @@ st.markdown("""
         margin-bottom: 20px; 
         width: 100%;
     }
-    
     .custom-card {
         background: #1c1c1c;
         border-radius: 10px; padding: 15px;
@@ -65,17 +63,24 @@ st.markdown("""
         border: 1px solid #333;
         min-width: 0; 
     }
-    
     .card-label { 
         color: #aaa !important; font-size: 13px; font-weight: 600; margin-bottom: 5px; 
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
     }
-    
     .card-value { font-size: 24px; font-weight: 700; white-space: nowrap; }
     .card-sub { font-size: 13px; margin-top: 5px; font-weight: 600; white-space: nowrap; }
 
-    .neg { color: #FF0000 !important; }
-    .pos { color: #ffffff !important; }
+    /* Inline Color Classes */
+    .val-sales { color: #33FFFF !important; }
+    .sub-sales { color: #33FFFF !important; }
+    .val-cost { color: #9400D3 !important; }
+    .sub-cost { color: #9400D3 !important; }
+    .val-ads { color: #FF6633 !important; }
+    .sub-ads { color: #FF6633 !important; }
+    .val-profit { color: #7CFC00 !important; }
+    .sub-profit { color: #7CFC00 !important; }
+    .val-neg { color: #FF0000 !important; }
+    .sub-neg { color: #FF0000 !important; }
 
     .border-blue { border-left-color: #3498db; }
     .border-purple { border-left-color: #9b59b6; }
@@ -88,25 +93,26 @@ st.markdown("""
     .custom-table th, .custom-table td { padding: 3px 5px; line-height: 1.1; text-align: center; border-bottom: 1px solid #333; border-right: 1px solid #333; white-space: nowrap; }
     .daily-table thead th, .month-table thead th { position: sticky; top: 0; z-index: 100; background-color: #1e3c72; color: white !important; font-weight: 700; border-bottom: 2px solid #555; }
     
-    /* Month Table Colors (Default) */
+    /* Default Table Colors */
     .custom-table tbody tr:nth-child(even) td { background-color: #262626; }
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
     .custom-table tbody tr:hover td { background-color: #333; }
-    
-    /* --- [UPDATED] Report Daily Specific Colors --- */
-    /* Row สี #696969 (เทาเข้ม) -> ตัวหนังสือขาว */
+
+    /* --- REPORT DAILY SPECIFIC (สลับสีเทาเข้ม/อ่อน) --- */
+    /* แถวคู่: พื้นหลังเทาเข้ม (#696969) ตัวหนังสือขาว */
     .custom-table.daily-table tbody tr:nth-child(even) td { 
         background-color: #696969 !important; 
-        color: #ffffff !important;
+        color: #ffffff; /* เอา !important ออกเพื่อให้ Python override ได้ถ้าติดลบ */
     }
-    /* Row สี #BEBEBE (เทาอ่อน) -> ตัวหนังสือดำ (เพื่อให้อ่านออก) */
+    /* แถวคี่: พื้นหลังเทาอ่อน (#BEBEBE) ตัวหนังสือดำ */
     .custom-table.daily-table tbody tr:nth-child(odd) td { 
         background-color: #BEBEBE !important; 
-        color: #000000 !important;
+        color: #000000; /* เอา !important ออกเพื่อให้ Python override ได้ถ้าติดลบ */
     }
+    /* Hover: สีพื้นหลังอ่อนลง ตัวหนังสือดำ */
     .custom-table.daily-table tbody tr:hover td { 
         background-color: #e6e6e6 !important; 
-        color: #000000 !important;
+        color: #000000;
     }
     
     /* Footer Row */
@@ -114,16 +120,13 @@ st.markdown("""
         position: sticky; bottom: 0; z-index: 100; 
         background-color: #1e3c72 !important; 
         font-weight: bold; 
-        color: white !important; 
+        color: white; /* เอา !important ออก */
         border-top: 2px solid #f1c40f; 
     }
 
-    /* --- [UPDATED] Column Widths (ขยายช่องแรก) --- */
-    /* Col 1: ขยายจาก 70px เป็น 100px */
+    /* --- Column Widths (ขยายช่องแรกเป็น 100px) --- */
     .col-fix-1 { position: sticky; left: 0; z-index: 10; width: 100px; border-right: 1px solid #333; }
-    /* Col 2: ขยับ left ตามความกว้าง Col 1 (100px) */
     .col-fix-2 { position: sticky; left: 100px; z-index: 10; width: 80px; border-right: 1px solid #333; }
-    /* Col 3: ขยับ left ตาม (100 + 80 = 180px) */
     .col-fix-3 { position: sticky; left: 180px; z-index: 10; width: 70px; border-right: 2px solid #bbb !important; }
 
     .th-sku { background-color: #1e3c72 !important; color: white !important; }
@@ -149,7 +152,7 @@ st.markdown("""
     .pnl-row-head td { font-weight: 600; color: #fff; background-color: #2c2c2c; }
     .num-cell { text-align: right; font-family: 'Courier New', monospace; }
     .sub-item td:first-child { padding-left: 35px; color: #aaa; font-size: 13px; }
-    
+
     div.stButton > button { width: 100%; border-radius: 6px; height: 42px; font-weight: bold; padding: 0px 5px; background-color: #333; color: white; border: 1px solid #555; }
     div.stButton > button:hover { border-color: #00d2ff; color: #00d2ff; }
 </style>
@@ -185,51 +188,58 @@ def get_val_color(val, default_hex):
 # GLOBAL METRIC CARD COMPONENT
 # ------------------------------
 def render_metric_row(total_sales, total_cost, total_ads, total_profit):
-    """Render metrics with enforced 4-column grid layout and correct colors."""
+    """Render summary metrics with unified colors and auto-negative detection."""
 
-    # Determine colors
     c_sales = get_val_color(total_sales, COLOR_SALES)
     c_cost = get_val_color(total_cost, COLOR_COST)
     c_ads = get_val_color(total_ads, COLOR_ADS)
     c_profit = get_val_color(total_profit, COLOR_PROFIT)
 
-    # Calculate percentages
     pct_sales = 100
     pct_cost = (total_cost / total_sales * 100) if total_sales > 0 else 0
     pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
     pct_profit = (total_profit / total_sales * 100) if total_sales > 0 else 0
 
-    # HTML Construction (Using list join to prevent indentation bugs & CSS Grid Layout)
+    # Select class based on value (for color enforcement)
+    cls_sales_v = "val-neg" if total_sales < 0 else "val-sales"
+    cls_sales_s = "sub-neg" if total_sales < 0 else "sub-sales"
+    cls_cost_v = "val-neg" if total_cost < 0 else "val-cost"
+    cls_cost_s = "sub-neg" if total_cost < 0 else "sub-cost"
+    cls_ads_v = "val-neg" if total_ads < 0 else "val-ads"
+    cls_ads_s = "sub-neg" if total_ads < 0 else "sub-ads"
+    cls_prof_v = "val-neg" if total_profit < 0 else "val-profit"
+    cls_prof_s = "sub-neg" if total_profit < 0 else "sub-profit"
+
+    # Grid Layout HTML
     cards_html = [
         '<div class="metric-container">',
         
         f'<div class="custom-card border-blue">',
         f'<div class="card-label">ยอดขายรวม</div>',
-        f'<div class="card-value" style="color:{c_sales} !important;">{total_sales:,.0f}</div>',
-        f'<div class="card-sub" style="color:{c_sales} !important;">{pct_sales:.0f}%</div>',
+        f'<div class="{cls_sales_v}">{total_sales:,.0f}</div>',
+        f'<div class="{cls_sales_s}">{pct_sales:.0f}%</div>',
         f'</div>',
 
         f'<div class="custom-card border-purple">',
         f'<div class="card-label">ทุนสินค้า + ค่าใช้จ่าย</div>',
-        f'<div class="card-value" style="color:{c_cost} !important;">{total_cost:,.0f}</div>',
-        f'<div class="card-sub" style="color:{c_cost} !important;">{pct_cost:.1f}% ของยอดขาย</div>',
+        f'<div class="{cls_cost_v}">{total_cost:,.0f}</div>',
+        f'<div class="{cls_cost_s}">{pct_cost:.1f}% ของยอดขาย</div>',
         f'</div>',
 
         f'<div class="custom-card border-orange">',
         f'<div class="card-label">ค่าโฆษณา</div>',
-        f'<div class="card-value" style="color:{c_ads} !important;">{total_ads:,.0f}</div>',
-        f'<div class="card-sub" style="color:{c_ads} !important;">{pct_ads:.1f}% ของยอดขาย</div>',
+        f'<div class="{cls_ads_v}">{total_ads:,.0f}</div>',
+        f'<div class="{cls_ads_s}">{pct_ads:.1f}% ของยอดขาย</div>',
         f'</div>',
 
         f'<div class="custom-card border-green">',
         f'<div class="card-label">กำไรสุทธิ</div>',
-        f'<div class="card-value" style="color:{c_profit} !important;">{total_profit:,.0f}</div>',
-        f'<div class="card-sub" style="color:{c_profit} !important;">{pct_profit:.1f}% ของยอดขาย</div>',
+        f'<div class="{cls_prof_v}">{total_profit:,.0f}</div>',
+        f'<div class="{cls_prof_s}">{pct_profit:.1f}% ของยอดขาย</div>',
         f'</div>',
         
         '</div>'
     ]
-    
     st.markdown("".join(cards_html), unsafe_allow_html=True)
 
 @st.cache_resource
@@ -723,30 +733,37 @@ try:
             for title, _, cls in cols_cfg: html += f'<th class="{cls}">{title}</th>'
             html += '</tr></thead><tbody>'
 
-            def get_color(val): return "#FF0000" if val < 0 else "#1e3c72"
+            # --- [FIXED] Python handles red color logic here ---
+            def get_cell_style(val):
+                # ถ้าติดลบ ให้บังคับสีแดง
+                if isinstance(val, (int, float)) and val < 0:
+                    return ' style="color: #FF0000 !important;"'
+                return '' 
 
-            for _, r in df_final_d.iterrows():
+            for i, (_, r) in enumerate(df_final_d.iterrows()):
                 html += '<tr>'
                 html += f'<td style="font-weight:bold;color:#1e3c72;">{r["SKU_Main"]}</td>'
                 html += f'<td style="text-align:left;font-size:11px;color:#1e3c72;">{r["ชื่อสินค้า"]}</td>'
 
-                html += f'<td style="color:{get_color(r["จำนวน"])};">{fmt(r["จำนวน"])}</td>'
-                html += f'<td style="color:{get_color(r["รายละเอียดยอดที่ชำระแล้ว"])};">{fmt(r["รายละเอียดยอดที่ชำระแล้ว"])}</td>'
-                html += f'<td style="color:{get_color(r["CAL_COST"])};">{fmt(r["CAL_COST"])}</td>'
-                html += f'<td style="color:{get_color(r["BOX_COST"])};">{fmt(r["BOX_COST"])}</td>'
-                html += f'<td style="color:{get_color(r["DELIV_COST"])};">{fmt(r["DELIV_COST"])}</td>'
-                html += f'<td style="color:{get_color(r["CAL_COD_COST"])};">{fmt(r["CAL_COD_COST"])}</td>'
-                html += f'<td style="color:{get_color(r["CAL_COM_ADMIN"])};">{fmt(r["CAL_COM_ADMIN"])}</td>'
-                html += f'<td style="color:{get_color(r["CAL_COM_TELESALE"])};">{fmt(r["CAL_COM_TELESALE"])}</td>'
+                html += f'<td{get_cell_style(r["จำนวน"])}>{fmt(r["จำนวน"])}</td>'
+                html += f'<td{get_cell_style(r["รายละเอียดยอดที่ชำระแล้ว"])}>{fmt(r["รายละเอียดยอดที่ชำระแล้ว"])}</td>'
+                html += f'<td{get_cell_style(r["CAL_COST"])}>{fmt(r["CAL_COST"])}</td>'
+                html += f'<td{get_cell_style(r["BOX_COST"])}>{fmt(r["BOX_COST"])}</td>'
+                html += f'<td{get_cell_style(r["DELIV_COST"])}>{fmt(r["DELIV_COST"])}</td>'
+                html += f'<td{get_cell_style(r["CAL_COD_COST"])}>{fmt(r["CAL_COD_COST"])}</td>'
+                html += f'<td{get_cell_style(r["CAL_COM_ADMIN"])}>{fmt(r["CAL_COM_ADMIN"])}</td>'
+                html += f'<td{get_cell_style(r["CAL_COM_TELESALE"])}>{fmt(r["CAL_COM_TELESALE"])}</td>'
 
                 html += f'<td style="color:#e67e22;">{fmt(r["Ads_Amount"])}</td>'
-                html += f'<td style="color:{get_color(r["Net_Profit"])};">{fmt(r["Net_Profit"])}</td>'
+                # กำไรสุทธิ (บังคับแดงถ้าลบ)
+                html += f'<td{get_cell_style(r["Net_Profit"])}>{fmt(r["Net_Profit"])}</td>'
 
                 html += f'<td class="col-small" style="color:#1e3c72;">{fmt(r["ROAS"])}</td>'
                 html += f'<td class="col-small" style="color:#1e3c72;">{fmt(r["% ทุนสินค้า"],True)}</td>'
                 html += f'<td class="col-small" style="color:#1e3c72;">{fmt(r["% ทุนอื่น"],True)}</td>'
                 html += f'<td class="col-small" style="color:#1e3c72;">{fmt(r["% Ads"],True)}</td>'
-                html += f'<td class="col-small" style="color:{get_color(r["% กำไร"])};">{fmt(r["% กำไร"],True)}</td>'
+                # % กำไร (บังคับแดงถ้าลบ)
+                html += f'<td class="col-small"{get_cell_style(r["% กำไร"])}>{fmt(r["% กำไร"],True)}</td>'
                 html += '</tr>'
 
             html += '<tr class="footer-row"><td>TOTAL</td><td></td>'
@@ -754,18 +771,17 @@ try:
             ta = df_final_d['Ads_Amount'].sum(); tc = df_final_d['CAL_COST'].sum()
             t_oth = df_final_d['BOX_COST'].sum() + df_final_d['DELIV_COST'].sum() + df_final_d['CAL_COD_COST'].sum() + df_final_d['CAL_COM_ADMIN'].sum() + df_final_d['CAL_COM_TELESALE'].sum()
 
-            def get_tot_col(val): return "#FF0000" if val < 0 else "#ffffff"
-
-            html += f'<td style="color:{get_tot_col(df_final_d["จำนวน"].sum())};">{fmt(df_final_d["จำนวน"].sum())}</td>'
-            html += f'<td style="color:{get_tot_col(ts)};">{fmt(ts)}</td>'
-            html += f'<td style="color:{get_tot_col(tc)};">{fmt(tc)}</td>'
-            html += f'<td style="color:{get_tot_col(df_final_d["BOX_COST"].sum())};">{fmt(df_final_d["BOX_COST"].sum())}</td>'
-            html += f'<td style="color:{get_tot_col(df_final_d["DELIV_COST"].sum())};">{fmt(df_final_d["DELIV_COST"].sum())}</td>'
-            html += f'<td style="color:{get_tot_col(df_final_d["CAL_COD_COST"].sum())};">{fmt(df_final_d["CAL_COD_COST"].sum())}</td>'
-            html += f'<td style="color:{get_tot_col(df_final_d["CAL_COM_ADMIN"].sum())};">{fmt(df_final_d["CAL_COM_ADMIN"].sum())}</td>'
-            html += f'<td style="color:{get_tot_col(df_final_d["CAL_COM_TELESALE"].sum())};">{fmt(df_final_d["CAL_COM_TELESALE"].sum())}</td>'
-            html += f'<td style="color:{get_tot_col(ta)};">{fmt(ta)}</td>'
-            html += f'<td style="color:{get_tot_col(tp)};">{fmt(tp)}</td>'
+            # Footer logic using same helper
+            html += f'<td{get_cell_style(df_final_d["จำนวน"].sum())}>{fmt(df_final_d["จำนวน"].sum())}</td>'
+            html += f'<td{get_cell_style(ts)}>{fmt(ts)}</td>'
+            html += f'<td{get_cell_style(tc)}>{fmt(tc)}</td>'
+            html += f'<td{get_cell_style(df_final_d["BOX_COST"].sum())}>{fmt(df_final_d["BOX_COST"].sum())}</td>'
+            html += f'<td{get_cell_style(df_final_d["DELIV_COST"].sum())}>{fmt(df_final_d["DELIV_COST"].sum())}</td>'
+            html += f'<td{get_cell_style(df_final_d["CAL_COD_COST"].sum())}>{fmt(df_final_d["CAL_COD_COST"].sum())}</td>'
+            html += f'<td{get_cell_style(df_final_d["CAL_COM_ADMIN"].sum())}>{fmt(df_final_d["CAL_COM_ADMIN"].sum())}</td>'
+            html += f'<td{get_cell_style(df_final_d["CAL_COM_TELESALE"].sum())}>{fmt(df_final_d["CAL_COM_TELESALE"].sum())}</td>'
+            html += f'<td{get_cell_style(ta)}>{fmt(ta)}</td>'
+            html += f'<td{get_cell_style(tp)}>{fmt(tp)}</td>'
 
             f_roas = ts/ta if ta>0 else 0
             f_pp = (tp/ts*100) if ts>0 else 0
@@ -773,7 +789,7 @@ try:
             html += f'<td class="col-small" style="color:#ffffff;">{fmt((tc/ts*100) if ts>0 else 0,True)}</td>'
             html += f'<td class="col-small" style="color:#ffffff;">{fmt((t_oth/ts*100) if ts>0 else 0,True)}</td>'
             html += f'<td class="col-small" style="color:#ffffff;">{fmt((ta/ts*100) if ts>0 else 0,True)}</td>'
-            html += f'<td class="col-small" style="color:{get_tot_col(f_pp)};">{fmt(f_pp,True)}</td></tr></tbody></table></div>'
+            html += f'<td class="col-small"{get_cell_style(f_pp)}>{fmt(f_pp,True)}</td></tr></tbody></table></div>'
             st.markdown(html, unsafe_allow_html=True)
 
     # --- PAGE 3: PRODUCT GRAPH ---
