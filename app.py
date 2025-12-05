@@ -14,11 +14,12 @@ from datetime import datetime, date
 thai_months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
                "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
 
-# --- COLOR SETTINGS ---
-COLOR_SALES = "#33FFFF"     # Cyan/Aqua
-COLOR_COST = "#9400D3"      # Dark Violet
-COLOR_ADS = "#FF6633"       # Orange-Red
-COLOR_PROFIT = "#7CFC00"    # Lawn Green
+# --- COLOR SETTINGS (ตั้งค่าสีที่นี่) ---
+COLOR_SALES = "#33FFFF"     # ฟ้า (Cyan/Aqua)
+COLOR_COST = "#9400D3"      # ม่วง (Dark Violet)
+COLOR_ADS = "#FF6633"       # ส้มแดง (Orange-Red)
+COLOR_PROFIT = "#7CFC00"    # เขียว (Lawn Green)
+COLOR_NEGATIVE = "#FF0000"  # แดง (เมื่อติดลบ)
 
 # ==========================================
 # 1. CONFIG & CSS
@@ -33,7 +34,7 @@ st.markdown("""
     
     .block-container { padding-top: 2rem !important; }
 
-    /* Inputs (เฉพาะช่องกรอก ให้เป็นสีขาว) */
+    /* Inputs */
     .stTextInput input { color: #ffffff !important; caret-color: white; background-color: #262730 !important; border: 1px solid #555 !important; }
     div[data-baseweb="select"] div { color: #ffffff !important; background-color: #262730 !important; }
     div[data-baseweb="select"] span { color: #ffffff !important; }
@@ -60,7 +61,7 @@ st.markdown("""
     
     .card-label { color: #aaa !important; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
     
-    /* ลบสีออกจาก Class นี้ เพื่อให้ Inline Style ทำงาน */
+    /* เอาสีขาวบังคับออก เพื่อให้ Inline Style ทำงาน */
     .card-value { font-size: 24px; font-weight: 700; }
     .card-sub { font-size: 13px; margin-top: 5px; font-weight: 600; }
 
@@ -189,15 +190,17 @@ def safe_date(val):
 
 def get_val_color(val, default_hex):
     """Returns RED (#FF0000) if negative, else default_hex."""
-    return "#FF0000" if val < 0 else default_hex
+    if val < 0:
+        return COLOR_NEGATIVE
+    return default_hex
 
 # ------------------------------
 # GLOBAL METRIC CARD COMPONENT
 # ------------------------------
 def render_metric_row(total_sales, total_cost, total_ads, total_profit):
-    """Render summary metrics with unified colors and auto-negative detection."""
+    """Render summary metrics with custom colors and negative alert."""
 
-    # ระบบกำหนดสีตามที่ลูกค้ากำหนด
+    # คำนวณสี (ถ้าติดลบจะได้สีแดงอัตโนมัติ)
     c_sales = get_val_color(total_sales, COLOR_SALES)
     c_cost = get_val_color(total_cost, COLOR_COST)
     c_ads = get_val_color(total_ads, COLOR_ADS)
@@ -209,7 +212,7 @@ def render_metric_row(total_sales, total_cost, total_ads, total_profit):
     pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
     pct_profit = (total_profit / total_sales * 100) if total_sales > 0 else 0
 
-    # HTML ส่วนกลาง (สำคัญ: ห้ามย่อหน้าใน string นี้เด็ดขาด เพื่อป้องกันบัค Code Block)
+    # สร้าง HTML โดยไม่เว้นวรรค (Indentation) เพื่อป้องกันบัค Code Block
     html = f"""
 <div class="metric-container">
 <div class="custom-card border-blue">
