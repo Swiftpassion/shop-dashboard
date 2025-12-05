@@ -14,6 +14,12 @@ from datetime import datetime, date
 thai_months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
                "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
 
+# --- COLOR SETTINGS (USER DEFINED) ---
+COLOR_SALES = "#33FFFF"     # Cyan/Aqua
+COLOR_COST = "#9400D3"      # Dark Violet
+COLOR_ADS = "#FF6633"       # Orange-Red
+COLOR_PROFIT = "#7CFC00"    # Lawn Green
+
 # ==========================================
 # 1. CONFIG & CSS
 # ==========================================
@@ -25,7 +31,6 @@ st.markdown("""
 
     html, body, [class*="css"] { font-family: 'Sarabun', sans-serif; }
     
-    /* 1. Adjust Top Container Spacing */
     .block-container { padding-top: 2rem !important; }
 
     /* General Text Colors */
@@ -45,19 +50,6 @@ st.markdown("""
     }
     .header-title { font-size: 22px; font-weight: 700; margin: 0; color: white !important; }
 
-    /* Navigation */
-    div[role="radiogroup"] {
-        background-color: #1c1c1c;
-        padding: 8px;
-        border-radius: 10px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        display: flex;
-        justify-content: center;
-        margin-top: 30px;
-        margin-bottom: -15px;
-        border: 1px solid #444;
-    }
-
     /* Metric Cards */
     .metric-container { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
     .custom-card {
@@ -69,13 +61,9 @@ st.markdown("""
     }
     .card-label { color: #aaa !important; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
     
-    /* --- [UPDATED CSS] Removed !important to allow inline styles to work --- */
+    /* Removed color definitions here to let inline styles work */
     .card-value { font-size: 24px; font-weight: 700; }
     .card-sub { font-size: 13px; margin-top: 5px; font-weight: 600; }
-    /* ---------------------------------------------------------------------- */
-
-    .neg { color: #FF0000 !important; }
-    .pos { color: #ffffff !important; }
 
     .border-blue { border-left-color: #3498db; }
     .border-purple { border-left-color: #9b59b6; }
@@ -102,26 +90,23 @@ st.markdown("""
         line-height: 1.1;
         text-align: center; border-bottom: 1px solid #333; border-right: 1px solid #333; white-space: nowrap;
     }
-
+    
     /* Sticky Headers */
     .daily-table thead th, .month-table thead th {
-        position: sticky;
-        top: 0; z-index: 100;
+        position: sticky; top: 0; z-index: 100;
         background-color: #1e3c72; color: white !important;
         font-weight: 700; border-bottom: 2px solid #555;
-        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
     }
     
-    /* DEFAULT TABLE COLORS */
+    /* Table Colors */
     .custom-table tbody tr:nth-child(even) td { background-color: #262626; }
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
     .custom-table tbody tr:hover td { background-color: #333; }
 
-    /* REPORT DAILY CSS */
+    /* Report Daily Specific */
     .custom-table.daily-table tbody tr:nth-child(even) td { background-color: #ffffff !important; }
     .custom-table.daily-table tbody tr:nth-child(odd) td { background-color: #f2f2f2 !important; }
     .custom-table.daily-table tbody tr:hover td { background-color: #e6e6e6 !important; }
-    
     .custom-table.daily-table tbody tr.footer-row td {
         position: sticky; bottom: 0; z-index: 100;
         background-color: #1e3c72 !important; 
@@ -132,7 +117,6 @@ st.markdown("""
     .col-fix-1 { position: sticky; left: 0; z-index: 10; width: 70px; border-right: 1px solid #333; }
     .col-fix-2 { position: sticky; left: 70px; z-index: 10; width: 80px; border-right: 1px solid #333; }
     .col-fix-3 { position: sticky; left: 150px; z-index: 10; width: 70px; border-right: 2px solid #bbb !important; }
-
     .th-sku { background-color: #1e3c72 !important; color: white !important; }
     .sku-header { font-size: 10px; color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
     .col-small { width: 70px; min-width: 70px; max-width: 70px; font-size: 11px; }
@@ -146,7 +130,7 @@ st.markdown("""
     }
     .header-title-pnl { font-size: 24px; font-weight: 600; margin: 0; color: white !important; }
     .header-sub-pnl { font-size: 14px; color: #cbd5e1; font-weight: 300; margin-top: 5px; }
-
+    
     .kpi-card-pnl {
         background-color: #1c1c1c; border: 1px solid #333;
         border-radius: 12px; padding: 20px;
@@ -186,7 +170,7 @@ FOLDER_ID_ADS = "1ZE76TXNA_vNeXjhAZfLgBQQGIV0GY7w8"
 SHEET_MASTER_URL = "https://docs.google.com/spreadsheets/d/1Q3akHm1GKkDI2eilGfujsd9pO7aOjJvyYJNuXd98lzo/edit"
 
 # ==========================================
-# 3. BACKEND: DATA LOADING & PROCESSING
+# 3. BACKEND & HELPERS
 # ==========================================
 def safe_float(val):
     if pd.isna(val) or val == "" or val is None: return 0.0
@@ -200,6 +184,58 @@ def safe_float(val):
 def safe_date(val):
     try: return pd.to_datetime(val).date()
     except: return None
+
+def get_val_color(val, default_hex):
+    """Returns RED (#FF0000) if negative, else default_hex."""
+    return "#FF0000" if val < 0 else default_hex
+
+# ------------------------------
+# GLOBAL METRIC CARD COMPONENT
+# ------------------------------
+def render_metric_row(total_sales, total_cost, total_ads, total_profit):
+    """Render summary metrics with unified colors and auto-negative detection."""
+
+    # ระบบกำหนดสีตามที่ลูกค้ากำหนด
+    c_sales = get_val_color(total_sales, COLOR_SALES)
+    c_cost = get_val_color(total_cost, COLOR_COST)
+    c_ads = get_val_color(total_ads, COLOR_ADS)
+    c_profit = get_val_color(total_profit, COLOR_PROFIT)
+
+    # คำนวณ % ทั้งหมด
+    pct_sales = 100
+    pct_cost = (total_cost / total_sales * 100) if total_sales > 0 else 0
+    pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
+    pct_profit = (total_profit / total_sales * 100) if total_sales > 0 else 0
+
+    # HTML ส่วนกลาง ใช้ได้ทุกหน้า
+    html = f"""
+    <div class="metric-container">
+        <div class="custom-card border-blue">
+            <div class="card-label">ยอดขายรวม</div>
+            <div class="card-value" style="color:{c_sales} !important;">{total_sales:,.0f}</div>
+            <div class="card-sub" style="color:{c_sales} !important;">{pct_sales:.0f}%</div>
+        </div>
+
+        <div class="custom-card border-purple">
+            <div class="card-label">ทุนสินค้า + ค่าใช้จ่าย</div>
+            <div class="card-value" style="color:{c_cost} !important;">{total_cost:,.0f}</div>
+            <div class="card-sub" style="color:{c_cost} !important;">{pct_cost:.1f}% ของยอดขาย</div>
+        </div>
+
+        <div class="custom-card border-orange">
+            <div class="card-label">ค่าโฆษณา</div>
+            <div class="card-value" style="color:{c_ads} !important;">{total_ads:,.0f}</div>
+            <div class="card-sub" style="color:{c_ads} !important;">{pct_ads:.1f}% ของยอดขาย</div>
+        </div>
+
+        <div class="custom-card border-green">
+            <div class="card-label">กำไรสุทธิ</div>
+            <div class="card-value" style="color:{c_profit} !important;">{total_profit:,.0f}</div>
+            <div class="card-sub" style="color:{c_profit} !important;">{pct_profit:.1f}% ของยอดขาย</div>
+        </div>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
 
 @st.cache_resource
 def get_drive_service():
@@ -450,18 +486,7 @@ try:
     page_options = ["📊 REPORT_MONTH", "📅 REPORT_DAILY", "📈 PRODUCT GRAPH", "📈 YEARLY P&L", "📅 MONTHLY P&L", "💰 COMMISSION"]
     selected_page = st.radio("เลือกหน้าจอที่ต้องการแสดงผล:", page_options, horizontal=True, label_visibility="collapsed")
 
-    # --- COLOR HELPERS (NEW) ---
-    def get_val_color(val, default_hex):
-        """Returns RED (#FF0000) if negative, else default_hex."""
-        return "#FF0000" if val < 0 else default_hex
-
-    # Define requested colors
-    COLOR_SALES = "#33FFFF"     # Cyan/Aqua
-    COLOR_COST = "#9400D3"      # Dark Violet
-    COLOR_ADS = "#FF6633"       # Orange-Red
-    COLOR_PROFIT = "#7CFC00"    # Lawn Green
-
-    # --- PAGE 1 ---
+    # --- PAGE 1: REPORT_MONTH ---
     if selected_page == "📊 REPORT_MONTH":
         st.markdown('<div class="header-bar"><div class="header-title"><i class="fas fa-chart-line"></i> สรุปยอดขายรายเดือน</div></div>', unsafe_allow_html=True)
         all_years = sorted(df_daily['Year'].unique(), reverse=True)
@@ -507,48 +532,10 @@ try:
             total_sales = df_view['รายละเอียดยอดที่ชำระแล้ว'].sum()
             total_ads = df_view['Ads_Amount'].sum()
             total_cost_ops = df_view['Total_Cost'].sum() - total_ads
-            
-            # Net Profit (Removed Fix Cost)
             net_profit = total_sales - df_view['Total_Cost'].sum()
 
-            pct_cost = (total_cost_ops / total_sales * 100) if total_sales > 0 else 0
-            pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
-            pct_profit = (net_profit / total_sales * 100) if total_sales > 0 else 0
-
-            # Determine Colors
-            c_sales = get_val_color(total_sales, COLOR_SALES)
-            c_cost = get_val_color(total_cost_ops, COLOR_COST)
-            c_ads = get_val_color(total_ads, COLOR_ADS)
-            c_profit = get_val_color(net_profit, COLOR_PROFIT)
-
-            # NOTE: Percentages follow the same color as the main value (unless negative override applies to value logic above)
-            # Actually percentages are rarely negative for cost/ads, but for consistency we use same color var.
-            
-            # --- [CRITICAL FIX] Added !important to inline styles to override any lingering CSS ---
-            st.markdown(f"""
-            <div class="metric-container">
-                <div class="custom-card border-blue">
-                    <div class="card-label">ยอดขายรวม</div>
-                    <div class="card-value" style="color:{c_sales} !important;">{total_sales:,.0f}</div>
-                    <div class="card-sub" style="color:{c_sales} !important;">100%</div>
-                </div>
-                <div class="custom-card border-purple">
-                    <div class="card-label">ทุนสินค้า + ค่าใช้จ่าย</div>
-                    <div class="card-value" style="color:{c_cost} !important;">{total_cost_ops:,.0f}</div>
-                    <div class="card-sub" style="color:{c_cost} !important;">{pct_cost:,.1f}% ของยอดขาย</div>
-                </div>
-                <div class="custom-card border-orange">
-                    <div class="card-label">ค่าโฆษณา</div>
-                    <div class="card-value" style="color:{c_ads} !important;">{total_ads:,.0f}</div>
-                    <div class="card-sub" style="color:{c_ads} !important;">{pct_ads:,.1f}% ของยอดขาย</div>
-                </div>
-                <div class="custom-card border-green">
-                    <div class="card-label">กำไรสุทธิ</div>
-                    <div class="card-value" style="color:{c_profit} !important;">{net_profit:,.0f}</div>
-                    <div class="card-sub" style="color:{c_profit} !important;">{pct_profit:,.1f}% ของยอดขาย</div>
-                </div>
-            </div>""", unsafe_allow_html=True)
-            # --------------------------------------------------------------------------------------
+            # --- RENDER METRICS ---
+            render_metric_row(total_sales, total_cost_ops, total_ads, net_profit)
 
             all_days = range(1, days_in_month + 1)
             matrix_data = []
@@ -557,9 +544,7 @@ try:
                 day_data = df_view[df_view['Day'] == day]
                 d_sales = day_data['รายละเอียดยอดที่ชำระแล้ว'].sum()
                 d_profit = day_data['Net_Profit'].sum()
-                
                 row = {'วันที่': f"{day}", 'รวม': d_sales, 'กำไรสุทธิ': d_profit}
-            
                 for sku in final_skus:
                     sku_row = day_data[day_data['SKU_Main'] == sku]
                     val = sku_row['Net_Profit'].sum() if not sku_row.empty else 0
@@ -584,13 +569,11 @@ try:
             html += '</tr></thead><tbody>'
             for _, r in df_matrix.iterrows():
                 html += f'<tr><td class="col-fix-1" style="font-weight:bold;">{fmt_n(r["รวม"])}</td>'
-                # RED IF NEGATIVE
                 prof_color = "#FF0000" if r["กำไรสุทธิ"] < 0 else "#27ae60"
                 html += f'<td class="col-fix-2" style="font-weight:bold; color:{prof_color};">{fmt_n(r["กำไรสุทธิ"])}</td>'
                 html += f'<td class="col-fix-3">{r["วันที่"]}</td>'
                 for sku in final_skus:
                     val = r.get(sku, 0)
-                    # RED IF NEGATIVE
                     color = "#FF0000" if val < 0 else "#ddd"
                     html += f'<td style="color:{color};">{fmt_n(val)}</td>'
                 html += '</tr>'
@@ -606,11 +589,8 @@ try:
                 elif "row-pct-cost" in row_cls: bg_color = "#9400D3"   
                 else: bg_color = "#ffffff"
 
-                if bg_color != "#ffffff":
-                    dark_bg = True
-
+                if bg_color != "#ffffff": dark_bg = True
                 style_bg = f"background-color:{bg_color};"
-
                 lbl_color = "#ffffff" if dark_bg else "#000000"
                 
                 row_html = f'<tr class="{row_cls}"><td class="col-fix-1" style="{style_bg} color: {lbl_color} !important;">{label}</td>'
@@ -626,7 +606,6 @@ try:
 
                 txt_val = fmt_p(grand_val) if val_type=='pct' else fmt_n(grand_val)
                 grand_text_col = "#333333"
-                # RED IF NEGATIVE
                 if grand_val < 0: grand_text_col = "#FF0000"
                 elif dark_bg: grand_text_col = "#ffffff"
 
@@ -652,14 +631,12 @@ try:
 
                     txt = fmt_p(val) if val_type=='pct' else fmt_n(val)
                     cell_text_col = "#333333"
-                    # RED IF NEGATIVE
                     if val < 0: cell_text_col = "#FF0000"
                     elif dark_bg: cell_text_col = "#ffffff"
 
                     row_html += f'<td style="{style_bg} color:{cell_text_col};">{txt}</td>'
                 row_html += '</tr>'
                 return row_html
-            # ----------------------------------------------------
 
             html += create_footer_row("row-cost", "รวมทุนสินค้า", footer_sums, 'num')
             html += create_footer_row("row-sales", "รวมยอดขาย", footer_sums, 'num')
@@ -671,7 +648,7 @@ try:
             html += '</tbody></table></div>'
             st.markdown(html, unsafe_allow_html=True)
 
-    # --- PAGE 2 ---
+    # --- PAGE 2: REPORT_DAILY ---
     elif selected_page == "📅 REPORT_DAILY":
         st.markdown('<div class="header-bar"><div class="header-title"><i class="fas fa-calendar-day"></i> สรุปการขายรายวัน (ตามช่วงเวลา)</div></div>', unsafe_allow_html=True)
 
@@ -726,41 +703,8 @@ try:
             sum_total_cost_ops = sum_cost_prod + sum_ops
             sum_profit = df_final_d['Net_Profit'].sum()
             
-            p_cost = (sum_total_cost_ops / sum_sales * 100) if sum_sales > 0 else 0
-            p_ads = (sum_ads / sum_sales * 100) if sum_sales > 0 else 0
-            p_prof = (sum_profit / sum_sales * 100) if sum_sales > 0 else 0
-
-            # Determine Colors
-            c_sales = get_val_color(sum_sales, COLOR_SALES)
-            c_cost = get_val_color(sum_total_cost_ops, COLOR_COST)
-            c_ads = get_val_color(sum_ads, COLOR_ADS)
-            c_profit = get_val_color(sum_profit, COLOR_PROFIT)
-
-            # --- [CRITICAL FIX] Added !important here as well ---
-            st.markdown(f"""
-            <div class="metric-container">
-                <div class="custom-card border-blue">
-                    <div class="card-label">ยอดขายรวม</div>
-                    <div class="card-value" style="color:{c_sales} !important;">{sum_sales:,.0f}</div>
-                    <div class="card-sub" style="color:{c_sales} !important;">100%</div>
-                </div>
-                <div class="custom-card border-purple">
-                    <div class="card-label">ทุนสินค้า + ค่าใช้จ่าย</div>
-                    <div class="card-value" style="color:{c_cost} !important;">{sum_total_cost_ops:,.0f}</div>
-                    <div class="card-sub" style="color:{c_cost} !important;">{p_cost:,.1f}% ของยอดขาย</div>
-                </div>
-                <div class="custom-card border-orange">
-                    <div class="card-label">ค่าโฆษณา</div>
-                    <div class="card-value" style="color:{c_ads} !important;">{sum_ads:,.0f}</div>
-                    <div class="card-sub" style="color:{c_ads} !important;">{p_ads:,.1f}% ของยอดขาย</div>
-                </div>
-                <div class="custom-card border-green">
-                    <div class="card-label">กำไรสุทธิ</div>
-                    <div class="card-value" style="color:{c_profit} !important;">{sum_profit:,.0f}</div>
-                    <div class="card-sub" style="color:{c_profit} !important;">{p_prof:,.1f}% ของยอดขาย</div>
-                </div>
-            </div>""", unsafe_allow_html=True)
-            # ----------------------------------------------------
+            # --- RENDER METRICS ---
+            render_metric_row(sum_sales, sum_total_cost_ops, sum_ads, sum_profit)
 
             df_final_d['กำไร/ขาดทุน'] = df_final_d['Net_Profit']
             df_final_d['ROAS'] = np.where(df_final_d['Ads_Amount']>0, df_final_d['รายละเอียดยอดที่ชำระแล้ว']/df_final_d['Ads_Amount'], 0)
@@ -784,7 +728,6 @@ try:
             for title, _, cls in cols_cfg: html += f'<th class="{cls}">{title}</th>'
             html += '</tr></thead><tbody>'
 
-            # RED IF NEGATIVE
             def get_color(val): return "#FF0000" if val < 0 else "#1e3c72"
 
             for _, r in df_final_d.iterrows():
@@ -816,7 +759,6 @@ try:
             ta = df_final_d['Ads_Amount'].sum(); tc = df_final_d['CAL_COST'].sum()
             t_oth = df_final_d['BOX_COST'].sum() + df_final_d['DELIV_COST'].sum() + df_final_d['CAL_COD_COST'].sum() + df_final_d['CAL_COM_ADMIN'].sum() + df_final_d['CAL_COM_TELESALE'].sum()
 
-            # RED IF NEGATIVE
             def get_tot_col(val): return "#FF0000" if val < 0 else "#ffffff"
 
             html += f'<td style="color:{get_tot_col(df_final_d["จำนวน"].sum())};">{fmt(df_final_d["จำนวน"].sum())}</td>'
@@ -839,7 +781,7 @@ try:
             html += f'<td class="col-small" style="color:{get_tot_col(f_pp)};">{fmt(f_pp,True)}</td></tr></tbody></table></div>'
             st.markdown(html, unsafe_allow_html=True)
 
-    # --- PAGE 3 ---
+    # --- PAGE 3: PRODUCT GRAPH ---
     elif selected_page == "📈 PRODUCT GRAPH":
         st.markdown('<div class="header-bar"><div class="header-title"><i class="fas fa-chart-line"></i> กราฟแสดงแนวโน้มยอดขายรายสินค้า</div></div>', unsafe_allow_html=True)
 
@@ -850,7 +792,6 @@ try:
             with c_g3: filter_mode_g = st.selectbox("เงื่อนไขสินค้า (Fast Filter)",
                 ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 เฉพาะรายการที่ขายได้", "💸 ผลาญงบ (มี Ads แต่ขายไม่ได้)", "📋 แสดง Master ทั้งหมด"], key="g_m")
 
-            # Layout Input Row 2: SKU Selector
             c1_g, c2_g, c3_g, c4_g, c5_g = st.columns([1.5, 3.5, 0.4, 0.4, 0.8])
             with c1_g: st.text_input("ค้นหา SKU / ชื่อสินค้า (Graph):", placeholder="...", key="search_g")
             with c2_g: st.multiselect("เลือกสินค้าที่ต้องการดูกราฟ:", sku_options_list_global, key="selected_skus_g")
@@ -881,7 +822,6 @@ try:
 
         selected_labels_g = st.session_state.selected_skus_g
         real_selected_g = [sku_map_reverse_global[l] for l in selected_labels_g]
-
         final_skus_g = sorted(real_selected_g) if real_selected_g else sorted(auto_skus_g)
 
         if not final_skus_g:
@@ -892,13 +832,21 @@ try:
             if df_graph.empty:
                 st.warning("⚠️ ไม่พบข้อมูลการขายของสินค้าที่เลือกในช่วงเวลานี้")
             else:
+                # Calculate Totals for Metric Row
+                g_sales = df_graph['รายละเอียดยอดที่ชำระแล้ว'].sum()
+                g_ads = df_graph['Ads_Amount'].sum()
+                g_net_profit = df_graph['Net_Profit'].sum()
+                g_cost_ops = df_graph['Total_Cost'].sum() - g_ads
+                
+                # --- RENDER METRICS ---
+                render_metric_row(g_sales, g_cost_ops, g_ads, g_net_profit)
+                
                 df_chart = df_graph.groupby(['Date', 'SKU_Main']).agg({
                     'รายละเอียดยอดที่ชำระแล้ว': 'sum',
                     'จำนวน': 'sum'
                 }).reset_index()
 
                 df_chart['Product_Name'] = df_chart['SKU_Main'].apply(lambda x: f"{x} : {sku_name_lookup.get(x, '')}")
-                # Date to string for Altair safety
                 df_chart['DateStr'] = df_chart['Date'].astype(str)
 
                 st.markdown("##### 📈 แนวโน้มยอดขายรายวัน (Sales Trend)")
@@ -935,7 +883,7 @@ try:
                     )
                     st.altair_chart(chart_bar_qty, use_container_width=True)
 
-    # --- PAGE 4 ---
+    # --- PAGE 4: YEARLY P&L ---
     elif selected_page == "📈 YEARLY P&L":
         st.markdown('<div class="pnl-container">', unsafe_allow_html=True)
         st.markdown("""
@@ -984,6 +932,13 @@ try:
             total_sales = df_merged['รายละเอียดยอดที่ชำระแล้ว'].sum()
             total_exp = df_merged['Total_Exp'].sum()
             total_profit = df_merged['Net_Profit_Final'].sum()
+            
+            # Extract Ads to separate it from Total Exp for the metric card
+            total_ads = df_merged['Ads_Amount'].sum()
+            total_cost_ops = total_exp - total_ads
+
+            # --- RENDER METRICS ---
+            render_metric_row(total_sales, total_cost_ops, total_ads, total_profit)
 
             pct_net_income = (total_sales / total_sales * 100) if total_sales else 0
             pct_exp = (total_exp / total_sales * 100) if total_sales else 0
@@ -991,32 +946,6 @@ try:
 
             def fmt(v): return f"{v:,.0f}"
             def fmt_p(v): return f"{v:,.2f}%"
-
-            kpi_html = f"""
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
-                <div class="kpi-card-pnl b-blue">
-                    <div class="kpi-label-pnl">ยอดขายรวม</div>
-                    <div class="kpi-value-pnl">{fmt(total_sales)}</div>
-                    <div class="kpi-sub-pnl">บาท</div>
-                </div>
-                <div class="kpi-card-pnl b-teal">
-                    <div class="kpi-label-pnl">รายได้สุทธิ</div>
-                    <div class="kpi-value-pnl">{fmt(total_sales)}</div>
-                    <div class="kpi-sub-pnl t-teal">คิดเป็น {fmt_p(pct_net_income)} ของยอดขาย</div>
-                </div>
-                <div class="kpi-card-pnl b-red">
-                    <div class="kpi-label-pnl">ค่าใช้จ่ายรวม</div>
-                    <div class="kpi-value-pnl">{fmt(total_exp)}</div>
-                    <div class="kpi-sub-pnl t-red">คิดเป็น {fmt_p(pct_exp)} ของรายได้</div>
-                </div>
-                <div class="kpi-card-pnl b-indigo">
-                    <div class="kpi-label-pnl">กำไรสุทธิ</div>
-                    <div class="kpi-value-pnl">{fmt(total_profit)}</div>
-                    <div class="kpi-sub-pnl t-indigo">Margin: {fmt_p(net_margin)}</div>
-                </div>
-            </div>
-            """
-            st.markdown(kpi_html, unsafe_allow_html=True)
 
             c_chart1, c_chart2 = st.columns(2)
 
@@ -1066,20 +995,15 @@ try:
 
             # --- CALC DETAILED BREAKDOWN ---
             t_sales = df_merged['รายละเอียดยอดที่ชำระแล้ว'].sum()
-
             t_prod_cost = df_merged['CAL_COST'].sum()
             t_box_cost = df_merged['BOX_COST'].sum()
-
-            # Calculate Gross Profit after Product + Box
             t_gross = t_sales - t_prod_cost - t_box_cost
-
             t_ship = df_merged['DELIV_COST'].sum()
             t_cod = df_merged['CAL_COD_COST'].sum()
             t_admin = df_merged['CAL_COM_ADMIN'].sum()
             t_tele = df_merged['CAL_COM_TELESALE'].sum()
             t_ads = df_merged['Ads_Amount'].sum()
             t_fix = df_merged['Fix_Cost'].sum()
-
             t_net = t_gross - t_ship - t_cod - t_admin - t_tele - t_ads - t_fix
 
             def row_html(label, val, is_head=False, is_neg=False, is_sub=False):
@@ -1087,7 +1011,6 @@ try:
                 val_cls = "neg" if val < 0 else ""
                 return f'<tr class="{cls}"><td>{label}</td><td class="num-cell {val_cls}">{fmt(val)}</td></tr>'
 
-            # --- [FIXED POINT 3] : Removed Fixed Cost Row ---
             table_html = f"""
             <table class="pnl-table">
                 <thead><tr><th>รายการ (Accounts)</th><th style="text-align:right">จำนวนเงิน (THB)</th></tr></thead>
@@ -1108,7 +1031,7 @@ try:
             st.markdown(table_html, unsafe_allow_html=True)
             st.markdown('</div></div>', unsafe_allow_html=True)
 
-    # --- PAGE 5 ---
+    # --- PAGE 5: MONTHLY P&L ---
     elif selected_page == "📅 MONTHLY P&L":
         st.markdown('<div class="pnl-container">', unsafe_allow_html=True)
         st.markdown("""
@@ -1157,38 +1080,18 @@ try:
         m_sales = df_d_agg['รายละเอียดยอดที่ชำระแล้ว'].sum()
         m_total_exp = df_d_agg['Daily_Total_Exp'].sum()
         m_net_profit = df_d_agg['Daily_Net_Profit'].sum()
+        
+        m_ads = df_d_agg['Ads_Amount'].sum()
+        m_cost_ops = m_total_exp - m_ads
+
+        # --- RENDER METRICS ---
+        render_metric_row(m_sales, m_cost_ops, m_ads, m_net_profit)
 
         pct_net = (m_net_profit / m_sales * 100) if m_sales else 0
         pct_exp_ratio = (m_total_exp / m_sales * 100) if m_sales else 0
 
         def fmt(v): return f"{v:,.0f}"
         def fmt_p(v): return f"{v:,.2f}%"
-
-        kpi_html_m = f"""
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
-            <div class="kpi-card-pnl b-blue">
-                <div class="kpi-label-pnl">ยอดขาย ({sel_m_m})</div>
-                <div class="kpi-value-pnl">{fmt(m_sales)}</div>
-                <div class="kpi-sub-pnl">บาท</div>
-            </div>
-            <div class="kpi-card-pnl b-teal">
-                <div class="kpi-label-pnl">รายได้สุทธิ</div>
-                <div class="kpi-value-pnl">{fmt(m_sales)}</div>
-                <div class="kpi-sub-pnl t-teal">100%</div>
-            </div>
-            <div class="kpi-card-pnl b-red">
-                <div class="kpi-label-pnl">ค่าใช้จ่ายรวม (+FixCost)</div>
-                <div class="kpi-value-pnl">{fmt(m_total_exp)}</div>
-                <div class="kpi-sub-pnl t-red">คิดเป็น {fmt_p(pct_exp_ratio)} ของยอดขาย</div>
-            </div>
-            <div class="kpi-card-pnl b-indigo">
-                <div class="kpi-label-pnl">กำไรสุทธิ</div>
-                <div class="kpi-value-pnl">{fmt(m_net_profit)}</div>
-                <div class="kpi-sub-pnl t-indigo">Margin: {fmt_p(pct_net)}</div>
-            </div>
-        </div>
-        """
-        st.markdown(kpi_html_m, unsafe_allow_html=True)
 
         c1, c2 = st.columns(2)
         with c1:
@@ -1265,19 +1168,15 @@ try:
 
         # --- MONTHLY BREAKDOWN ---
         m_sales = df_d_agg['รายละเอียดยอดที่ชำระแล้ว'].sum()
-
         m_prod_cost = df_d_agg['CAL_COST'].sum()
         m_box_cost = df_d_agg['BOX_COST'].sum()
-
         m_gross = m_sales - m_prod_cost - m_box_cost
-
         m_ship = df_d_agg['DELIV_COST'].sum()
         m_cod = df_d_agg['CAL_COD_COST'].sum()
         m_admin = df_d_agg['CAL_COM_ADMIN'].sum()
         m_tele = df_d_agg['CAL_COM_TELESALE'].sum()
         m_ads = df_d_agg['Ads_Amount'].sum()
         # fix_cost_month defined earlier (now 0)
-
         m_net = m_gross - m_ship - m_cod - m_admin - m_tele - m_ads - fix_cost_month
 
         def row_html(label, val, is_head=False, is_neg=False, is_sub=False):
@@ -1285,7 +1184,6 @@ try:
             val_cls = "neg" if val < 0 else ""
             return f'<tr class="{cls}"><td>{label}</td><td class="num-cell {val_cls}">{fmt(val)}</td></tr>'
 
-        # --- [FIXED POINT 3] : Removed Fixed Cost Row ---
         table_html_m = f"""
         <table class="pnl-table">
             <thead><tr><th>รายการ (Accounts)</th><th style="text-align:right">จำนวนเงิน (THB)</th></tr></thead>
@@ -1306,7 +1204,7 @@ try:
         st.markdown(table_html_m, unsafe_allow_html=True)
         st.markdown('</div></div>', unsafe_allow_html=True)
 
-    # --- PAGE 6 ---
+    # --- PAGE 6: COMMISSION ---
     elif selected_page == "💰 COMMISSION":
         st.markdown('<div class="header-bar"><div class="header-title"><i class="fas fa-coins"></i> สรุปค่าคอมมิชชั่น (Admin & Telesale)</div></div>', unsafe_allow_html=True)
 
@@ -1329,7 +1227,6 @@ try:
 
         if df_comm.empty:
             st.warning(f"⚠️ ไม่พบข้อมูลสำหรับเดือน {sel_month_c} {sel_year_c}")
-            # Create empty chart data for visual consistency if needed, or just stop
             df_merged_c = df_full_days.copy()
             df_merged_c['CAL_COM_ADMIN'] = 0
             df_merged_c['CAL_COM_TELESALE'] = 0
@@ -1342,13 +1239,8 @@ try:
             total_tele = df_comm['CAL_COM_TELESALE'].sum()
             total_all = total_admin + total_tele
 
-            # Metric Cards
-            st.markdown(f"""
-            <div class="metric-container">
-                <div class="custom-card border-blue"><div class="card-label">ค่าคอมรวมทั้งหมด</div><div class="card-value">{total_all:,.0f}</div><div class="card-sub txt-gray">บาท</div></div>
-                <div class="custom-card border-purple"><div class="card-label">Admin Commission</div><div class="card-value">{total_admin:,.0f}</div><div class="card-sub txt-gray">{(total_admin/total_all*100) if total_all else 0:.1f}% ของทั้งหมด</div></div>
-                <div class="custom-card border-orange"><div class="card-label">Telesale Commission</div><div class="card-value">{total_tele:,.0f}</div><div class="card-sub txt-gray">{(total_tele/total_all*100) if total_all else 0:.1f}% ของทั้งหมด</div></div>
-            </div>""", unsafe_allow_html=True)
+            # Metric Cards (Custom for Commission but consistent style if preferred, otherwise can use render_metric_row for specific mapping)
+            render_metric_row(total_all, total_admin + total_tele, 0, total_all)
 
             c_chart, c_table = st.columns([2, 1])
 
