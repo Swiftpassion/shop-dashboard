@@ -113,12 +113,12 @@ st.markdown("""
     /* Total Fixed Width = 125 + 95 + 95 + 60 + 95 + 60 = 530px 
        เพิ่มความกว้างเพื่อให้ตัวหนังสือไม่ทับซ้อนกัน 
     */
-    .fix-m-1 { position: sticky; left: 0; z-index: 20; width: 125px; min-width: 125px; border-right: 1px solid #444; }
-    .fix-m-2 { position: sticky; left: 125px; z-index: 20; width: 65px; min-width: 95px; border-right: 1px solid #444; }
-    .fix-m-3 { position: sticky; left: 190px; z-index: 20; width: 50px; min-width: 95px; border-right: 1px solid #444; }
-    .fix-m-4 { position: sticky; left: 240px; z-index: 20; width: 35px; min-width: 60px; border-right: 1px solid #444; }
-    .fix-m-5 { position: sticky; left: 275px; z-index: 20; width: 65px; min-width: 95px; border-right: 1px solid #444; }
-    .fix-m-6 { position: sticky; left: 340px; z-index: 20; width: 35px; min-width: 60px; border-right: 2px solid #bbb !important; }
+    .fix-m-1 { position: sticky; left: 0px !important;   z-index: 20; width: 120px !important; min-width: 120px !important; border-right: 1px solid #444; }
+    .fix-m-2 { position: sticky; left: 120px !important; z-index: 20; width: 90px !important;  min-width: 90px !important;  border-right: 1px solid #444; }
+    .fix-m-3 { position: sticky; left: 210px !important; z-index: 20; width: 90px !important;  min-width: 90px !important;  border-right: 1px solid #444; }
+    .fix-m-4 { position: sticky; left: 300px !important; z-index: 20; width: 60px !important;  min-width: 60px !important;  border-right: 1px solid #444; }
+    .fix-m-5 { position: sticky; left: 360px !important; z-index: 20; width: 90px !important;  min-width: 90px !important;  border-right: 1px solid #444; }
+    .fix-m-6 { position: sticky; left: 450px !important; z-index: 20; width: 60px !important;  min-width: 60px !important;  border-right: 2px solid #bbb !important; }
 
     /* Fix z-index for headers to be above body sticky cols */
     .month-table thead th.fix-m-1, .month-table thead th.fix-m-2, 
