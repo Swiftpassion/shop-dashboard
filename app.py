@@ -14,12 +14,12 @@ from datetime import datetime, date
 thai_months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
                "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
 
-# --- COLOR SETTINGS (ตั้งค่าสีตรงนี้) ---
-COLOR_SALES = "#33FFFF"     # ฟ้า (Cyan/Aqua)
-COLOR_COST = "#9400D3"      # ม่วง (Dark Violet)
-COLOR_ADS = "#FF6633"       # ส้ม (Orange-Red)
-COLOR_PROFIT = "#7CFC00"    # เขียว (Lawn Green)
-COLOR_NEGATIVE = "#FF0000"  # แดง (เมื่อยอดติดลบ)
+# --- COLOR SETTINGS (สีที่ต้องการ) ---
+COLOR_SALES = "#33FFFF"     # ฟ้า (ยอดขาย)
+COLOR_COST = "#9400D3"      # ม่วง (ทุน)
+COLOR_ADS = "#FF6633"       # ส้ม (Ads)
+COLOR_PROFIT = "#7CFC00"    # เขียว (กำไร)
+COLOR_NEGATIVE = "#FF0000"  # แดง (เมื่อติดลบ)
 
 # ==========================================
 # 1. CONFIG & CSS
@@ -34,7 +34,7 @@ st.markdown("""
     
     .block-container { padding-top: 2rem !important; }
 
-    /* --- [แก้ไขจุดสำคัญ] ลบบรรทัดที่บังคับสีขาวทิ้งไปแล้ว --- */
+    /* --- [แก้ไข] ลบบรรทัดที่บังคับสีขาว global ออกแล้ว (ตัวการปัญหา) --- */
 
     /* Inputs: บังคับสีขาวเฉพาะในช่องกรอก */
     .stTextInput input { color: #ffffff !important; caret-color: white; background-color: #262730 !important; border: 1px solid #555 !important; }
@@ -202,7 +202,7 @@ def get_val_color(val, default_hex):
 def render_metric_row(total_sales, total_cost, total_ads, total_profit):
     """Render summary metrics with unified colors and auto-negative detection."""
 
-    # ระบบกำหนดสีตามที่ลูกค้ากำหนด (และเช็คติดลบ)
+    # ระบบกำหนดสีตามที่ลูกค้ากำหนด
     c_sales = get_val_color(total_sales, COLOR_SALES)
     c_cost = get_val_color(total_cost, COLOR_COST)
     c_ads = get_val_color(total_ads, COLOR_ADS)
@@ -214,7 +214,7 @@ def render_metric_row(total_sales, total_cost, total_ads, total_profit):
     pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
     pct_profit = (total_profit / total_sales * 100) if total_sales > 0 else 0
 
-    # --- [CRITICAL FIX] HTML ชิดซ้ายสุด เพื่อแก้บัค Code Block ---
+    # HTML ส่วนกลาง (ชิดซ้ายสุด ห้ามย่อหน้า! เพื่อป้องกันบัค Code Block)
     html = f"""
 <div class="metric-container">
 <div class="custom-card border-blue">
