@@ -33,7 +33,7 @@ st.markdown("""
     
     .block-container { padding-top: 2rem !important; }
 
-    /* Inputs */
+    /* Inputs (เฉพาะช่องกรอก ให้เป็นสีขาว) */
     .stTextInput input { color: #ffffff !important; caret-color: white; background-color: #262730 !important; border: 1px solid #555 !important; }
     div[data-baseweb="select"] div { color: #ffffff !important; background-color: #262730 !important; }
     div[data-baseweb="select"] span { color: #ffffff !important; }
@@ -46,19 +46,6 @@ st.markdown("""
         margin-bottom: 20px; display: flex; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
     .header-title { font-size: 22px; font-weight: 700; margin: 0; color: white !important; }
-
-    /* Navigation */
-    div[role="radiogroup"] {
-        background-color: #1c1c1c;
-        padding: 8px;
-        border-radius: 10px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        display: flex;
-        justify-content: center;
-        margin-top: 30px;
-        margin-bottom: -15px;
-        border: 1px solid #444;
-    }
 
     /* Metric Cards Container */
     .metric-container { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -73,7 +60,7 @@ st.markdown("""
     
     .card-label { color: #aaa !important; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
     
-    /* Removed global color overrides here to let inline styles work */
+    /* ลบสีออกจาก Class นี้ เพื่อให้ Inline Style ทำงาน */
     .card-value { font-size: 24px; font-weight: 700; }
     .card-sub { font-size: 13px; margin-top: 5px; font-weight: 600; }
 
@@ -111,7 +98,6 @@ st.markdown("""
         position: sticky; top: 0; z-index: 100;
         background-color: #1e3c72; color: white !important;
         font-weight: 700; border-bottom: 2px solid #555;
-        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
     }
     
     /* Table Colors */
@@ -223,7 +209,7 @@ def render_metric_row(total_sales, total_cost, total_ads, total_profit):
     pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
     pct_profit = (total_profit / total_sales * 100) if total_sales > 0 else 0
 
-    # HTML ส่วนกลาง ใช้ได้ทุกหน้า (No indentation inside HTML string to prevent Code Block rendering)
+    # HTML ส่วนกลาง (สำคัญ: ห้ามย่อหน้าใน string นี้เด็ดขาด เพื่อป้องกันบัค Code Block)
     html = f"""
 <div class="metric-container">
 <div class="custom-card border-blue">
