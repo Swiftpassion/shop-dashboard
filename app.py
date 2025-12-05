@@ -14,7 +14,7 @@ from datetime import datetime, date
 thai_months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
                "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
 
-# --- COLOR SETTINGS (ตั้งค่าสีที่นี่) ---
+# --- COLOR SETTINGS (สีตามที่คุณต้องการ) ---
 COLOR_SALES = "#33FFFF"     # ฟ้า (Cyan/Aqua)
 COLOR_COST = "#9400D3"      # ม่วง (Dark Violet)
 COLOR_ADS = "#FF6633"       # ส้มแดง (Orange-Red)
@@ -34,7 +34,10 @@ st.markdown("""
     
     .block-container { padding-top: 2rem !important; }
 
-    /* Inputs: บังคับสีขาวเฉพาะในช่องกรอก ไม่เกี่ยวกับป้ายอื่นๆ */
+    /* --- [แก้ไข] ลบบรรทัดที่บังคับสีขาว global ออก เพื่อให้สีที่เรากำหนดเองทำงานได้ --- */
+    /* h1, h2, h3... { color: #ffffff; }  <-- ลบออกแล้ว */
+
+    /* Inputs: บังคับสีขาวเฉพาะในช่องกรอก */
     .stTextInput input { color: #ffffff !important; caret-color: white; background-color: #262730 !important; border: 1px solid #555 !important; }
     div[data-baseweb="select"] div { color: #ffffff !important; background-color: #262730 !important; }
     div[data-baseweb="select"] span { color: #ffffff !important; }
@@ -47,19 +50,6 @@ st.markdown("""
         margin-bottom: 20px; display: flex; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
     .header-title { font-size: 22px; font-weight: 700; margin: 0; color: white !important; }
-
-    /* Navigation */
-    div[role="radiogroup"] {
-        background-color: #1c1c1c;
-        padding: 8px;
-        border-radius: 10px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        display: flex;
-        justify-content: center;
-        margin-top: 30px;
-        margin-bottom: -15px;
-        border: 1px solid #444;
-    }
 
     /* Metric Cards Container */
     .metric-container { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -74,10 +64,11 @@ st.markdown("""
     
     .card-label { color: #aaa !important; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
     
-    /* ลบการบังคับสีขาวออก เพื่อให้สีที่เรากำหนดเองทำงาน */
+    /* Font Size Styles */
     .card-value { font-size: 24px; font-weight: 700; }
     .card-sub { font-size: 13px; margin-top: 5px; font-weight: 600; }
 
+    /* Table Colors */
     .neg { color: #FF0000 !important; }
     .pos { color: #ffffff !important; }
 
@@ -114,7 +105,7 @@ st.markdown("""
         font-weight: 700; border-bottom: 2px solid #555;
     }
     
-    /* Table Colors */
+    /* Table Rows */
     .custom-table tbody tr:nth-child(even) td { background-color: #262626; }
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
     .custom-table tbody tr:hover td { background-color: #333; }
@@ -213,7 +204,7 @@ def get_val_color(val, default_hex):
 def render_metric_row(total_sales, total_cost, total_ads, total_profit):
     """Render summary metrics with unified colors and auto-negative detection."""
 
-    # ระบบกำหนดสีตามที่ลูกค้ากำหนด
+    # ระบบกำหนดสี (จะเปลี่ยนเป็นสีแดงถ้าติดลบ)
     c_sales = get_val_color(total_sales, COLOR_SALES)
     c_cost = get_val_color(total_cost, COLOR_COST)
     c_ads = get_val_color(total_ads, COLOR_ADS)
@@ -225,7 +216,7 @@ def render_metric_row(total_sales, total_cost, total_ads, total_profit):
     pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
     pct_profit = (total_profit / total_sales * 100) if total_sales > 0 else 0
 
-    # HTML ส่วนกลาง (ชิดซ้ายสุด ห้ามเว้นวรรคเพื่อป้องกันบัค Code Block)
+    # HTML ส่วนกลาง (ชิดซ้ายสุด ห้ามย่อหน้า! เพื่อป้องกันบัค Code Block)
     html = f"""
 <div class="metric-container">
 <div class="custom-card border-blue">
