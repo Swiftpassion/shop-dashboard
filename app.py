@@ -48,7 +48,7 @@ st.markdown("""
     }
     .header-title { font-size: 22px; font-weight: 700; margin: 0; color: white !important; }
 
-    /* --- [FIXED LAYOUT] บังคับ Grid 4 คอลัมน์ --- */
+    /* --- [LAYOUT FIX] บังคับ Grid 4 คอลัมน์ --- */
     .metric-container { 
         display: grid !important; 
         grid-template-columns: repeat(4, 1fr) !important; 
@@ -71,7 +71,7 @@ st.markdown("""
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
     }
     
-    /* ลบการบังคับสี global ออก ให้ Inline Style ทำงาน */
+    /* --- [COLOR FIX] ลบสีออกจาก Class นี้ เพื่อให้ Inline Style ทำงานได้เต็มที่ --- */
     .card-value { font-size: 24px; font-weight: 700; white-space: nowrap; }
     .card-sub { font-size: 13px; margin-top: 5px; font-weight: 600; white-space: nowrap; }
 
@@ -124,7 +124,7 @@ st.markdown("""
     .pnl-row-head td { font-weight: 600; color: #fff; background-color: #2c2c2c; }
     .num-cell { text-align: right; font-family: 'Courier New', monospace; }
     .sub-item td:first-child { padding-left: 35px; color: #aaa; font-size: 13px; }
-    
+
     div.stButton > button { width: 100%; border-radius: 6px; height: 42px; font-weight: bold; padding: 0px 5px; background-color: #333; color: white; border: 1px solid #555; }
     div.stButton > button:hover { border-color: #00d2ff; color: #00d2ff; }
 </style>
@@ -174,7 +174,7 @@ def render_metric_row(total_sales, total_cost, total_ads, total_profit):
     pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
     pct_profit = (total_profit / total_sales * 100) if total_sales > 0 else 0
 
-    # HTML Construction (Using list join to prevent indentation bugs)
+    # HTML Construction (Using list join to prevent indentation bugs & CSS Grid Layout)
     cards_html = [
         '<div class="metric-container">',
         
