@@ -25,9 +25,6 @@ st.markdown("""
 
     html, body, [class*="css"] { font-family: 'Sarabun', sans-serif; }
     
-    /* FORCE DARK MODE BACKGROUND */
-    .stApp { background-color: #0e1117 !important; color: #ffffff !important; }
-    
     /* 1. Adjust Top Container Spacing */
     .block-container { padding-top: 2rem !important; }
 
@@ -67,8 +64,14 @@ st.markdown("""
         border: 1px solid #333;
     }
     .card-label { color: #aaa !important; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
-    .card-value { color: #fff !important; font-size: 24px; font-weight: 700; }
-    .card-sub { font-size: 13px; margin-top: 5px; font-weight: 600; color: #ccc !important; }
+    /* Value size stays large, color will be inline styled */
+    .card-value { font-size: 24px; font-weight: 700; }
+    /* Subtext size stays small, color will be inline styled */
+    .card-sub { font-size: 13px; margin-top: 5px; font-weight: 600; }
+
+    /* Class for NEGATIVE VALUES in Tables (Cards use inline styles now) */
+    .neg { color: #FF0000 !important; }
+    .pos { color: #ffffff !important; }
 
     .border-blue { border-left-color: #3498db; }
     .border-purple { border-left-color: #9b59b6; }
@@ -110,7 +113,7 @@ st.markdown("""
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
     .custom-table tbody tr:hover td { background-color: #333; }
 
-    /* REPORT DAILY CSS: Lighter Backgrounds */
+    /* REPORT DAILY CSS */
     .custom-table.daily-table tbody tr:nth-child(even) td {
         background-color: #ffffff !important;
     }
@@ -121,17 +124,16 @@ st.markdown("""
         background-color: #e6e6e6 !important;
     }
     
-    /* --- [UPDATED FIXED POINT 2] : Report Daily Total Row Blue Background --- */
+    /* Report Daily Total Row Blue Background */
     .custom-table.daily-table tbody tr.footer-row td {
         position: sticky;
         bottom: 0;
         z-index: 100;
-        background-color: #1e3c72 !important; /* Blue Background */
+        background-color: #1e3c72 !important; 
         font-weight: bold;
         color: white !important;
         border-top: 2px solid #f1c40f;
     }
-    /* ---------------------------------------------------------------- */
 
     .col-fix-1 { position: sticky; left: 0; z-index: 10; width: 70px; border-right: 1px solid #333; }
     .col-fix-2 { position: sticky; left: 70px; z-index: 10; width: 80px; border-right: 1px solid #333; }
@@ -177,7 +179,7 @@ st.markdown("""
     .pnl-table td { padding: 12px 16px; border-bottom: 1px solid #333; color: #ddd; }
     .pnl-row-head td { font-weight: 600; color: #fff; background-color: #2c2c2c; }
     .num-cell { text-align: right; font-family: 'Courier New', monospace; }
-    .neg { color: #dc2626; }
+    
     .sub-item td:first-child { padding-left: 35px; color: #aaa; font-size: 13px; }
 
     div.stButton > button { width: 100%; border-radius: 6px; height: 42px; font-weight: bold; padding: 0px 5px; background-color: #333; color: white; border: 1px solid #555; }
@@ -458,6 +460,17 @@ try:
     page_options = ["📊 REPORT_MONTH", "📅 REPORT_DAILY", "📈 PRODUCT GRAPH", "📈 YEARLY P&L", "📅 MONTHLY P&L", "💰 COMMISSION"]
     selected_page = st.radio("เลือกหน้าจอที่ต้องการแสดงผล:", page_options, horizontal=True, label_visibility="collapsed")
 
+    # --- COLOR HELPERS (NEW) ---
+    def get_val_color(val, default_hex):
+        """Returns RED (#FF0000) if negative, else default_hex."""
+        return "#FF0000" if val < 0 else default_hex
+
+    # Define requested colors
+    COLOR_SALES = "#33FFFF"     # Cyan/Aqua
+    COLOR_COST = "#9400D3"      # Dark Violet
+    COLOR_ADS = "#FF6633"       # Orange-Red
+    COLOR_PROFIT = "#7CFC00"    # Lawn Green
+
     # --- PAGE 1 ---
     if selected_page == "📊 REPORT_MONTH":
         st.markdown('<div class="header-bar"><div class="header-title"><i class="fas fa-chart-line"></i> สรุปยอดขายรายเดือน</div></div>', unsafe_allow_html=True)
@@ -512,12 +525,37 @@ try:
             pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
             pct_profit = (net_profit / total_sales * 100) if total_sales > 0 else 0
 
+            # Determine Colors
+            c_sales = get_val_color(total_sales, COLOR_SALES)
+            c_cost = get_val_color(total_cost_ops, COLOR_COST)
+            c_ads = get_val_color(total_ads, COLOR_ADS)
+            c_profit = get_val_color(net_profit, COLOR_PROFIT)
+
+            # NOTE: Percentages follow the same color as the main value (unless negative override applies to value logic above)
+            # Actually percentages are rarely negative for cost/ads, but for consistency we use same color var.
+            
             st.markdown(f"""
             <div class="metric-container">
-                <div class="custom-card border-blue"><div class="card-label">ยอดขายรวม</div><div class="card-value">{total_sales:,.0f}</div><div class="card-sub txt-gray">100%</div></div>
-                <div class="custom-card border-purple"><div class="card-label">ทุนสินค้า + ค่าใช้จ่าย</div><div class="card-value">{total_cost_ops:,.0f}</div><div class="card-sub txt-red">{pct_cost:,.1f}% ของยอดขาย</div></div>
-                <div class="custom-card border-orange"><div class="card-label">ค่าโฆษณา</div><div class="card-value">{total_ads:,.0f}</div><div class="card-sub txt-red">{pct_ads:,.1f}% ของยอดขาย</div></div>
-                <div class="custom-card border-green"><div class="card-label">กำไรสุทธิ</div><div class="card-value {'pos' if net_profit>=0 else 'neg'}">{net_profit:,.0f}</div><div class="card-sub {'txt-green' if pct_profit>=0 else 'txt-red'}">{pct_profit:,.1f}% ของยอดขาย</div></div>
+                <div class="custom-card border-blue">
+                    <div class="card-label">ยอดขายรวม</div>
+                    <div class="card-value" style="color:{c_sales};">{total_sales:,.0f}</div>
+                    <div class="card-sub" style="color:{c_sales};">100%</div>
+                </div>
+                <div class="custom-card border-purple">
+                    <div class="card-label">ทุนสินค้า + ค่าใช้จ่าย</div>
+                    <div class="card-value" style="color:{c_cost};">{total_cost_ops:,.0f}</div>
+                    <div class="card-sub" style="color:{c_cost};">{pct_cost:,.1f}% ของยอดขาย</div>
+                </div>
+                <div class="custom-card border-orange">
+                    <div class="card-label">ค่าโฆษณา</div>
+                    <div class="card-value" style="color:{c_ads};">{total_ads:,.0f}</div>
+                    <div class="card-sub" style="color:{c_ads};">{pct_ads:,.1f}% ของยอดขาย</div>
+                </div>
+                <div class="custom-card border-green">
+                    <div class="card-label">กำไรสุทธิ</div>
+                    <div class="card-value" style="color:{c_profit};">{net_profit:,.0f}</div>
+                    <div class="card-sub" style="color:{c_profit};">{pct_profit:,.1f}% ของยอดขาย</div>
+                </div>
             </div>""", unsafe_allow_html=True)
 
             all_days = range(1, days_in_month + 1)
@@ -554,35 +592,33 @@ try:
             html += '</tr></thead><tbody>'
             for _, r in df_matrix.iterrows():
                 html += f'<tr><td class="col-fix-1" style="font-weight:bold;">{fmt_n(r["รวม"])}</td>'
-                prof_color = "#c0392b" if r["กำไรสุทธิ"] < 0 else "#27ae60"
+                # RED IF NEGATIVE
+                prof_color = "#FF0000" if r["กำไรสุทธิ"] < 0 else "#27ae60"
                 html += f'<td class="col-fix-2" style="font-weight:bold; color:{prof_color};">{fmt_n(r["กำไรสุทธิ"])}</td>'
                 html += f'<td class="col-fix-3">{r["วันที่"]}</td>'
                 for sku in final_skus:
                     val = r.get(sku, 0)
-                    color = "#c0392b" if val < 0 else "#ddd"
+                    # RED IF NEGATIVE
+                    color = "#FF0000" if val < 0 else "#ddd"
                     html += f'<td style="color:{color};">{fmt_n(val)}</td>'
                 html += '</tr>'
             g_sales = total_sales; g_ads = total_ads; g_cost = total_cost_ops; g_profit = net_profit
 
-            # --- [UPDATED POINT 1] : Report Month Color Mapping ---
             def create_footer_row(row_cls, label, data_dict, val_type='num', dark_bg=False):
-                # 🎨 สีแถวสรุปท้ายตาราง (Updated Colors)
-                if "row-cost" in row_cls: bg_color = "#0000FF"       # รวมทุนสินค้า (Blue)
-                elif "row-sales" in row_cls: bg_color = "#000080"      # รวมยอดขาย (MediumBlue)
-                elif "row-profit" in row_cls: bg_color = "#006400"     # รวมกำไร (MidnightBlue)
-                elif "row-ads" in row_cls: bg_color = "#B8860B"        # รวมค่าแอด (Navy)
-                elif "row-pct-profit" in row_cls: bg_color = "#228B22" # กำไร / ยอดขาย (Chocolate)
-                elif "row-pct-ads" in row_cls: bg_color = "#8A2BE2"    # ค่าแอด / ยอดขาย (Sienna)
-                elif "row-pct-cost" in row_cls: bg_color = "#9400D3"   # ทุน/ยอดขาย (SaddleBrown)
+                if "row-cost" in row_cls: bg_color = "#0000FF"       
+                elif "row-sales" in row_cls: bg_color = "#000080"      
+                elif "row-profit" in row_cls: bg_color = "#006400"     
+                elif "row-ads" in row_cls: bg_color = "#B8860B"        
+                elif "row-pct-profit" in row_cls: bg_color = "#228B22" 
+                elif "row-pct-ads" in row_cls: bg_color = "#8A2BE2"    
+                elif "row-pct-cost" in row_cls: bg_color = "#9400D3"   
                 else: bg_color = "#ffffff"
 
-                # ถ้า Background ไม่ใช่สีขาว ให้ถือว่าเป็น Dark Mode โดยอัตโนมัติ เพื่อเปลี่ยนตัวหนังสือเป็นสีขาว
                 if bg_color != "#ffffff":
                     dark_bg = True
 
                 style_bg = f"background-color:{bg_color};"
 
-                # *** Label Text Color: White if dark bg, else black/default ***
                 lbl_color = "#ffffff" if dark_bg else "#000000"
                 
                 row_html = f'<tr class="{row_cls}"><td class="col-fix-1" style="{style_bg} color: {lbl_color} !important;">{label}</td>'
@@ -598,7 +634,8 @@ try:
 
                 txt_val = fmt_p(grand_val) if val_type=='pct' else fmt_n(grand_val)
                 grand_text_col = "#333333"
-                if grand_val < 0: grand_text_col = "#c0392b"
+                # RED IF NEGATIVE
+                if grand_val < 0: grand_text_col = "#FF0000"
                 elif dark_bg: grand_text_col = "#ffffff"
 
                 row_html += f'<td class="col-fix-2" style="{style_bg} color:{grand_text_col};">{txt_val}</td>'
@@ -623,7 +660,8 @@ try:
 
                     txt = fmt_p(val) if val_type=='pct' else fmt_n(val)
                     cell_text_col = "#333333"
-                    if val < 0: cell_text_col = "#c0392b"
+                    # RED IF NEGATIVE
+                    if val < 0: cell_text_col = "#FF0000"
                     elif dark_bg: cell_text_col = "#ffffff"
 
                     row_html += f'<td style="{style_bg} color:{cell_text_col};">{txt}</td>'
@@ -700,12 +738,34 @@ try:
             p_ads = (sum_ads / sum_sales * 100) if sum_sales > 0 else 0
             p_prof = (sum_profit / sum_sales * 100) if sum_sales > 0 else 0
 
+            # Determine Colors
+            c_sales = get_val_color(sum_sales, COLOR_SALES)
+            c_cost = get_val_color(sum_total_cost_ops, COLOR_COST)
+            c_ads = get_val_color(sum_ads, COLOR_ADS)
+            c_profit = get_val_color(sum_profit, COLOR_PROFIT)
+
             st.markdown(f"""
             <div class="metric-container">
-                <div class="custom-card border-blue"><div class="card-label">ยอดขายรวม</div><div class="card-value">{sum_sales:,.0f}</div><div class="card-sub txt-gray">100%</div></div>
-                <div class="custom-card border-purple"><div class="card-label">ทุนสินค้า + ค่าใช้จ่าย</div><div class="card-value">{sum_total_cost_ops:,.0f}</div><div class="card-sub txt-red">{p_cost:,.1f}% ของยอดขาย</div></div>
-                <div class="custom-card border-orange"><div class="card-label">ค่าโฆษณา</div><div class="card-value">{sum_ads:,.0f}</div><div class="card-sub txt-red">{p_ads:,.1f}% ของยอดขาย</div></div>
-                <div class="custom-card border-green"><div class="card-label">กำไรสุทธิ</div><div class="card-value {'pos' if sum_profit>=0 else 'neg'}">{sum_profit:,.0f}</div><div class="card-sub {'txt-green' if p_prof>=0 else 'txt-red'}">{p_prof:,.1f}% ของยอดขาย</div></div>
+                <div class="custom-card border-blue">
+                    <div class="card-label">ยอดขายรวม</div>
+                    <div class="card-value" style="color:{c_sales};">{sum_sales:,.0f}</div>
+                    <div class="card-sub" style="color:{c_sales};">100%</div>
+                </div>
+                <div class="custom-card border-purple">
+                    <div class="card-label">ทุนสินค้า + ค่าใช้จ่าย</div>
+                    <div class="card-value" style="color:{c_cost};">{sum_total_cost_ops:,.0f}</div>
+                    <div class="card-sub" style="color:{c_cost};">{p_cost:,.1f}% ของยอดขาย</div>
+                </div>
+                <div class="custom-card border-orange">
+                    <div class="card-label">ค่าโฆษณา</div>
+                    <div class="card-value" style="color:{c_ads};">{sum_ads:,.0f}</div>
+                    <div class="card-sub" style="color:{c_ads};">{p_ads:,.1f}% ของยอดขาย</div>
+                </div>
+                <div class="custom-card border-green">
+                    <div class="card-label">กำไรสุทธิ</div>
+                    <div class="card-value" style="color:{c_profit};">{sum_profit:,.0f}</div>
+                    <div class="card-sub" style="color:{c_profit};">{p_prof:,.1f}% ของยอดขาย</div>
+                </div>
             </div>""", unsafe_allow_html=True)
 
             df_final_d['กำไร/ขาดทุน'] = df_final_d['Net_Profit']
@@ -730,7 +790,8 @@ try:
             for title, _, cls in cols_cfg: html += f'<th class="{cls}">{title}</th>'
             html += '</tr></thead><tbody>'
 
-            def get_color(val): return "#c0392b" if val < 0 else "#1e3c72"
+            # RED IF NEGATIVE
+            def get_color(val): return "#FF0000" if val < 0 else "#1e3c72"
 
             for _, r in df_final_d.iterrows():
                 html += '<tr>'
@@ -761,7 +822,8 @@ try:
             ta = df_final_d['Ads_Amount'].sum(); tc = df_final_d['CAL_COST'].sum()
             t_oth = df_final_d['BOX_COST'].sum() + df_final_d['DELIV_COST'].sum() + df_final_d['CAL_COD_COST'].sum() + df_final_d['CAL_COM_ADMIN'].sum() + df_final_d['CAL_COM_TELESALE'].sum()
 
-            def get_tot_col(val): return "#c0392b" if val < 0 else "#ffffff"
+            # RED IF NEGATIVE
+            def get_tot_col(val): return "#FF0000" if val < 0 else "#ffffff"
 
             html += f'<td style="color:{get_tot_col(df_final_d["จำนวน"].sum())};">{fmt(df_final_d["จำนวน"].sum())}</td>'
             html += f'<td style="color:{get_tot_col(ts)};">{fmt(ts)}</td>'
