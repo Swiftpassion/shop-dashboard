@@ -14,6 +14,13 @@ from datetime import datetime, date
 thai_months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
                "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
 
+# --- COLOR SETTINGS ---
+COLOR_SALES = "#33FFFF"     # ฟ้า (Cyan/Aqua)
+COLOR_COST = "#9400D3"      # ม่วง (Dark Violet)
+COLOR_ADS = "#FF6633"       # ส้ม (Orange-Red)
+COLOR_PROFIT = "#7CFC00"    # เขียว (Lawn Green)
+COLOR_NEGATIVE = "#FF0000"  # แดง (เมื่อติดลบ)
+
 # ==========================================
 # 1. CONFIG & CSS
 # ==========================================
@@ -27,33 +34,24 @@ st.markdown("""
     
     .block-container { padding-top: 2rem !important; }
 
-    /* --- 1. สีตัวอักษร (ใช้ Class บังคับตามโค้ดของคุณ เพื่อให้สีติดชัวร์) --- */
-    
-    /* สีฟ้า: ยอดขาย */
-    .val-sales { color: #33FFFF !important; font-size: 24px; font-weight: 700; }
-    .sub-sales { color: #33FFFF !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
+    /* Inputs */
+    .stTextInput input { color: #ffffff !important; caret-color: white; background-color: #262730 !important; border: 1px solid #555 !important; }
+    div[data-baseweb="select"] div { color: #ffffff !important; background-color: #262730 !important; }
+    div[data-baseweb="select"] span { color: #ffffff !important; }
+    div[role="listbox"] li { color: #ffffff !important; background-color: #262730; }
 
-    /* สีม่วง: ทุน */
-    .val-cost { color: #9400D3 !important; font-size: 24px; font-weight: 700; }
-    .sub-cost { color: #9400D3 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
+    /* Header Bar */
+    .header-bar {
+        background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
+        padding: 15px 20px; border-radius: 10px;
+        margin-bottom: 20px; display: flex; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    .header-title { font-size: 22px; font-weight: 700; margin: 0; color: white !important; }
 
-    /* สีส้ม: แอด */
-    .val-ads { color: #FF6633 !important; font-size: 24px; font-weight: 700; }
-    .sub-ads { color: #FF6633 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
-
-    /* สีเขียว: กำไร */
-    .val-profit { color: #7CFC00 !important; font-size: 24px; font-weight: 700; }
-    .sub-profit { color: #7CFC00 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
-
-    /* สีแดง: ติดลบ (Override) */
-    .val-neg { color: #FF0000 !important; font-size: 24px; font-weight: 700; }
-    .sub-neg { color: #FF0000 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
-
-
-    /* --- 2. การจัดวาง (LAYOUT FIX) เปลี่ยนเป็น Grid 4 ช่อง --- */
+    /* --- [LAYOUT FIX] บังคับ Grid 4 คอลัมน์ --- */
     .metric-container { 
         display: grid !important; 
-        grid-template-columns: repeat(4, 1fr) !important; /* แบ่ง 4 ส่วนเท่ากัน */
+        grid-template-columns: repeat(4, 1fr) !important; 
         gap: 15px !important; 
         margin-bottom: 20px; 
         width: 100%;
@@ -62,17 +60,20 @@ st.markdown("""
     .custom-card {
         background: #1c1c1c;
         border-radius: 10px; padding: 15px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.5); 
-        /* ลบ flex และ min-width เดิมออก */
-        min-width: 0; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         border-left: 5px solid #ddd;
         border: 1px solid #333;
+        min-width: 0; 
     }
-    /* ------------------------------------------------------- */
+    
+    .card-label { 
+        color: #aaa !important; font-size: 13px; font-weight: 600; margin-bottom: 5px; 
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+    }
+    
+    .card-value { font-size: 24px; font-weight: 700; white-space: nowrap; }
+    .card-sub { font-size: 13px; margin-top: 5px; font-weight: 600; white-space: nowrap; }
 
-    .card-label { color: #aaa !important; font-size: 13px; font-weight: 600; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    /* Table Colors */
     .neg { color: #FF0000 !important; }
     .pos { color: #ffffff !important; }
 
@@ -81,42 +82,55 @@ st.markdown("""
     .border-orange { border-left-color: #e67e22; }
     .border-green { border-left-color: #27ae60; }
 
-    /* Inputs */
-    .stTextInput input { color: #ffffff !important; caret-color: white; background-color: #262730 !important; border: 1px solid #555 !important; }
-    div[data-baseweb="select"] div { color: #ffffff !important; background-color: #262730 !important; }
-    div[data-baseweb="select"] span { color: #ffffff !important; }
-    div[role="listbox"] li { color: #ffffff !important; background-color: #262730; }
-
-    /* Header & Utils */
-    .header-bar {
-        background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
-        padding: 15px 20px; border-radius: 10px;
-        margin-bottom: 20px; display: flex; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    }
-    .header-title { font-size: 22px; font-weight: 700; margin: 0; color: white !important; }
-
     /* Table Styling */
-    .table-wrapper { overflow: auto; width: 100%; max-height: 800px; margin-top: 10px; background: #1c1c1c; border-radius: 8px; border: 1px solid #444; }
+    .table-wrapper { overflow: auto; width: 100%; max-height: 800px; margin-top: 10px; background: #1c1c1c; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); padding-bottom: 10px; border: 1px solid #444; }
     .custom-table { width: 100%; min-width: 1000px; border-collapse: separate; border-spacing: 0; font-family: 'Sarabun', sans-serif; font-size: 11px; color: #ddd; }
     .custom-table th, .custom-table td { padding: 3px 5px; line-height: 1.1; text-align: center; border-bottom: 1px solid #333; border-right: 1px solid #333; white-space: nowrap; }
     .daily-table thead th, .month-table thead th { position: sticky; top: 0; z-index: 100; background-color: #1e3c72; color: white !important; font-weight: 700; border-bottom: 2px solid #555; }
     
+    /* Month Table Colors (Default) */
     .custom-table tbody tr:nth-child(even) td { background-color: #262626; }
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
     .custom-table tbody tr:hover td { background-color: #333; }
+    
+    /* --- [UPDATED] Report Daily Specific Colors --- */
+    /* Row สี #696969 (เทาเข้ม) -> ตัวหนังสือขาว */
+    .custom-table.daily-table tbody tr:nth-child(even) td { 
+        background-color: #696969 !important; 
+        color: #ffffff !important;
+    }
+    /* Row สี #BEBEBE (เทาอ่อน) -> ตัวหนังสือดำ (เพื่อให้อ่านออก) */
+    .custom-table.daily-table tbody tr:nth-child(odd) td { 
+        background-color: #BEBEBE !important; 
+        color: #000000 !important;
+    }
+    .custom-table.daily-table tbody tr:hover td { 
+        background-color: #e6e6e6 !important; 
+        color: #000000 !important;
+    }
+    
+    /* Footer Row */
+    .custom-table.daily-table tbody tr.footer-row td { 
+        position: sticky; bottom: 0; z-index: 100; 
+        background-color: #1e3c72 !important; 
+        font-weight: bold; 
+        color: white !important; 
+        border-top: 2px solid #f1c40f; 
+    }
 
-    .custom-table.daily-table tbody tr:nth-child(even) td { background-color: #ffffff !important; }
-    .custom-table.daily-table tbody tr:nth-child(odd) td { background-color: #f2f2f2 !important; }
-    .custom-table.daily-table tbody tr:hover td { background-color: #e6e6e6 !important; }
-    .custom-table.daily-table tbody tr.footer-row td { position: sticky; bottom: 0; z-index: 100; background-color: #1e3c72 !important; font-weight: bold; color: white !important; border-top: 2px solid #f1c40f; }
+    /* --- [UPDATED] Column Widths (ขยายช่องแรก) --- */
+    /* Col 1: ขยายจาก 70px เป็น 100px */
+    .col-fix-1 { position: sticky; left: 0; z-index: 10; width: 100px; border-right: 1px solid #333; }
+    /* Col 2: ขยับ left ตามความกว้าง Col 1 (100px) */
+    .col-fix-2 { position: sticky; left: 100px; z-index: 10; width: 80px; border-right: 1px solid #333; }
+    /* Col 3: ขยับ left ตาม (100 + 80 = 180px) */
+    .col-fix-3 { position: sticky; left: 180px; z-index: 10; width: 70px; border-right: 2px solid #bbb !important; }
 
-    .col-fix-1 { position: sticky; left: 0; z-index: 10; width: 70px; border-right: 1px solid #333; }
-    .col-fix-2 { position: sticky; left: 70px; z-index: 10; width: 80px; border-right: 1px solid #333; }
-    .col-fix-3 { position: sticky; left: 150px; z-index: 10; width: 70px; border-right: 2px solid #bbb !important; }
     .th-sku { background-color: #1e3c72 !important; color: white !important; }
     .sku-header { font-size: 10px; color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
     .col-small { width: 70px; min-width: 70px; max-width: 70px; font-size: 11px; }
 
+    /* P&L Styles */
     .pnl-container { font-family: 'Prompt', sans-serif; color: #ffffff; }
     .header-gradient-pnl { background-image: linear-gradient(135deg, #0f172a 0%, #334155 100%); padding: 20px 25px; border-radius: 12px; color: white; margin-bottom: 25px; }
     .header-title-pnl { font-size: 24px; font-weight: 600; margin: 0; color: white !important; }
@@ -143,15 +157,12 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. SETTINGS (IDs)
+# 2. SETTINGS & HELPERS
 # ==========================================
 FOLDER_ID_DATA = "1ciI_X2m8pVcsjRsPuUf5sg--6uPSPPDp"
 FOLDER_ID_ADS = "1ZE76TXNA_vNeXjhAZfLgBQQGIV0GY7w8"
 SHEET_MASTER_URL = "https://docs.google.com/spreadsheets/d/1Q3akHm1GKkDI2eilGfujsd9pO7aOjJvyYJNuXd98lzo/edit"
 
-# ==========================================
-# 3. BACKEND & HELPERS
-# ==========================================
 def safe_float(val):
     if pd.isna(val) or val == "" or val is None: return 0.0
     s = str(val).strip().replace(',', '').replace('฿', '').replace(' ', '')
@@ -165,57 +176,61 @@ def safe_date(val):
     try: return pd.to_datetime(val).date()
     except: return None
 
+def get_val_color(val, default_hex):
+    """Returns RED (#FF0000) if negative, else default_hex."""
+    if val < 0: return COLOR_NEGATIVE
+    return default_hex
+
 # ------------------------------
 # GLOBAL METRIC CARD COMPONENT
 # ------------------------------
 def render_metric_row(total_sales, total_cost, total_ads, total_profit):
-    """Render summary metrics with unified colors and auto-negative detection."""
+    """Render metrics with enforced 4-column grid layout and correct colors."""
 
-    # คำนวณ % ทั้งหมด
+    # Determine colors
+    c_sales = get_val_color(total_sales, COLOR_SALES)
+    c_cost = get_val_color(total_cost, COLOR_COST)
+    c_ads = get_val_color(total_ads, COLOR_ADS)
+    c_profit = get_val_color(total_profit, COLOR_PROFIT)
+
+    # Calculate percentages
     pct_sales = 100
     pct_cost = (total_cost / total_sales * 100) if total_sales > 0 else 0
     pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
     pct_profit = (total_profit / total_sales * 100) if total_sales > 0 else 0
 
-    # เลือก Class สี (ถ้าติดลบ ให้ใช้ .val-neg แทน class สีปกติ)
-    cls_sales_v = "val-neg" if total_sales < 0 else "val-sales"
-    cls_sales_s = "sub-neg" if total_sales < 0 else "sub-sales"
+    # HTML Construction (Using list join to prevent indentation bugs & CSS Grid Layout)
+    cards_html = [
+        '<div class="metric-container">',
+        
+        f'<div class="custom-card border-blue">',
+        f'<div class="card-label">ยอดขายรวม</div>',
+        f'<div class="card-value" style="color:{c_sales} !important;">{total_sales:,.0f}</div>',
+        f'<div class="card-sub" style="color:{c_sales} !important;">{pct_sales:.0f}%</div>',
+        f'</div>',
 
-    cls_cost_v = "val-neg" if total_cost < 0 else "val-cost"
-    cls_cost_s = "sub-neg" if total_cost < 0 else "sub-cost"
+        f'<div class="custom-card border-purple">',
+        f'<div class="card-label">ทุนสินค้า + ค่าใช้จ่าย</div>',
+        f'<div class="card-value" style="color:{c_cost} !important;">{total_cost:,.0f}</div>',
+        f'<div class="card-sub" style="color:{c_cost} !important;">{pct_cost:.1f}% ของยอดขาย</div>',
+        f'</div>',
 
-    cls_ads_v = "val-neg" if total_ads < 0 else "val-ads"
-    cls_ads_s = "sub-neg" if total_ads < 0 else "sub-ads"
+        f'<div class="custom-card border-orange">',
+        f'<div class="card-label">ค่าโฆษณา</div>',
+        f'<div class="card-value" style="color:{c_ads} !important;">{total_ads:,.0f}</div>',
+        f'<div class="card-sub" style="color:{c_ads} !important;">{pct_ads:.1f}% ของยอดขาย</div>',
+        f'</div>',
 
-    cls_prof_v = "val-neg" if total_profit < 0 else "val-profit"
-    cls_prof_s = "sub-neg" if total_profit < 0 else "sub-profit"
-
-    # HTML (ชิดซ้ายสุด แก้บัค Code Block) - ใช้ Grid Layout
-    html = f"""
-<div class="metric-container">
-<div class="custom-card border-blue">
-<div class="card-label">ยอดขายรวม</div>
-<div class="{cls_sales_v}">{total_sales:,.0f}</div>
-<div class="{cls_sales_s}">{pct_sales:.0f}%</div>
-</div>
-<div class="custom-card border-purple">
-<div class="card-label">ทุนสินค้า + ค่าใช้จ่าย</div>
-<div class="{cls_cost_v}">{total_cost:,.0f}</div>
-<div class="{cls_cost_s}">{pct_cost:.1f}% ของยอดขาย</div>
-</div>
-<div class="custom-card border-orange">
-<div class="card-label">ค่าโฆษณา</div>
-<div class="{cls_ads_v}">{total_ads:,.0f}</div>
-<div class="{cls_ads_s}">{pct_ads:.1f}% ของยอดขาย</div>
-</div>
-<div class="custom-card border-green">
-<div class="card-label">กำไรสุทธิ</div>
-<div class="{cls_prof_v}">{total_profit:,.0f}</div>
-<div class="{cls_prof_s}">{pct_profit:.1f}% ของยอดขาย</div>
-</div>
-</div>
-"""
-    st.markdown(html, unsafe_allow_html=True)
+        f'<div class="custom-card border-green">',
+        f'<div class="card-label">กำไรสุทธิ</div>',
+        f'<div class="card-value" style="color:{c_profit} !important;">{total_profit:,.0f}</div>',
+        f'<div class="card-sub" style="color:{c_profit} !important;">{pct_profit:.1f}% ของยอดขาย</div>',
+        f'</div>',
+        
+        '</div>'
+    ]
+    
+    st.markdown("".join(cards_html), unsafe_allow_html=True)
 
 @st.cache_resource
 def get_drive_service():
