@@ -28,12 +28,16 @@ st.markdown("""
     /* 1. Adjust Top Container Spacing */
     .block-container { padding-top: 2rem !important; }
 
-    h1, h2, h3, h4, h5, h6, p, span, div, label { color: #ffffff !important; }
+    /* General Text Colors */
+    h1, h2, h3, h4, h5, h6, p, span, div, label { color: #ffffff; }
+    
+    /* Inputs */
     .stTextInput input { color: #ffffff !important; caret-color: white; background-color: #262730 !important; border: 1px solid #555 !important; }
     div[data-baseweb="select"] div { color: #ffffff !important; background-color: #262730 !important; }
     div[data-baseweb="select"] span { color: #ffffff !important; }
     div[role="listbox"] li { color: #ffffff !important; background-color: #262730; }
 
+    /* Header Bar */
     .header-bar {
         background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
         padding: 15px 20px; border-radius: 10px;
@@ -41,7 +45,7 @@ st.markdown("""
     }
     .header-title { font-size: 22px; font-weight: 700; margin: 0; color: white !important; }
 
-    /* 2. Custom Navigation Layout */
+    /* Navigation */
     div[role="radiogroup"] {
         background-color: #1c1c1c;
         padding: 8px;
@@ -64,12 +68,12 @@ st.markdown("""
         border: 1px solid #333;
     }
     .card-label { color: #aaa !important; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
-    /* Value size stays large, color will be inline styled */
+    
+    /* --- [UPDATED CSS] Removed !important to allow inline styles to work --- */
     .card-value { font-size: 24px; font-weight: 700; }
-    /* Subtext size stays small, color will be inline styled */
     .card-sub { font-size: 13px; margin-top: 5px; font-weight: 600; }
+    /* ---------------------------------------------------------------------- */
 
-    /* Class for NEGATIVE VALUES in Tables (Cards use inline styles now) */
     .neg { color: #FF0000 !important; }
     .pos { color: #ffffff !important; }
 
@@ -108,30 +112,20 @@ st.markdown("""
         box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
     }
     
-    /* DEFAULT TABLE COLORS (For Report Month) */
+    /* DEFAULT TABLE COLORS */
     .custom-table tbody tr:nth-child(even) td { background-color: #262626; }
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
     .custom-table tbody tr:hover td { background-color: #333; }
 
     /* REPORT DAILY CSS */
-    .custom-table.daily-table tbody tr:nth-child(even) td {
-        background-color: #ffffff !important;
-    }
-    .custom-table.daily-table tbody tr:nth-child(odd) td {
-        background-color: #f2f2f2 !important;
-    }
-    .custom-table.daily-table tbody tr:hover td {
-        background-color: #e6e6e6 !important;
-    }
+    .custom-table.daily-table tbody tr:nth-child(even) td { background-color: #ffffff !important; }
+    .custom-table.daily-table tbody tr:nth-child(odd) td { background-color: #f2f2f2 !important; }
+    .custom-table.daily-table tbody tr:hover td { background-color: #e6e6e6 !important; }
     
-    /* Report Daily Total Row Blue Background */
     .custom-table.daily-table tbody tr.footer-row td {
-        position: sticky;
-        bottom: 0;
-        z-index: 100;
+        position: sticky; bottom: 0; z-index: 100;
         background-color: #1e3c72 !important; 
-        font-weight: bold;
-        color: white !important;
+        font-weight: bold; color: white !important;
         border-top: 2px solid #f1c40f;
     }
 
@@ -140,10 +134,7 @@ st.markdown("""
     .col-fix-3 { position: sticky; left: 150px; z-index: 10; width: 70px; border-right: 2px solid #bbb !important; }
 
     .th-sku { background-color: #1e3c72 !important; color: white !important; }
-    .sku-header { font-size: 10px;
-        color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis;
-        max-width: 100px;
-    }
+    .sku-header { font-size: 10px; color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
     .col-small { width: 70px; min-width: 70px; max-width: 70px; font-size: 11px; }
 
     /* P&L Styles */
@@ -179,7 +170,6 @@ st.markdown("""
     .pnl-table td { padding: 12px 16px; border-bottom: 1px solid #333; color: #ddd; }
     .pnl-row-head td { font-weight: 600; color: #fff; background-color: #2c2c2c; }
     .num-cell { text-align: right; font-family: 'Courier New', monospace; }
-    
     .sub-item td:first-child { padding-left: 35px; color: #aaa; font-size: 13px; }
 
     div.stButton > button { width: 100%; border-radius: 6px; height: 42px; font-weight: bold; padding: 0px 5px; background-color: #333; color: white; border: 1px solid #555; }
@@ -534,29 +524,31 @@ try:
             # NOTE: Percentages follow the same color as the main value (unless negative override applies to value logic above)
             # Actually percentages are rarely negative for cost/ads, but for consistency we use same color var.
             
+            # --- [CRITICAL FIX] Added !important to inline styles to override any lingering CSS ---
             st.markdown(f"""
             <div class="metric-container">
                 <div class="custom-card border-blue">
                     <div class="card-label">ยอดขายรวม</div>
-                    <div class="card-value" style="color:{c_sales};">{total_sales:,.0f}</div>
-                    <div class="card-sub" style="color:{c_sales};">100%</div>
+                    <div class="card-value" style="color:{c_sales} !important;">{total_sales:,.0f}</div>
+                    <div class="card-sub" style="color:{c_sales} !important;">100%</div>
                 </div>
                 <div class="custom-card border-purple">
                     <div class="card-label">ทุนสินค้า + ค่าใช้จ่าย</div>
-                    <div class="card-value" style="color:{c_cost};">{total_cost_ops:,.0f}</div>
-                    <div class="card-sub" style="color:{c_cost};">{pct_cost:,.1f}% ของยอดขาย</div>
+                    <div class="card-value" style="color:{c_cost} !important;">{total_cost_ops:,.0f}</div>
+                    <div class="card-sub" style="color:{c_cost} !important;">{pct_cost:,.1f}% ของยอดขาย</div>
                 </div>
                 <div class="custom-card border-orange">
                     <div class="card-label">ค่าโฆษณา</div>
-                    <div class="card-value" style="color:{c_ads};">{total_ads:,.0f}</div>
-                    <div class="card-sub" style="color:{c_ads};">{pct_ads:,.1f}% ของยอดขาย</div>
+                    <div class="card-value" style="color:{c_ads} !important;">{total_ads:,.0f}</div>
+                    <div class="card-sub" style="color:{c_ads} !important;">{pct_ads:,.1f}% ของยอดขาย</div>
                 </div>
                 <div class="custom-card border-green">
                     <div class="card-label">กำไรสุทธิ</div>
-                    <div class="card-value" style="color:{c_profit};">{net_profit:,.0f}</div>
-                    <div class="card-sub" style="color:{c_profit};">{pct_profit:,.1f}% ของยอดขาย</div>
+                    <div class="card-value" style="color:{c_profit} !important;">{net_profit:,.0f}</div>
+                    <div class="card-sub" style="color:{c_profit} !important;">{pct_profit:,.1f}% ของยอดขาย</div>
                 </div>
             </div>""", unsafe_allow_html=True)
+            # --------------------------------------------------------------------------------------
 
             all_days = range(1, days_in_month + 1)
             matrix_data = []
@@ -744,29 +736,31 @@ try:
             c_ads = get_val_color(sum_ads, COLOR_ADS)
             c_profit = get_val_color(sum_profit, COLOR_PROFIT)
 
+            # --- [CRITICAL FIX] Added !important here as well ---
             st.markdown(f"""
             <div class="metric-container">
                 <div class="custom-card border-blue">
                     <div class="card-label">ยอดขายรวม</div>
-                    <div class="card-value" style="color:{c_sales};">{sum_sales:,.0f}</div>
-                    <div class="card-sub" style="color:{c_sales};">100%</div>
+                    <div class="card-value" style="color:{c_sales} !important;">{sum_sales:,.0f}</div>
+                    <div class="card-sub" style="color:{c_sales} !important;">100%</div>
                 </div>
                 <div class="custom-card border-purple">
                     <div class="card-label">ทุนสินค้า + ค่าใช้จ่าย</div>
-                    <div class="card-value" style="color:{c_cost};">{sum_total_cost_ops:,.0f}</div>
-                    <div class="card-sub" style="color:{c_cost};">{p_cost:,.1f}% ของยอดขาย</div>
+                    <div class="card-value" style="color:{c_cost} !important;">{sum_total_cost_ops:,.0f}</div>
+                    <div class="card-sub" style="color:{c_cost} !important;">{p_cost:,.1f}% ของยอดขาย</div>
                 </div>
                 <div class="custom-card border-orange">
                     <div class="card-label">ค่าโฆษณา</div>
-                    <div class="card-value" style="color:{c_ads};">{sum_ads:,.0f}</div>
-                    <div class="card-sub" style="color:{c_ads};">{p_ads:,.1f}% ของยอดขาย</div>
+                    <div class="card-value" style="color:{c_ads} !important;">{sum_ads:,.0f}</div>
+                    <div class="card-sub" style="color:{c_ads} !important;">{p_ads:,.1f}% ของยอดขาย</div>
                 </div>
                 <div class="custom-card border-green">
                     <div class="card-label">กำไรสุทธิ</div>
-                    <div class="card-value" style="color:{c_profit};">{sum_profit:,.0f}</div>
-                    <div class="card-sub" style="color:{c_profit};">{p_prof:,.1f}% ของยอดขาย</div>
+                    <div class="card-value" style="color:{c_profit} !important;">{sum_profit:,.0f}</div>
+                    <div class="card-sub" style="color:{c_profit} !important;">{p_prof:,.1f}% ของยอดขาย</div>
                 </div>
             </div>""", unsafe_allow_html=True)
+            # ----------------------------------------------------
 
             df_final_d['กำไร/ขาดทุน'] = df_final_d['Net_Profit']
             df_final_d['ROAS'] = np.where(df_final_d['Ads_Amount']>0, df_final_d['รายละเอียดยอดที่ชำระแล้ว']/df_final_d['Ads_Amount'], 0)
