@@ -14,6 +14,13 @@ from datetime import datetime, date
 thai_months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
                "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
 
+# --- COLOR SETTINGS ---
+COLOR_SALES = "#33FFFF"
+COLOR_COST = "#9400D3"
+COLOR_ADS = "#FF6633"
+COLOR_PROFIT = "#7CFC00"
+COLOR_NEGATIVE = "#FF0000"
+
 # ==========================================
 # 1. CONFIG & CSS
 # ==========================================
@@ -28,24 +35,18 @@ st.markdown("""
     .block-container { padding-top: 2rem !important; }
 
     /* --- 1. สีตัวอักษร (ใช้ Class บังคับตามโค้ดของคุณ เพื่อให้สีติดชัวร์) --- */
-    
-    /* สีฟ้า: ยอดขาย */
     .val-sales { color: #33FFFF !important; font-size: 24px; font-weight: 700; }
     .sub-sales { color: #33FFFF !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
 
-    /* สีม่วง: ทุน */
     .val-cost { color: #9400D3 !important; font-size: 24px; font-weight: 700; }
     .sub-cost { color: #9400D3 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
 
-    /* สีส้ม: แอด */
     .val-ads { color: #FF6633 !important; font-size: 24px; font-weight: 700; }
     .sub-ads { color: #FF6633 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
 
-    /* สีเขียว: กำไร */
     .val-profit { color: #7CFC00 !important; font-size: 24px; font-weight: 700; }
     .sub-profit { color: #7CFC00 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
 
-    /* สีแดง: ติดลบ (Override) */
     .val-neg { color: #FF0000 !important; font-size: 24px; font-weight: 700; }
     .sub-neg { color: #FF0000 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
 
@@ -53,7 +54,7 @@ st.markdown("""
     /* --- 2. การจัดวาง (LAYOUT FIX) เปลี่ยนเป็น Grid 4 ช่อง --- */
     .metric-container { 
         display: grid !important; 
-        grid-template-columns: repeat(4, 1fr) !important; /* แบ่ง 4 ส่วนเท่ากัน */
+        grid-template-columns: repeat(4, 1fr) !important; 
         gap: 15px !important; 
         margin-bottom: 20px; 
         width: 100%;
@@ -63,12 +64,10 @@ st.markdown("""
         background: #1c1c1c;
         border-radius: 10px; padding: 15px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.5); 
-        /* ลบ flex และ min-width เดิมออก */
         min-width: 0; 
         border-left: 5px solid #ddd;
         border: 1px solid #333;
     }
-    /* ------------------------------------------------------- */
 
     .card-label { color: #aaa !important; font-size: 13px; font-weight: 600; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
@@ -105,23 +104,37 @@ st.markdown("""
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
     .custom-table tbody tr:hover td { background-color: #333; }
 
-    /* --- [EDITED] REPORT DAILY SPECIFIC COLORS --- */
-    .custom-table.daily-table tbody tr:nth-child(even) td { background-color: #636363 !important; }
-    .custom-table.daily-table tbody tr:nth-child(odd) td { background-color: #3b3b3b !important; }
-    .custom-table.daily-table tbody tr:hover td { background-color: #555555 !important; }
+    /* --- [EDITED] REPORT DAILY COLORS (Requested Update) --- */
+    .custom-table.daily-table tbody tr:nth-child(even) td { 
+        background-color: #636363 !important; 
+        color: #ffffff; /* Default text color, will be overridden if negative */
+    }
+    .custom-table.daily-table tbody tr:nth-child(odd) td { 
+        background-color: #999999 !important; 
+        color: #000000; /* Default text color, will be overridden if negative */
+    }
+    .custom-table.daily-table tbody tr:hover td { 
+        background-color: #555555 !important; 
+        color: #ffffff;
+    }
     
-    .custom-table.daily-table tbody tr.footer-row td { position: sticky; bottom: 0; z-index: 100; background-color: #1e3c72 !important; font-weight: bold; color: white !important; border-top: 2px solid #f1c40f; }
+    .custom-table.daily-table tbody tr.footer-row td { 
+        position: sticky; bottom: 0; z-index: 100; 
+        background-color: #1e3c72 !important; 
+        font-weight: bold; color: white !important; 
+        border-top: 2px solid #f1c40f; 
+    }
 
-    /* --- [EDITED] COLUMN WIDTHS (Widen First Column) --- */
-    .col-fix-1 { position: sticky; left: 0; z-index: 10; width: 100px; border-right: 1px solid #333; }
-    .col-fix-2 { position: sticky; left: 100px; z-index: 10; width: 80px; border-right: 1px solid #333; }
-    .col-fix-3 { position: sticky; left: 180px; z-index: 10; width: 70px; border-right: 2px solid #bbb !important; }
-    /* ------------------------------------------------ */
+    /* --- [EDITED] COLUMN WIDTHS (Expanded TOTAL to 150px) --- */
+    .col-fix-1 { position: sticky; left: 0; z-index: 10; width: 150px; border-right: 1px solid #333; }
+    .col-fix-2 { position: sticky; left: 150px; z-index: 10; width: 80px; border-right: 1px solid #333; }
+    .col-fix-3 { position: sticky; left: 230px; z-index: 10; width: 70px; border-right: 2px solid #bbb !important; }
 
     .th-sku { background-color: #1e3c72 !important; color: white !important; }
     .sku-header { font-size: 10px; color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
     .col-small { width: 70px; min-width: 70px; max-width: 70px; font-size: 11px; }
 
+    /* P&L Styles */
     .pnl-container { font-family: 'Prompt', sans-serif; color: #ffffff; }
     .header-gradient-pnl { background-image: linear-gradient(135deg, #0f172a 0%, #334155 100%); padding: 20px 25px; border-radius: 12px; color: white; margin-bottom: 25px; }
     .header-title-pnl { font-size: 24px; font-weight: 600; margin: 0; color: white !important; }
@@ -167,17 +180,16 @@ def safe_date(val):
     try: return pd.to_datetime(val).date()
     except: return None
 
+def get_val_color(val, default_hex):
+    """Returns RED (#FF0000) if negative, else default_hex."""
+    if val < 0: return COLOR_NEGATIVE
+    return default_hex
+
 # ------------------------------
 # GLOBAL METRIC CARD COMPONENT
 # ------------------------------
 def render_metric_row(total_sales, total_cost, total_ads, total_profit):
     """Render summary metrics with unified colors and auto-negative detection."""
-
-    # คำนวณ % ทั้งหมด
-    pct_sales = 100
-    pct_cost = (total_cost / total_sales * 100) if total_sales > 0 else 0
-    pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
-    pct_profit = (total_profit / total_sales * 100) if total_sales > 0 else 0
 
     # เลือก Class สี (ถ้าติดลบ ให้ใช้ .val-neg แทน class สีปกติ)
     cls_sales_v = "val-neg" if total_sales < 0 else "val-sales"
@@ -191,8 +203,14 @@ def render_metric_row(total_sales, total_cost, total_ads, total_profit):
 
     cls_prof_v = "val-neg" if total_profit < 0 else "val-profit"
     cls_prof_s = "sub-neg" if total_profit < 0 else "sub-profit"
+    
+    # คำนวณ %
+    pct_sales = 100
+    pct_cost = (total_cost / total_sales * 100) if total_sales > 0 else 0
+    pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
+    pct_profit = (total_profit / total_sales * 100) if total_sales > 0 else 0
 
-    # HTML (ชิดซ้ายสุด แก้บัค Code Block) - ใช้ Grid Layout
+    # HTML (Grid Layout)
     html = f"""
 <div class="metric-container">
 <div class="custom-card border-blue">
@@ -710,7 +728,9 @@ try:
             for title, _, cls in cols_cfg: html += f'<th class="{cls}">{title}</th>'
             html += '</tr></thead><tbody>'
 
+            # --- [FIXED] Python handles red color logic here ---
             def get_cell_style(val):
+                # ถ้าติดลบ ให้บังคับสีแดง
                 if isinstance(val, (int, float)) and val < 0:
                     return ' style="color: #FF0000 !important;"'
                 return '' 
@@ -732,12 +752,14 @@ try:
                 html += f'<td{get_cell_style(r["CAL_COM_TELESALE"])}>{fmt(r["CAL_COM_TELESALE"])}</td>'
 
                 html += f'<td style="color:#e67e22;">{fmt(r["Ads_Amount"])}</td>'
+                # กำไรสุทธิ (บังคับแดงถ้าลบ)
                 html += f'<td{get_cell_style(r["Net_Profit"])}>{fmt(r["Net_Profit"])}</td>'
 
                 html += f'<td class="col-small" style="color:#1e3c72;">{fmt(r["ROAS"])}</td>'
                 html += f'<td class="col-small" style="color:#1e3c72;">{fmt(r["% ทุนสินค้า"],True)}</td>'
                 html += f'<td class="col-small" style="color:#1e3c72;">{fmt(r["% ทุนอื่น"],True)}</td>'
                 html += f'<td class="col-small" style="color:#1e3c72;">{fmt(r["% Ads"],True)}</td>'
+                # % กำไร (บังคับแดงถ้าลบ)
                 html += f'<td class="col-small"{get_cell_style(r["% กำไร"])}>{fmt(r["% กำไร"],True)}</td>'
                 html += '</tr>'
 
@@ -746,6 +768,7 @@ try:
             ta = df_final_d['Ads_Amount'].sum(); tc = df_final_d['CAL_COST'].sum()
             t_oth = df_final_d['BOX_COST'].sum() + df_final_d['DELIV_COST'].sum() + df_final_d['CAL_COD_COST'].sum() + df_final_d['CAL_COM_ADMIN'].sum() + df_final_d['CAL_COM_TELESALE'].sum()
 
+            # Footer logic using same helper
             html += f'<td{get_cell_style(df_final_d["จำนวน"].sum())}>{fmt(df_final_d["จำนวน"].sum())}</td>'
             html += f'<td{get_cell_style(ts)}>{fmt(ts)}</td>'
             html += f'<td{get_cell_style(tc)}>{fmt(tc)}</td>'
@@ -998,7 +1021,6 @@ try:
                 val_cls = "neg" if val < 0 else ""
                 return f'<tr class="{cls}"><td>{label}</td><td class="num-cell {val_cls}">{fmt(val)}</td></tr>'
 
-            # --- [FIXED POINT 3] : Removed Fixed Cost Row ---
             table_html = f"""
             <table class="pnl-table">
                 <thead><tr><th>รายการ (Accounts)</th><th style="text-align:right">จำนวนเงิน (THB)</th></tr></thead>
@@ -1172,7 +1194,6 @@ try:
             val_cls = "neg" if val < 0 else ""
             return f'<tr class="{cls}"><td>{label}</td><td class="num-cell {val_cls}">{fmt(val)}</td></tr>'
 
-        # --- [FIXED POINT 3] : Removed Fixed Cost Row ---
         table_html_m = f"""
         <table class="pnl-table">
             <thead><tr><th>รายการ (Accounts)</th><th style="text-align:right">จำนวนเงิน (THB)</th></tr></thead>
