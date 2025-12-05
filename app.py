@@ -47,6 +47,19 @@ st.markdown("""
     }
     .header-title { font-size: 22px; font-weight: 700; margin: 0; color: white !important; }
 
+    /* Navigation */
+    div[role="radiogroup"] {
+        background-color: #1c1c1c;
+        padding: 8px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        display: flex;
+        justify-content: center;
+        margin-top: 30px;
+        margin-bottom: -15px;
+        border: 1px solid #444;
+    }
+
     /* Metric Cards Container */
     .metric-container { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
     
@@ -59,8 +72,13 @@ st.markdown("""
     }
     
     .card-label { color: #aaa !important; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+    
+    /* Removed global color overrides here to let inline styles work */
     .card-value { font-size: 24px; font-weight: 700; }
     .card-sub { font-size: 13px; margin-top: 5px; font-weight: 600; }
+
+    .neg { color: #FF0000 !important; }
+    .pos { color: #ffffff !important; }
 
     .border-blue { border-left-color: #3498db; }
     .border-purple { border-left-color: #9b59b6; }
@@ -93,6 +111,7 @@ st.markdown("""
         position: sticky; top: 0; z-index: 100;
         background-color: #1e3c72; color: white !important;
         font-weight: 700; border-bottom: 2px solid #555;
+        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
     }
     
     /* Table Colors */
