@@ -109,38 +109,43 @@ st.markdown("""
     .custom-table.daily-table tbody tr:hover td { background-color: #555555 !important; color: #ffffff; }
     .custom-table.daily-table tbody tr.footer-row td { position: sticky; bottom: 0; z-index: 100; background-color: #1e3c72 !important; font-weight: bold; color: white !important; border-top: 2px solid #f1c40f; }
 
-    /* --- [FIX COMPACT SIZE] REPORT MONTH STICKY COLS --- */
-    /* Total Width = 110 + 70 + 70 + 45 + 70 + 45 = 410px (เล็กลงมาก)
-       Col 1 (Date): 110px
-       Col 2 (Sales): 70px
-       Col 3 (Profit): 70px
-       Col 4 (%): 45px
-       Col 5 (Ads): 70px
-       Col 6 (%): 45px
+    /* --- [FIX 7 COLS] REPORT MONTH STICKY COLS (Added 'Qty' Column) --- */
+    /* Total Cols: 7
+       1. Date (110px)
+       2. Qty  (50px) -> NEW
+       3. Sales(70px)
+       4. Profit(70px)
+       5. %    (45px)
+       6. Ads  (70px)
+       7. %    (45px)
     */
     .fix-m-1 { position: sticky; left: 0px !important;   z-index: 20; width: 110px !important; min-width: 110px !important; border-right: 1px solid #444; }
-    .fix-m-2 { position: sticky; left: 110px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
-    .fix-m-3 { position: sticky; left: 180px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
-    .fix-m-4 { position: sticky; left: 250px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 1px solid #444; }
-    .fix-m-5 { position: sticky; left: 295px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
-    .fix-m-6 { position: sticky; left: 365px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 2px solid #bbb !important; }
+    .fix-m-2 { position: sticky; left: 110px !important; z-index: 20; width: 50px !important;  min-width: 50px !important;  border-right: 1px solid #444; }
+    .fix-m-3 { position: sticky; left: 160px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
+    .fix-m-4 { position: sticky; left: 230px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
+    .fix-m-5 { position: sticky; left: 300px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 1px solid #444; }
+    .fix-m-6 { position: sticky; left: 345px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
+    .fix-m-7 { position: sticky; left: 415px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 2px solid #bbb !important; }
 
     /* Fix z-index for headers */
     .month-table thead th.fix-m-1, .month-table thead th.fix-m-2, 
     .month-table thead th.fix-m-3, .month-table thead th.fix-m-4,
-    .month-table thead th.fix-m-5, .month-table thead th.fix-m-6 {
+    .month-table thead th.fix-m-5, .month-table thead th.fix-m-6,
+    .month-table thead th.fix-m-7 {
         z-index: 30 !important;
     }
 
     /* Force background for sticky cols */
     .custom-table tbody tr td.fix-m-1, .custom-table tbody tr td.fix-m-2,
     .custom-table tbody tr td.fix-m-3, .custom-table tbody tr td.fix-m-4,
-    .custom-table tbody tr td.fix-m-5, .custom-table tbody tr td.fix-m-6 {
+    .custom-table tbody tr td.fix-m-5, .custom-table tbody tr td.fix-m-6,
+    .custom-table tbody tr td.fix-m-7 {
         background-color: #1c1c1c; 
     }
     .custom-table tbody tr:nth-child(even) td.fix-m-1, .custom-table tbody tr:nth-child(even) td.fix-m-2,
     .custom-table tbody tr:nth-child(even) td.fix-m-3, .custom-table tbody tr:nth-child(even) td.fix-m-4,
-    .custom-table tbody tr:nth-child(even) td.fix-m-5, .custom-table tbody tr:nth-child(even) td.fix-m-6 {
+    .custom-table tbody tr:nth-child(even) td.fix-m-5, .custom-table tbody tr:nth-child(even) td.fix-m-6,
+    .custom-table tbody tr:nth-child(even) td.fix-m-7 {
         background-color: #262626; 
     }
 
@@ -555,6 +560,7 @@ try:
                 day_data = df_view[df_view['Date'] == d_date]
                 
                 d_sales = day_data['รายละเอียดยอดที่ชำระแล้ว'].sum()
+                d_qty = day_data['จำนวน'].sum()
                 d_profit = day_data['Net_Profit'].sum()
                 d_ads = day_data['Ads_Amount'].sum()
                 
@@ -565,6 +571,7 @@ try:
 
                 row = {
                     'วันที่': day_str, 
+                    'จำนวน': d_qty,
                     'ยอดขาย': d_sales, 
                     'กำไร': d_profit,
                     '%กำไร': d_pct_profit,
@@ -580,7 +587,7 @@ try:
 
             df_matrix = pd.DataFrame(matrix_data)
             
-            footer_sums = df_view.groupby('SKU_Main').agg({'รายละเอียดยอดที่ชำระแล้ว': 'sum', 'CAL_COST': 'sum', 'Other_Costs': 'sum', 'Ads_Amount': 'sum', 'Net_Profit': 'sum',
+            footer_sums = df_view.groupby('SKU_Main').agg({'รายละเอียดยอดที่ชำระแล้ว': 'sum', 'จำนวน': 'sum', 'CAL_COST': 'sum', 'Other_Costs': 'sum', 'Ads_Amount': 'sum', 'Net_Profit': 'sum',
                                                             'CAL_COM_ADMIN': 'sum', 'CAL_COM_TELESALE': 'sum'})
             footer_sums = footer_sums.reindex(final_skus, fill_value=0)
 
@@ -590,11 +597,12 @@ try:
             html = '<div class="table-wrapper"><table class="custom-table month-table"><thead><tr>'
             
             html += '<th class="fix-m-1" style="background-color:#2c3e50;color:white;">วันที่</th>'
-            html += '<th class="fix-m-2" style="background-color:#2c3e50;color:white;">ยอดขาย</th>'
-            html += '<th class="fix-m-3" style="background-color:#27ae60;color:white;">กำไร</th>'
-            html += '<th class="fix-m-4" style="background-color:#27ae60;color:white;">%</th>'
-            html += '<th class="fix-m-5" style="background-color:#e67e22;color:white;">ค่าแอด</th>'
-            html += '<th class="fix-m-6" style="background-color:#e67e22;color:white;">%</th>'
+            html += '<th class="fix-m-2" style="background-color:#2c3e50;color:white;">จำนวน</th>'
+            html += '<th class="fix-m-3" style="background-color:#2c3e50;color:white;">ยอดขาย</th>'
+            html += '<th class="fix-m-4" style="background-color:#27ae60;color:white;">กำไร</th>'
+            html += '<th class="fix-m-5" style="background-color:#27ae60;color:white;">%</th>'
+            html += '<th class="fix-m-6" style="background-color:#e67e22;color:white;">ค่าแอด</th>'
+            html += '<th class="fix-m-7" style="background-color:#e67e22;color:white;">%</th>'
 
             for sku in final_skus:
                 name = str(sku_name_lookup.get(sku, ""))
@@ -607,11 +615,12 @@ try:
                 
                 html += f'<tr>'
                 html += f'<td class="fix-m-1">{r["วันที่"]}</td>'
-                html += f'<td class="fix-m-2" style="font-weight:bold;">{fmt_n(r["ยอดขาย"])}</td>'
-                html += f'<td class="fix-m-3" style="font-weight:bold; color:{color_profit};">{fmt_n(r["กำไร"])}</td>'
-                html += f'<td class="fix-m-4" style="color:{color_pct_profit};">{fmt_p(r["%กำไร"])}</td>'
-                html += f'<td class="fix-m-5" style="color:#e67e22;">{fmt_n(r["ค่าแอด"])}</td>'
-                html += f'<td class="fix-m-6" style="color:#e67e22;">{fmt_p(r["%แอด"])}</td>'
+                html += f'<td class="fix-m-2" style="font-weight:bold;color:#ddd;">{fmt_n(r["จำนวน"])}</td>'
+                html += f'<td class="fix-m-3" style="font-weight:bold;">{fmt_n(r["ยอดขาย"])}</td>'
+                html += f'<td class="fix-m-4" style="font-weight:bold; color:{color_profit};">{fmt_n(r["กำไร"])}</td>'
+                html += f'<td class="fix-m-5" style="color:{color_pct_profit};">{fmt_p(r["%กำไร"])}</td>'
+                html += f'<td class="fix-m-6" style="color:#e67e22;">{fmt_n(r["ค่าแอด"])}</td>'
+                html += f'<td class="fix-m-7" style="color:#e67e22;">{fmt_p(r["%แอด"])}</td>'
 
                 for sku in final_skus:
                     val = r.get(sku, 0)
@@ -620,6 +629,7 @@ try:
                 html += '</tr>'
             
             g_sales = total_sales; g_ads = total_ads; g_cost = total_cost_ops; g_profit = net_profit
+            g_qty = df_view['จำนวน'].sum()
 
             def create_footer_row_new(row_cls, label, data_dict, val_type='num', dark_bg=False):
                 if "row-cost" in row_cls: bg_color = "#0000FF"       
@@ -638,6 +648,7 @@ try:
                 grand_val = 0
                 if label == "รวมทุนสินค้า": grand_val = g_cost
                 elif label == "รวมยอดขาย": grand_val = g_sales
+                elif label == "รวมจำนวน": grand_val = g_qty
                 elif label == "รวมกำไร": grand_val = g_profit
                 elif label == "รวมค่าแอด": grand_val = g_ads
                 elif label == "กำไร / ยอดขาย": grand_val = (g_profit/g_sales*100) if g_sales else 0
@@ -651,11 +662,20 @@ try:
 
                 row_html = f'<tr class="{row_cls}">'
                 row_html += f'<td class="fix-m-1" style="{style_bg} color: {lbl_color} !important;">{label}</td>'
-                row_html += f'<td class="fix-m-2" style="{style_bg} color:{grand_text_col};">{txt_val}</td>'
-                row_html += f'<td class="fix-m-3" style="{style_bg}"></td>'
+                # Show Quantity Total only in "Total Sales" row or add a specific row?
+                # For simplicity, if label is "Total Sales", show Sales. 
+                # But we have 7 cols now.
+                # Col 2 is Qty.
+                
+                val_qty = ""
+                if label == "รวมยอดขาย": val_qty = fmt_n(g_qty)
+                
+                row_html += f'<td class="fix-m-2" style="{style_bg} color:{grand_text_col};">{val_qty}</td>'
+                row_html += f'<td class="fix-m-3" style="{style_bg} color:{grand_text_col};">{txt_val}</td>'
                 row_html += f'<td class="fix-m-4" style="{style_bg}"></td>'
                 row_html += f'<td class="fix-m-5" style="{style_bg}"></td>'
                 row_html += f'<td class="fix-m-6" style="{style_bg}"></td>'
+                row_html += f'<td class="fix-m-7" style="{style_bg}"></td>'
 
                 for sku in final_skus:
                     val = 0
