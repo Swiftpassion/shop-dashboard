@@ -16,7 +16,7 @@ thai_months = ["มกราคม", "กุมภาพันธ์", "มี�
 
 # --- COLOR SETTINGS ---
 COLOR_SALES = "#33FFFF"
-COLOR_COST = "#9400D3"
+COLOR_COST = "#A020F0"
 COLOR_ADS = "#FF6633"
 COLOR_PROFIT = "#7CFC00"
 COLOR_NEGATIVE = "#FF0000"
@@ -109,14 +109,24 @@ st.markdown("""
     .custom-table.daily-table tbody tr:hover td { background-color: #555555 !important; color: #ffffff; }
     .custom-table.daily-table tbody tr.footer-row td { position: sticky; bottom: 0; z-index: 100; background-color: #1e3c72 !important; font-weight: bold; color: white !important; border-top: 2px solid #f1c40f; }
 
-    /* --- [FIX COMPACT SIZE] REPORT MONTH STICKY COLS --- */
+    /* --- [FIX COMPACT SIZE] REPORT MONTH STICKY COLS (Reordered) --- */
+    /* New Order:
+       1. Date   (110px) - Left 0
+       2. Sales  (80px)  - Left 110  <-- Swapped
+       3. Qty    (50px)  - Left 190  <-- Swapped
+       4. Profit (70px)  - Left 240
+       5. %      (45px)  - Left 310
+       6. Ads    (70px)  - Left 355
+       7. %      (45px)  - Left 425
+       Total Width = 470px
+    */
     .fix-m-1 { position: sticky; left: 0px !important;   z-index: 20; width: 110px !important; min-width: 110px !important; border-right: 1px solid #444; }
-    .fix-m-2 { position: sticky; left: 110px !important; z-index: 20; width: 50px !important;  min-width: 50px !important;  border-right: 1px solid #444; }
-    .fix-m-3 { position: sticky; left: 160px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
-    .fix-m-4 { position: sticky; left: 230px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
-    .fix-m-5 { position: sticky; left: 300px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 1px solid #444; }
-    .fix-m-6 { position: sticky; left: 345px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
-    .fix-m-7 { position: sticky; left: 415px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 2px solid #bbb !important; }
+    .fix-m-2 { position: sticky; left: 110px !important; z-index: 20; width: 80px !important;  min-width: 80px !important;  border-right: 1px solid #444; }
+    .fix-m-3 { position: sticky; left: 190px !important; z-index: 20; width: 50px !important;  min-width: 50px !important;  border-right: 1px solid #444; }
+    .fix-m-4 { position: sticky; left: 240px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
+    .fix-m-5 { position: sticky; left: 310px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 1px solid #444; }
+    .fix-m-6 { position: sticky; left: 355px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
+    .fix-m-7 { position: sticky; left: 425px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 2px solid #bbb !important; }
 
     /* Fix z-index for headers */
     .month-table thead th.fix-m-1, .month-table thead th.fix-m-2, 
@@ -235,17 +245,17 @@ def render_metric_row(total_sales, total_cost, total_ads, total_profit):
 <div class="custom-card border-purple">
 <div class="card-label">ทุนสินค้า + ค่าใช้จ่าย</div>
 <div class="{cls_cost_v}">{total_cost:,.0f}</div>
-<div class="{cls_cost_s}">{pct_cost:.1f}% ของยอดขาย</div>
+<div class="{cls_cost_s}">{pct_cost:.1f}%</div>
 </div>
 <div class="custom-card border-orange">
 <div class="card-label">ค่าโฆษณา</div>
 <div class="{cls_ads_v}">{total_ads:,.0f}</div>
-<div class="{cls_ads_s}">{pct_ads:.1f}% ของยอดขาย</div>
+<div class="{cls_ads_s}">{pct_ads:.1f}%</div>
 </div>
 <div class="custom-card border-green">
 <div class="card-label">กำไรสุทธิ</div>
 <div class="{cls_prof_v}">{total_profit:,.0f}</div>
-<div class="{cls_prof_s}">{pct_profit:.1f}% ของยอดขาย</div>
+<div class="{cls_prof_s}">{pct_profit:.1f}%</div>
 </div>
 </div>
 """
@@ -587,8 +597,8 @@ try:
             html = '<div class="table-wrapper"><table class="custom-table month-table"><thead><tr>'
             
             html += '<th class="fix-m-1" style="background-color:#2c3e50;color:white;">วันที่</th>'
-            html += '<th class="fix-m-2" style="background-color:#2c3e50;color:white;">จำนวน</th>'
-            html += '<th class="fix-m-3" style="background-color:#2c3e50;color:white;">ยอดขาย</th>'
+            html += '<th class="fix-m-2" style="background-color:#2c3e50;color:white;">ยอดขาย</th>'
+            html += '<th class="fix-m-3" style="background-color:#2c3e50;color:white;">จำนวน</th>'
             html += '<th class="fix-m-4" style="background-color:#27ae60;color:white;">กำไร</th>'
             html += '<th class="fix-m-5" style="background-color:#27ae60;color:white;">%</th>'
             html += '<th class="fix-m-6" style="background-color:#e67e22;color:white;">ค่าแอด</th>'
@@ -605,8 +615,8 @@ try:
                 
                 html += f'<tr>'
                 html += f'<td class="fix-m-1">{r["วันที่"]}</td>'
-                html += f'<td class="fix-m-2" style="font-weight:bold;color:#ddd;">{fmt_n(r["จำนวน"])}</td>'
-                html += f'<td class="fix-m-3" style="font-weight:bold;">{fmt_n(r["ยอดขาย"])}</td>'
+                html += f'<td class="fix-m-2" style="font-weight:bold;">{fmt_n(r["ยอดขาย"])}</td>'
+                html += f'<td class="fix-m-3" style="font-weight:bold;color:#ddd;">{fmt_n(r["จำนวน"])}</td>'
                 html += f'<td class="fix-m-4" style="font-weight:bold; color:{color_profit};">{fmt_n(r["กำไร"])}</td>'
                 html += f'<td class="fix-m-5" style="color:{color_pct_profit};">{fmt_p(r["%กำไร"])}</td>'
                 html += f'<td class="fix-m-6" style="color:#e67e22;">{fmt_n(r["ค่าแอด"])}</td>'
@@ -631,8 +641,8 @@ try:
 
             html += f'<tr style="background-color: {bg_total}; font-weight: bold;">'
             html += f'<td class="fix-m-1" style="background-color: {bg_total}; color: {c_total};">รวม</td>'
-            html += f'<td class="fix-m-2" style="background-color: {bg_total}; color: {c_total};">{fmt_n(g_qty)}</td>'
-            html += f'<td class="fix-m-3" style="background-color: {bg_total}; color: {c_total};">{fmt_n(g_sales)}</td>'
+            html += f'<td class="fix-m-2" style="background-color: {bg_total}; color: {c_total};">{fmt_n(g_sales)}</td>'
+            html += f'<td class="fix-m-3" style="background-color: {bg_total}; color: {c_total};">{fmt_n(g_qty)}</td>'
             c_prof_sum = "#7CFC00" if g_profit >= 0 else "#FF0000"
             html += f'<td class="fix-m-4" style="background-color: {bg_total}; color: {c_prof_sum};">{fmt_n(g_profit)}</td>'
             html += f'<td class="fix-m-5" style="background-color: {bg_total}; color: {c_prof_sum};">{fmt_p(g_pct_profit)}</td>'
@@ -681,8 +691,8 @@ try:
                 val_qty = ""
                 if label == "รวมยอดขาย": val_qty = fmt_n(g_qty)
                 
-                row_html += f'<td class="fix-m-2" style="{style_bg} color:{grand_text_col};">{val_qty}</td>'
-                row_html += f'<td class="fix-m-3" style="{style_bg} color:{grand_text_col};">{txt_val}</td>'
+                row_html += f'<td class="fix-m-2" style="{style_bg} color:{grand_text_col};">{txt_val}</td>'
+                row_html += f'<td class="fix-m-3" style="{style_bg} color:{grand_text_col};">{val_qty}</td>'
                 row_html += f'<td class="fix-m-4" style="{style_bg}"></td>'
                 row_html += f'<td class="fix-m-5" style="{style_bg}"></td>'
                 row_html += f'<td class="fix-m-6" style="{style_bg}"></td>'
@@ -735,7 +745,6 @@ try:
             with c3: end_d = st.date_input("ถึงวันที่", datetime.now(), key="d_e")
             with c4: filter_mode_d = st.selectbox("เงื่อนไขสินค้า (Fast Filter)", ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 เฉพาะรายการที่ขายได้", "💸 ผลาญงบ (มี Ads แต่ขายไม่ได้)", "📋 แสดง Master ทั้งหมด"], key="d_m")
 
-            # Remove search input, keep layout clean
             c_sku, c_clear, c_run = st.columns([4, 0.5, 1])
             with c_sku: st.multiselect("รายการที่เลือก (Choose options):", sku_options_list_global, key="selected_skus_d")
             with c_clear:
