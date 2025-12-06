@@ -109,24 +109,15 @@ st.markdown("""
     .custom-table.daily-table tbody tr:hover td { background-color: #555555 !important; color: #ffffff; }
     .custom-table.daily-table tbody tr.footer-row td { position: sticky; bottom: 0; z-index: 100; background-color: #1e3c72 !important; font-weight: bold; color: white !important; border-top: 2px solid #f1c40f; }
 
-    /* --- [FIX COMPACT SIZE] REPORT MONTH STICKY COLS (Reordered) --- */
-    /* New Order:
-       1. Date   (110px) - Left 0
-       2. Sales  (80px)  - Left 110  <-- Swapped
-       3. Qty    (50px)  - Left 190  <-- Swapped
-       4. Profit (70px)  - Left 240
-       5. %      (45px)  - Left 310
-       6. Ads    (70px)  - Left 355
-       7. %      (45px)  - Left 425
-       Total Width = 470px
-    */
+    /* --- [FIX COMPACT SIZE] REPORT MONTH STICKY COLS --- */
+    /* Total Width = 110 + 50 + 70 + 70 + 45 + 70 + 45 = 460px */
     .fix-m-1 { position: sticky; left: 0px !important;   z-index: 20; width: 110px !important; min-width: 110px !important; border-right: 1px solid #444; }
-    .fix-m-2 { position: sticky; left: 110px !important; z-index: 20; width: 80px !important;  min-width: 80px !important;  border-right: 1px solid #444; }
-    .fix-m-3 { position: sticky; left: 190px !important; z-index: 20; width: 50px !important;  min-width: 50px !important;  border-right: 1px solid #444; }
-    .fix-m-4 { position: sticky; left: 240px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
-    .fix-m-5 { position: sticky; left: 310px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 1px solid #444; }
-    .fix-m-6 { position: sticky; left: 355px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
-    .fix-m-7 { position: sticky; left: 425px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 2px solid #bbb !important; }
+    .fix-m-2 { position: sticky; left: 110px !important; z-index: 20; width: 50px !important;  min-width: 50px !important;  border-right: 1px solid #444; }
+    .fix-m-3 { position: sticky; left: 160px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
+    .fix-m-4 { position: sticky; left: 230px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
+    .fix-m-5 { position: sticky; left: 300px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 1px solid #444; }
+    .fix-m-6 { position: sticky; left: 345px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
+    .fix-m-7 { position: sticky; left: 415px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 2px solid #bbb !important; }
 
     /* Fix z-index for headers */
     .month-table thead th.fix-m-1, .month-table thead th.fix-m-2, 
@@ -689,7 +680,7 @@ try:
                 row_html += f'<td class="fix-m-1" style="{style_bg} color: {lbl_color} !important;">{label}</td>'
                 
                 val_qty = ""
-                if label == "รวมยอดขาย": val_qty = fmt_n(g_qty)
+                if label == "รวมยอดขาย": val_qty = ""
                 
                 row_html += f'<td class="fix-m-2" style="{style_bg} color:{grand_text_col};">{txt_val}</td>'
                 row_html += f'<td class="fix-m-3" style="{style_bg} color:{grand_text_col};">{val_qty}</td>'
