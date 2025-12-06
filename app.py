@@ -109,34 +109,39 @@ st.markdown("""
     .custom-table.daily-table tbody tr:hover td { background-color: #555555 !important; color: #ffffff; }
     .custom-table.daily-table tbody tr.footer-row td { position: sticky; bottom: 0; z-index: 100; background-color: #1e3c72 !important; font-weight: bold; color: white !important; border-top: 2px solid #f1c40f; }
 
-    /* --- [FIX] REPORT MONTH STICKY COLS (Wider & Recalculated) --- */
-    /* Total Fixed Width = 125 + 95 + 95 + 60 + 95 + 60 = 530px 
-       เพิ่มความกว้างเพื่อให้ตัวหนังสือไม่ทับซ้อนกัน 
+    /* --- [FIX COMPACT SIZE] REPORT MONTH STICKY COLS --- */
+    /* Total Width = 110 + 70 + 70 + 45 + 70 + 45 = 410px (เล็กลงมาก)
+       Col 1 (Date): 110px
+       Col 2 (Sales): 70px
+       Col 3 (Profit): 70px
+       Col 4 (%): 45px
+       Col 5 (Ads): 70px
+       Col 6 (%): 45px
     */
-    .fix-m-1 { position: sticky; left: 0px !important;   z-index: 20; width: 120px !important; min-width: 120px !important; border-right: 1px solid #444; }
-    .fix-m-2 { position: sticky; left: 120px !important; z-index: 20; width: 90px !important;  min-width: 90px !important;  border-right: 1px solid #444; }
-    .fix-m-3 { position: sticky; left: 210px !important; z-index: 20; width: 90px !important;  min-width: 90px !important;  border-right: 1px solid #444; }
-    .fix-m-4 { position: sticky; left: 300px !important; z-index: 20; width: 60px !important;  min-width: 60px !important;  border-right: 1px solid #444; }
-    .fix-m-5 { position: sticky; left: 360px !important; z-index: 20; width: 90px !important;  min-width: 90px !important;  border-right: 1px solid #444; }
-    .fix-m-6 { position: sticky; left: 450px !important; z-index: 20; width: 60px !important;  min-width: 60px !important;  border-right: 2px solid #bbb !important; }
+    .fix-m-1 { position: sticky; left: 0px !important;   z-index: 20; width: 110px !important; min-width: 110px !important; border-right: 1px solid #444; }
+    .fix-m-2 { position: sticky; left: 110px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
+    .fix-m-3 { position: sticky; left: 180px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
+    .fix-m-4 { position: sticky; left: 250px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 1px solid #444; }
+    .fix-m-5 { position: sticky; left: 295px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
+    .fix-m-6 { position: sticky; left: 365px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 2px solid #bbb !important; }
 
-    /* Fix z-index for headers to be above body sticky cols */
+    /* Fix z-index for headers */
     .month-table thead th.fix-m-1, .month-table thead th.fix-m-2, 
     .month-table thead th.fix-m-3, .month-table thead th.fix-m-4,
     .month-table thead th.fix-m-5, .month-table thead th.fix-m-6 {
         z-index: 30 !important;
     }
 
-    /* Force background for sticky cols to prevent see-through */
+    /* Force background for sticky cols */
     .custom-table tbody tr td.fix-m-1, .custom-table tbody tr td.fix-m-2,
     .custom-table tbody tr td.fix-m-3, .custom-table tbody tr td.fix-m-4,
     .custom-table tbody tr td.fix-m-5, .custom-table tbody tr td.fix-m-6 {
-        background-color: #1c1c1c; /* Default dark */
+        background-color: #1c1c1c; 
     }
     .custom-table tbody tr:nth-child(even) td.fix-m-1, .custom-table tbody tr:nth-child(even) td.fix-m-2,
     .custom-table tbody tr:nth-child(even) td.fix-m-3, .custom-table tbody tr:nth-child(even) td.fix-m-4,
     .custom-table tbody tr:nth-child(even) td.fix-m-5, .custom-table tbody tr:nth-child(even) td.fix-m-6 {
-        background-color: #262626; /* Alternating dark */
+        background-color: #262626; 
     }
 
     .th-sku { background-color: #1e3c72 !important; color: white !important; min-width: 80px; }
