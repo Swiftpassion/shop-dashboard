@@ -141,6 +141,24 @@ st.markdown("""
         background-color: #262626; 
     }
 
+    /* --- FOOTER STICKY FOR REPORT MONTH --- */
+    .month-table tfoot {
+        position: sticky;
+        bottom: 0;
+        z-index: 25;
+        border-top: 2px solid #fff;
+    }
+    /* Increase z-index for the corner cells in footer to be above everything */
+    .month-table tfoot td.fix-m-1, 
+    .month-table tfoot td.fix-m-2, 
+    .month-table tfoot td.fix-m-3, 
+    .month-table tfoot td.fix-m-4, 
+    .month-table tfoot td.fix-m-5, 
+    .month-table tfoot td.fix-m-6, 
+    .month-table tfoot td.fix-m-7 {
+        z-index: 40 !important;
+    }
+
     .th-sku { background-color: #1e3c72 !important; color: white !important; min-width: 80px; }
     .sku-header { font-size: 10px; color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
     .col-small { width: 70px; min-width: 70px; max-width: 70px; font-size: 11px; }
@@ -620,6 +638,9 @@ try:
                     html += f'<td style="color:{color};">{fmt_n(val)}</td>'
                 html += '</tr>'
             
+            html += '</tbody>'
+            html += '<tfoot>'
+
             g_sales = total_sales; g_ads = total_ads; g_cost = total_cost_ops; g_profit = net_profit
             g_qty = df_view['จำนวน'].sum()
 
@@ -720,7 +741,7 @@ try:
             html += create_footer_row_new("row-pct-profit", "กำไร / ยอดขาย", footer_sums, 'pct')
             html += create_footer_row_new("row-pct-ads", "ค่าแอด / ยอดขาย", footer_sums, 'pct')
             html += create_footer_row_new("row-pct-cost", "ทุน/ยอดขาย", footer_sums, 'pct')
-            html += '</tbody></table></div>'
+            html += '</tfoot></table></div>'
             st.markdown(html, unsafe_allow_html=True)
 
     # --- PAGE 2: REPORT_DAILY ---
