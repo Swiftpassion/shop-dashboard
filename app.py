@@ -646,9 +646,9 @@ try:
             # ----------------------------------
 
             def create_footer_row_new(row_cls, label, data_dict, val_type='num', dark_bg=False):
-                if "row-sales" in row_cls: bg_color = "#593601"       
+                if "row-sales" in row_cls: bg_color = "#B8860B"       
                 elif "row-cost" in row_cls: bg_color = "#3366FF"      
-                elif "row-ads" in row_cls: bg_color = "#B8860B"       
+                elif "row-ads" in row_cls: bg_color = "#9400D3"       
                 elif "row-profit" in row_cls: bg_color = "#006400"    
                 elif "row-pct-profit" in row_cls: bg_color = "#1E90FF" 
                 elif "row-pct-ads" in row_cls: bg_color = "#b802b8"    
