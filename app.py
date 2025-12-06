@@ -110,7 +110,6 @@ st.markdown("""
     .custom-table.daily-table tbody tr.footer-row td { position: sticky; bottom: 0; z-index: 100; background-color: #1e3c72 !important; font-weight: bold; color: white !important; border-top: 2px solid #f1c40f; }
 
     /* --- [FIX COMPACT SIZE] REPORT MONTH STICKY COLS --- */
-    /* Total Width = 110 + 50 + 70 + 70 + 45 + 70 + 45 = 460px */
     .fix-m-1 { position: sticky; left: 0px !important;   z-index: 20; width: 110px !important; min-width: 110px !important; border-right: 1px solid #444; }
     .fix-m-2 { position: sticky; left: 110px !important; z-index: 20; width: 50px !important;  min-width: 50px !important;  border-right: 1px solid #444; }
     .fix-m-3 { position: sticky; left: 160px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
@@ -148,7 +147,6 @@ st.markdown("""
         z-index: 25;
         border-top: 2px solid #fff;
     }
-    /* Increase z-index for the corner cells in footer to be above everything */
     .month-table tfoot td.fix-m-1, 
     .month-table tfoot td.fix-m-2, 
     .month-table tfoot td.fix-m-3, 
@@ -474,23 +472,8 @@ try:
     if 'selected_skus_d' not in st.session_state: st.session_state.selected_skus_d = []
     if 'selected_skus_g' not in st.session_state: st.session_state.selected_skus_g = []
 
-    def cb_add_m():
-        term = st.session_state.search_m.lower() if 'search_m' in st.session_state else ""
-        if term:
-            found = [opt for opt in sku_options_list_global if term in opt.lower()]
-            st.session_state.selected_skus = list(set(st.session_state.selected_skus).union(set(found)))
     def cb_clear_m(): st.session_state.selected_skus = []
-    def cb_add_d():
-        term = st.session_state.search_d.lower() if 'search_d' in st.session_state else ""
-        if term:
-            found = [opt for opt in sku_options_list_global if term in opt.lower()]
-            st.session_state.selected_skus_d = list(set(st.session_state.selected_skus_d).union(set(found)))
     def cb_clear_d(): st.session_state.selected_skus_d = []
-    def cb_add_g():
-        term = st.session_state.search_g.lower() if 'search_g' in st.session_state else ""
-        if term:
-            found = [opt for opt in sku_options_list_global if term in opt.lower()]
-            st.session_state.selected_skus_g = list(set(st.session_state.selected_skus_g).union(set(found)))
     def cb_clear_g(): st.session_state.selected_skus_g = []
 
     page_options = ["📊 REPORT_MONTH", "📅 REPORT_DAILY", "📈 PRODUCT GRAPH", "📈 YEARLY P&L", "📅 MONTHLY P&L", "💰 COMMISSION"]
@@ -521,19 +504,16 @@ try:
             with c_s: start_date_m = st.date_input("วันที่เริ่มต้น", default_start, key="m_d_start")
             with c_e: end_date_m = st.date_input("วันที่สิ้นสุด", default_end, key="m_d_end")
 
-            c_type, c2, c3, c4, c5 = st.columns([1.5, 3.5, 0.4, 0.4, 0.8])
+            c_type, c_sku, c_clear, c_run = st.columns([1.5, 4, 0.5, 1])
             with c_type:
                 filter_mode = st.selectbox("เงื่อนไขสินค้า (Fast Filter)",
                     ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 เฉพาะรายการที่ขายได้", "💸 ผลาญงบ (มี Ads แต่ขายไม่ได้)", "📋 แสดง Master ทั้งหมด"])
             
-            with c2: st.multiselect("รายการที่เลือก (Choose options):", sku_options_list_global, key="selected_skus")
-            with c3:
-                st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
-                st.button("➕", use_container_width=True, disabled=True, key="btn_add_m_fake")
-            with c4:
+            with c_sku: st.multiselect("รายการที่เลือก (Choose options):", sku_options_list_global, key="selected_skus")
+            with c_clear:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
                 st.button("🧹", type="secondary", use_container_width=True, key="btn_clear_m", on_click=cb_clear_m)
-            with c5:
+            with c_run:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
                 st.button("🚀 ประมวลผล", type="primary", use_container_width=True, key="btn_run_m")
 
@@ -755,16 +735,13 @@ try:
             with c3: end_d = st.date_input("ถึงวันที่", datetime.now(), key="d_e")
             with c4: filter_mode_d = st.selectbox("เงื่อนไขสินค้า (Fast Filter)", ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 เฉพาะรายการที่ขายได้", "💸 ผลาญงบ (มี Ads แต่ขายไม่ได้)", "📋 แสดง Master ทั้งหมด"], key="d_m")
 
-            c1_d, c2_d, c3_d, c4_d, c5_d = st.columns([1.5, 3.5, 0.4, 0.4, 0.8])
-            with c1_d: st.text_input("ค้นหา SKU / ชื่อสินค้า (Daily):", placeholder="...", key="search_d")
-            with c2_d: st.multiselect("รายการที่เลือก (Choose options):", sku_options_list_global, key="selected_skus_d")
-            with c3_d:
-                st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
-                st.button("➕", use_container_width=True, key="btn_add_d", on_click=cb_add_d)
-            with c4_d:
+            # Remove search input, keep layout clean
+            c_sku, c_clear, c_run = st.columns([4, 0.5, 1])
+            with c_sku: st.multiselect("รายการที่เลือก (Choose options):", sku_options_list_global, key="selected_skus_d")
+            with c_clear:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
                 st.button("🧹", type="secondary", use_container_width=True, key="btn_clear_d", on_click=cb_clear_d)
-            with c5_d:
+            with c_run:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
                 st.button("🚀 ประมวลผล", type="primary", use_container_width=True, key="btn_run_d")
 
@@ -888,16 +865,12 @@ try:
             with c_g3: filter_mode_g = st.selectbox("เงื่อนไขสินค้า (Fast Filter)",
                 ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 เฉพาะรายการที่ขายได้", "💸 ผลาญงบ (มี Ads แต่ขายไม่ได้)", "📋 แสดง Master ทั้งหมด"], key="g_m")
 
-            c1_g, c2_g, c3_g, c4_g, c5_g = st.columns([1.5, 3.5, 0.4, 0.4, 0.8])
-            with c1_g: st.text_input("ค้นหา SKU / ชื่อสินค้า (Graph):", placeholder="...", key="search_g")
-            with c2_g: st.multiselect("เลือกสินค้าที่ต้องการดูกราฟ:", sku_options_list_global, key="selected_skus_g")
-            with c3_g:
-                st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
-                st.button("➕", use_container_width=True, key="btn_add_g", on_click=cb_add_g)
-            with c4_g:
+            c_sku, c_clear, c_run = st.columns([4, 0.5, 1])
+            with c_sku: st.multiselect("เลือกสินค้าที่ต้องการดูกราฟ:", sku_options_list_global, key="selected_skus_g")
+            with c_clear:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
                 st.button("🧹", type="secondary", use_container_width=True, key="btn_clear_g", on_click=cb_clear_g)
-            with c5_g:
+            with c_run:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
                 st.button("🚀 สร้างกราฟ", type="primary", use_container_width=True, key="btn_run_g")
 
