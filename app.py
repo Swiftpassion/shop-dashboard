@@ -109,15 +109,9 @@ st.markdown("""
     .custom-table.daily-table tbody tr:hover td { background-color: #555555 !important; color: #ffffff; }
     .custom-table.daily-table tbody tr.footer-row td { position: sticky; bottom: 0; z-index: 100; background-color: #1e3c72 !important; font-weight: bold; color: white !important; border-top: 2px solid #f1c40f; }
 
-    /* --- [FIX 7 COLS] REPORT MONTH STICKY COLS (Added 'Qty' Column) --- */
-    /* Total Cols: 7
-       1. Date (110px)
-       2. Qty  (50px) -> NEW
-       3. Sales(70px)
-       4. Profit(70px)
-       5. %    (45px)
-       6. Ads  (70px)
-       7. %    (45px)
+    /* --- [FIX COMPACT SIZE] REPORT MONTH STICKY COLS --- */
+    /* Total Cols: 7 (Date, Qty, Sales, Profit, %, Ads, %)
+       Total Width = 110 + 50 + 70 + 70 + 45 + 70 + 45 = 460px
     */
     .fix-m-1 { position: sticky; left: 0px !important;   z-index: 20; width: 110px !important; min-width: 110px !important; border-right: 1px solid #444; }
     .fix-m-2 { position: sticky; left: 110px !important; z-index: 20; width: 50px !important;  min-width: 50px !important;  border-right: 1px solid #444; }
@@ -631,6 +625,38 @@ try:
             g_sales = total_sales; g_ads = total_ads; g_cost = total_cost_ops; g_profit = net_profit
             g_qty = df_view['จำนวน'].sum()
 
+            # --- [NEW] TOTAL ROW (SUM B2:B) ---
+            sum_qty = df_view['จำนวน'].sum()
+            sum_sales = df_view['รายละเอียดยอดที่ชำระแล้ว'].sum()
+            sum_profit = df_view['Net_Profit'].sum()
+            sum_ads = df_view['Ads_Amount'].sum()
+            
+            pct_profit_total = (sum_profit / sum_sales * 100) if sum_sales != 0 else 0
+            pct_ads_total = (sum_ads / sum_sales * 100) if sum_sales != 0 else 0
+
+            # Generate HTML for "รวม" Row
+            bg_total = "#2c3e50" 
+            c_total = "white"
+            
+            html += f'<tr class="footer-row-total">'
+            html += f'<td class="fix-m-1" style="background-color:{bg_total}; color:{c_total}; font-weight:bold;">รวม</td>'
+            html += f'<td class="fix-m-2" style="background-color:{bg_total}; color:{c_total}; font-weight:bold;">{fmt_n(sum_qty)}</td>'
+            html += f'<td class="fix-m-3" style="background-color:{bg_total}; color:{c_total}; font-weight:bold;">{fmt_n(sum_sales)}</td>'
+            
+            c_prof_sum = "#7CFC00" if sum_profit >= 0 else "#FF0000"
+            html += f'<td class="fix-m-4" style="background-color:{bg_total}; color:{c_prof_sum}; font-weight:bold;">{fmt_n(sum_profit)}</td>'
+            html += f'<td class="fix-m-5" style="background-color:{bg_total}; color:{c_prof_sum}; font-weight:bold;">{fmt_p(pct_profit_total)}</td>'
+            
+            html += f'<td class="fix-m-6" style="background-color:{bg_total}; color:#FF6633; font-weight:bold;">{fmt_n(sum_ads)}</td>'
+            html += f'<td class="fix-m-7" style="background-color:{bg_total}; color:#FF6633; font-weight:bold;">{fmt_p(pct_ads_total)}</td>'
+
+            for sku in final_skus:
+                val = footer_sums.loc[sku, 'Net_Profit']
+                c_sku = "#7CFC00" if val >= 0 else "#FF0000"
+                html += f'<td style="background-color:{bg_total}; color:{c_sku}; font-weight:bold;">{fmt_n(val)}</td>'
+            
+            html += '</tr>'
+
             def create_footer_row_new(row_cls, label, data_dict, val_type='num', dark_bg=False):
                 if "row-cost" in row_cls: bg_color = "#0000FF"       
                 elif "row-sales" in row_cls: bg_color = "#000080"      
@@ -662,10 +688,6 @@ try:
 
                 row_html = f'<tr class="{row_cls}">'
                 row_html += f'<td class="fix-m-1" style="{style_bg} color: {lbl_color} !important;">{label}</td>'
-                # Show Quantity Total only in "Total Sales" row or add a specific row?
-                # For simplicity, if label is "Total Sales", show Sales. 
-                # But we have 7 cols now.
-                # Col 2 is Qty.
                 
                 val_qty = ""
                 if label == "รวมยอดขาย": val_qty = fmt_n(g_qty)
