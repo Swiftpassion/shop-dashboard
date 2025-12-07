@@ -112,12 +112,12 @@ st.markdown("""
     /* --- [FIX COMPACT SIZE] REPORT MONTH STICKY COLS --- */
     /* Total Width = 110 + 50 + 70 + 70 + 45 + 70 + 45 = 460px */
     .fix-m-1 { position: sticky; left: 0px !important;   z-index: 20; width: 110px !important; min-width: 110px !important; border-right: 1px solid #444; }
-    .fix-m-2 { position: sticky; left: 110px !important; z-index: 20; width: 50px !important;  min-width: 50px !important;  border-right: 1px solid #444; }
-    .fix-m-3 { position: sticky; left: 160px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
-    .fix-m-4 { position: sticky; left: 230px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
-    .fix-m-5 { position: sticky; left: 300px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 1px solid #444; }
-    .fix-m-6 { position: sticky; left: 345px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
-    .fix-m-7 { position: sticky; left: 415px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 2px solid #bbb !important; }
+    .fix-m-2 { position: sticky; left: 110px !important; z-index: 20; width: 80px !important;  min-width: 80px !important;  border-right: 1px solid #444; }
+    .fix-m-3 { position: sticky; left: 190px !important; z-index: 20; width: 50px !important;  min-width: 50px !important;  border-right: 1px solid #444; }
+    .fix-m-4 { position: sticky; left: 240px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
+    .fix-m-5 { position: sticky; left: 310px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 1px solid #444; }
+    .fix-m-6 { position: sticky; left: 355px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
+    .fix-m-7 { position: sticky; left: 425px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 2px solid #bbb !important; }
 
     /* Fix z-index for headers */
     .month-table thead th.fix-m-1, .month-table thead th.fix-m-2, 
@@ -441,8 +441,14 @@ def process_data():
     if not df_fix_cost.empty and 'เดือน' in df_fix_cost.columns: df_fix_cost['Key'] = df_fix_cost['เดือน'].astype(str).str.strip() + "-" + df_fix_cost['ปี'].astype(str)
 
     sku_map = df_daily.groupby('SKU_Main')['ชื่อสินค้า'].last().to_dict()
-    if 'ชื่อสินค้า' in df_master.columns: sku_map.update(df_master.set_index('SKU')['ชื่อสินค้า'].to_dict())
-    sku_list = sorted(list(set(df_daily['SKU_Main'].unique())))
+    master_skus_set = set()
+    if not df_master.empty and 'SKU' in df_master.columns:
+        master_skus_set = set(df_master['SKU'].astype(str).str.strip())
+        if 'ชื่อสินค้า' in df_master.columns:
+            sku_map.update(df_master.set_index('SKU')['ชื่อสินค้า'].to_dict())
+    
+    daily_skus_set = set(df_daily['SKU_Main'].unique())
+    sku_list = sorted(list(daily_skus_set.union(master_skus_set)))
 
     return df_daily, df_fix_cost, sku_map, sku_list
 
@@ -679,8 +685,8 @@ try:
                 row_html = f'<tr class="{row_cls}">'
                 row_html += f'<td class="fix-m-1" style="{style_bg} color: {lbl_color} !important;">{label}</td>'
                 
-                val_qty = ""
-                if label == "รวมยอดขาย": val_qty = ""
+                # --- CHANGE HERE: Empty string for Qty column in "Total Sales" row ---
+                val_qty = "" # Always empty in footer sub-rows except Grand Total
                 
                 row_html += f'<td class="fix-m-2" style="{style_bg} color:{grand_text_col};">{txt_val}</td>'
                 row_html += f'<td class="fix-m-3" style="{style_bg} color:{grand_text_col};">{val_qty}</td>'
