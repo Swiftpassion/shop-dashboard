@@ -103,27 +103,32 @@ st.markdown("""
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
     .custom-table tbody tr:hover td { background-color: #333; }
 
-    /* REPORT DAILY SPECIFIC - UPDATED COLORS (GREY/WHITE SCHEME) [FIXED] */
-    /* 1. Remove default text color to allow inline styles to work */
-    .custom-table.daily-table tbody tr td { 
-        color: inherit; 
-    }
-    
-    /* 2. Set background colors without forcing text color */
+    /* ================================================================
+       REPORT DAILY SPECIFIC STYLES - MODIFIED HERE 
+       ================================================================
+    */
+    /* Row Backgrounds & Text Colors */
     .custom-table.daily-table tbody tr:nth-child(even) td { 
         background-color: #d9d9d9 !important; 
+        color: #3b3b3b !important;
     }
     .custom-table.daily-table tbody tr:nth-child(odd) td { 
         background-color: #ffffff !important; 
-    }
-    .custom-table.daily-table tbody tr:hover td { 
-        background-color: #e6e6e6 !important; 
+        color: #000000 !important;
     }
     
-    /* Force red color for negative values even with !important */
+    /* Hover Effect */
+    .custom-table.daily-table tbody tr:hover td { 
+        background-color: #e6e6e6 !important; 
+        color: #000000 !important;
+    }
+    
+    /* Force RED color for negative values (overriding the row colors above) */
+    .custom-table.daily-table tbody tr td.neg-val,
     .custom-table.daily-table tbody tr td[style*="color: #FF0000"],
     .custom-table.daily-table tbody tr td[style*="color:#FF0000"] {
         color: #FF0000 !important;
+        font-weight: bold;
     }
     
     /* Footer Row */
@@ -825,8 +830,9 @@ try:
                 return text
 
             def get_cell_style(val):
+                # Ensure negative values are RED with !important priority
                 if isinstance(val, (int, float)) and val < 0:
-                    return ' style="color: #FF0000; font-weight: bold;"'
+                    return ' style="color: #FF0000 !important; font-weight: bold;"'
                 return '' 
 
             st.markdown("##### 📋 รายละเอียดสินค้า")
@@ -838,8 +844,9 @@ try:
 
             for i, (_, r) in enumerate(df_final_d.iterrows()):
                 html += '<tr>'
-                html += f'<td style="font-weight:bold;color:#1e3c72;">{r["SKU_Main"]}</td>'
-                html += f'<td style="text-align:left;font-size:11px;color:#1e3c72;">{r["ชื่อสินค้า"]}</td>'
+                # Remove hardcoded colors so CSS can take effect (except for inline negatives)
+                html += f'<td style="font-weight:bold;">{r["SKU_Main"]}</td>'
+                html += f'<td style="text-align:left;font-size:11px;">{r["ชื่อสินค้า"]}</td>'
 
                 html += f'<td{get_cell_style(r["จำนวน"])}>{fmt(r["จำนวน"])}</td>'
                 html += f'<td{get_cell_style(r["รายละเอียดยอดที่ชำระแล้ว"])}>{fmt(r["รายละเอียดยอดที่ชำระแล้ว"])}</td>'
@@ -850,13 +857,13 @@ try:
                 html += f'<td{get_cell_style(r["CAL_COM_ADMIN"])}>{fmt(r["CAL_COM_ADMIN"])}</td>'
                 html += f'<td{get_cell_style(r["CAL_COM_TELESALE"])}>{fmt(r["CAL_COM_TELESALE"])}</td>'
 
-                html += f'<td style="color:#e67e22;">{fmt(r["Ads_Amount"])}</td>'
+                html += f'<td style="color:#e67e22; font-weight:bold;">{fmt(r["Ads_Amount"])}</td>'
                 html += f'<td{get_cell_style(r["Net_Profit"])}>{fmt(r["Net_Profit"])}</td>'
 
-                html += f'<td class="col-small" style="color:#1e3c72;">{fmt(r["ROAS"])}</td>'
-                html += f'<td class="col-small" style="color:#1e3c72;">{fmt(r["% ทุนสินค้า"],True)}</td>'
-                html += f'<td class="col-small" style="color:#1e3c72;">{fmt(r["% ทุนอื่น"],True)}</td>'
-                html += f'<td class="col-small" style="color:#1e3c72;">{fmt(r["% Ads"],True)}</td>'
+                html += f'<td class="col-small">{fmt(r["ROAS"])}</td>'
+                html += f'<td class="col-small">{fmt(r["% ทุนสินค้า"],True)}</td>'
+                html += f'<td class="col-small">{fmt(r["% ทุนอื่น"],True)}</td>'
+                html += f'<td class="col-small">{fmt(r["% Ads"],True)}</td>'
                 html += f'<td class="col-small"{get_cell_style(r["% กำไร"])}>{fmt(r["% กำไร"],True)}</td>'
                 html += '</tr>'
 
