@@ -103,47 +103,33 @@ st.markdown("""
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
     .custom-table tbody tr:hover td { background-color: #333; }
 
-    /* REPORT DAILY SPECIFIC - UPDATED COLORS (GREY/WHITE SCHEME) [FIXED] */
-    /* 1. กำหนดสีตัวอักษรเริ่มต้นให้เข้มขึ้นเพื่อให้อ่านง่าย */
-    .custom-table.daily-table tbody tr td { 
-        color: #333333 !important; /* สีเทาเข้มสำหรับตัวอักษรปกติ */
-        font-weight: 500;
-    }
-    
-    /* 2. Set background colors */
+    /* REPORT DAILY SPECIFIC - UPDATED */
+    /* 1. แถวคู่: พื้นหลังเทา #d9d9d9 ตัวหนังสือเทาเข้ม #3b3b3b */
     .custom-table.daily-table tbody tr:nth-child(even) td { 
         background-color: #d9d9d9 !important; 
+        color: #3b3b3b !important; 
+        border-bottom: 1px solid #c0c0c0;
     }
+
+    /* 2. แถวคี่: พื้นหลังขาว #ffffff ตัวหนังสือดำ #000000 */
     .custom-table.daily-table tbody tr:nth-child(odd) td { 
         background-color: #ffffff !important; 
+        color: #000000 !important; 
+        border-bottom: 1px solid #e0e0e0;
     }
+
+    /* 3. Hover: เปลี่ยนเป็นสีเทาอ่อนๆ เพื่อให้อ่านง่าย */
     .custom-table.daily-table tbody tr:hover td { 
         background-color: #e6e6e6 !important; 
+        color: #000000 !important; 
+        cursor: pointer;
     }
-    
-    /* 3. Force red color for negative values */
-    .custom-table.daily-table tbody tr td[style*="color: #FF0000"],
-    .custom-table.daily-table tbody tr td[style*="color:#FF0000"] {
-        color: #FF0000 !important;
-        font-weight: bold !important;
-    }
-    
-    /* 4. ให้สี Ads (ส้ม) ทำงานได้ */
-    .custom-table.daily-table tbody tr td[style*="color: #e67e22"],
-    .custom-table.daily-table tbody tr td[style*="color:#e67e22"] {
-        color: #e67e22 !important;
-    }
-    
-    /* 5. ให้สี SKU และชื่อสินค้า (น้ำเงิน) ทำงานได้ */
-    .custom-table.daily-table tbody tr td[style*="color: #1e3c72"],
-    .custom-table.daily-table tbody tr td[style*="color:#1e3c72"] {
-        color: #1e3c72 !important;
-        font-weight: bold !important;
-    }
-    
-    /* Footer Row */
+
+    /* Footer: ส่วนท้ายตาราง REPORT DAILY */
     .custom-table.daily-table tbody tr.footer-row td { 
-        position: sticky; bottom: 0; z-index: 100; 
+        position: sticky; 
+        bottom: 0; 
+        z-index: 100; 
         background-color: #1e3c72 !important; 
         font-weight: bold; 
         color: white !important; 
@@ -201,7 +187,7 @@ st.markdown("""
 
     .th-sku { background-color: #1e3c72 !important; color: white !important; min-width: 80px; }
     .sku-header { font-size: 10px; color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
-    .col-small { width: 70px; min-width: 70px; max-width: 70px; font-size: 11px; color: #333333 !important; }
+    .col-small { width: 70px; min-width: 70px; max-width: 70px; font-size: 11px; }
 
     .pnl-container { font-family: 'Prompt', sans-serif; color: #ffffff; }
     .header-gradient-pnl { background-image: linear-gradient(135deg, #0f172a 0%, #334155 100%); padding: 20px 25px; border-radius: 12px; color: white; margin-bottom: 25px; }
@@ -555,7 +541,7 @@ try:
             c_type, c_sku, c_clear, c_run = st.columns([1.5, 4, 0.5, 1])
             with c_type:
                 filter_mode = st.selectbox("เงื่อนไขสินค้า (Fast Filter)",
-                    ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 แสดงสินค้ากำไร", "💸 แสดงสินค้าขาดทุน", "📋 แสดงรายการทั้งหมด"])
+                    ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 เฉพาะรายการที่ขายได้", "💸 ผลาญงบ (มี Ads แต่ขายไม่ได้)", "📋 แสดง Master ทั้งหมด"])
             
             with c_sku: st.multiselect("รายการที่เลือก (Choose options):", sku_options_list_global, key="selected_skus")
             with c_clear:
@@ -568,11 +554,11 @@ try:
         mask_date = (df_daily['Date'] >= start_date_m) & (df_daily['Date'] <= end_date_m)
         df_base = df_daily[mask_date]
 
-        sku_summary = df_base.groupby('SKU_Main').agg({'รายละเอียดยอดที่ชำระแล้ว': 'sum', 'Ads_Amount': 'sum', 'Net_Profit': 'sum'}).reset_index()
+        sku_summary = df_base.groupby('SKU_Main').agg({'รายละเอียดยอดที่ชำระแล้ว': 'sum', 'Ads_Amount': 'sum'}).reset_index()
         auto_skus = []
-        if "แสดงสินค้ากำไร" in filter_mode: auto_skus = sku_summary[sku_summary['Net_Profit'] > 0]['SKU_Main'].tolist()
-        elif "แสดงสินค้าขาดทุน" in filter_mode: auto_skus = sku_summary[sku_summary['Net_Profit'] < 0]['SKU_Main'].tolist()
-        elif "แสดงรายการทั้งหมด" in filter_mode: auto_skus = all_skus_global
+        if "เฉพาะรายการที่ขายได้" in filter_mode: auto_skus = sku_summary[sku_summary['รายละเอียดยอดที่ชำระแล้ว'] > 0]['SKU_Main'].tolist()
+        elif "ผลาญงบ" in filter_mode: auto_skus = sku_summary[(sku_summary['Ads_Amount'] > 0) & (sku_summary['รายละเอียดยอดที่ชำระแล้ว'] == 0)]['SKU_Main'].tolist()
+        elif "แสดง Master ทั้งหมด" in filter_mode: auto_skus = all_skus_global
         else: auto_skus = sku_summary[(sku_summary['รายละเอียดยอดที่ชำระแล้ว'] > 0) | (sku_summary['Ads_Amount'] > 0)]['SKU_Main'].tolist()
 
         selected_labels = st.session_state.selected_skus
@@ -726,6 +712,7 @@ try:
                 row_html = f'<tr class="{row_cls}">'
                 row_html += f'<td class="fix-m-1" style="{style_bg} color: {lbl_color} !important;">{label}</td>'
                 
+                # --- CHANGE HERE: Empty string for Qty column in "Total Sales" row ---
                 val_qty = "" # Always empty in footer sub-rows except Grand Total
                 
                 row_html += f'<td class="fix-m-2" style="{style_bg} color:{grand_text_col};">{txt_val}</td>'
@@ -780,7 +767,7 @@ try:
             with c1: sel_year_d = st.selectbox("เลือกปี", sorted(df_daily['Year'].unique(), reverse=True), key="d_y")
             with c2: start_d = st.date_input("เริ่มวันที่", datetime.now().replace(day=1), key="d_s")
             with c3: end_d = st.date_input("ถึงวันที่", datetime.now(), key="d_e")
-            with c4: filter_mode_d = st.selectbox("เงื่อนไขสินค้า (Fast Filter)", ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 แสดงสินค้ากำไร", "💸 แสดงสินค้าขาดทุน", "📋 แสดงรายการทั้งหมด"], key="d_m")
+            with c4: filter_mode_d = st.selectbox("เงื่อนไขสินค้า (Fast Filter)", ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 เฉพาะรายการที่ขายได้", "💸 ผลาญงบ (มี Ads แต่ขายไม่ได้)", "📋 แสดง Master ทั้งหมด"], key="d_m")
 
             c_sku, c_clear, c_run = st.columns([4, 0.5, 1])
             with c_sku: st.multiselect("รายการที่เลือก (Choose options):", sku_options_list_global, key="selected_skus_d")
@@ -802,9 +789,9 @@ try:
         df_grouped['ชื่อสินค้า'] = df_grouped['SKU_Main'].map(sku_name_lookup).fillna("ไม่ระบุชื่อ")
 
         auto_skus_d = []
-        if "แสดงสินค้ากำไร" in filter_mode_d: auto_skus_d = df_grouped[df_grouped['Net_Profit'] > 0]['SKU_Main'].tolist()
-        elif "แสดงสินค้าขาดทุน" in filter_mode_d: auto_skus_d = df_grouped[df_grouped['Net_Profit'] < 0]['SKU_Main'].tolist()
-        elif "แสดงรายการทั้งหมด" in filter_mode_d: auto_skus_d = all_skus_global
+        if "เฉพาะรายการที่ขายได้" in filter_mode_d: auto_skus_d = df_grouped[df_grouped['รายละเอียดยอดที่ชำระแล้ว'] > 0]['SKU_Main'].tolist()
+        elif "ผลาญงบ" in filter_mode_d: auto_skus_d = df_grouped[(df_grouped['Ads_Amount'] > 0) & (df_grouped['รายละเอียดยอดที่ชำระแล้ว'] == 0)]['SKU_Main'].tolist()
+        elif "แสดง Master ทั้งหมด" in filter_mode_d: auto_skus_d = all_skus_global
         else: auto_skus_d = df_grouped[(df_grouped['รายละเอียดยอดที่ชำระแล้ว'] > 0) | (df_grouped['Ads_Amount'] > 0)]['SKU_Main'].tolist()
 
         selected_labels_d = st.session_state.selected_skus_d
@@ -839,17 +826,17 @@ try:
                 text = f"{val:,.2f}%" if is_percent else f"{val:,.2f}"
                 return text
 
-            def get_cell_style(val):
-                if isinstance(val, (int, float)) and val < 0:
-                    return ' style="color: #FF0000; font-weight: bold;"'
-                return '' 
-
             st.markdown("##### 📋 รายละเอียดสินค้า")
             cols_cfg = [('SKU', 'SKU_Main', ''), ('ชื่อสินค้า', 'ชื่อสินค้า', ''), ('จำนวน', 'จำนวน', ''), ('ยอดขาย', 'รายละเอียดยอดที่ชำระแล้ว', ''), ('ต้นทุน', 'CAL_COST', ''), ('ค่ากล่อง', 'BOX_COST', ''), ('ค่าส่ง', 'DELIV_COST', ''), ('COD', 'CAL_COD_COST', ''), ('Admin', 'CAL_COM_ADMIN', ''), ('Tele', 'CAL_COM_TELESALE', ''), ('ค่า Ads', 'Ads_Amount', ''), ('กำไร', 'Net_Profit', ''), ('ROAS', 'ROAS', 'col-small'), ('%ทุน', '% ทุนสินค้า', 'col-small'), ('%อื่น', '% ทุนอื่น', 'col-small'), ('%Ads', '% Ads', 'col-small'), ('%กำไร', '% กำไร', 'col-small')]
 
             html = '<div class="table-wrapper"><table class="custom-table daily-table"><thead><tr>'
             for title, _, cls in cols_cfg: html += f'<th class="{cls}">{title}</th>'
             html += '</tr></thead><tbody>'
+
+            def get_cell_style(val):
+                if isinstance(val, (int, float)) and val < 0:
+                    return ' style="color: #FF0000 !important;"'
+                return '' 
 
             for i, (_, r) in enumerate(df_final_d.iterrows()):
                 html += '<tr>'
@@ -893,17 +880,11 @@ try:
 
             f_roas = ts/ta if ta>0 else 0
             f_pp = (tp/ts*100) if ts>0 else 0
-            
-            val_pct_cost = (tc/ts*100) if ts>0 else 0
-            val_pct_oth = (t_oth/ts*100) if ts>0 else 0
-            val_pct_ads = (ta/ts*100) if ts>0 else 0
-            val_pct_profit = f_pp
-            
-            html += f'<td class="col-small"{get_cell_style(f_roas)}>{fmt(f_roas)}</td>'
-            html += f'<td class="col-small"{get_cell_style(val_pct_cost)}>{fmt(val_pct_cost,True)}</td>'
-            html += f'<td class="col-small"{get_cell_style(val_pct_oth)}>{fmt(val_pct_oth,True)}</td>'
-            html += f'<td class="col-small"{get_cell_style(val_pct_ads)}>{fmt(val_pct_ads,True)}</td>'
-            html += f'<td class="col-small"{get_cell_style(val_pct_profit)}>{fmt(val_pct_profit,True)}</td></tr></tbody></table></div>'
+            html += f'<td class="col-small" style="color:#ffffff;">{fmt(f_roas)}</td>'
+            html += f'<td class="col-small" style="color:#ffffff;">{fmt((tc/ts*100) if ts>0 else 0,True)}</td>'
+            html += f'<td class="col-small" style="color:#ffffff;">{fmt((t_oth/ts*100) if ts>0 else 0,True)}</td>'
+            html += f'<td class="col-small" style="color:#ffffff;">{fmt((ta/ts*100) if ts>0 else 0,True)}</td>'
+            html += f'<td class="col-small"{get_cell_style(f_pp)}>{fmt(f_pp,True)}</td></tr></tbody></table></div>'
             st.markdown(html, unsafe_allow_html=True)
 
     # --- PAGE 3: PRODUCT GRAPH ---
@@ -915,7 +896,7 @@ try:
             with c_g1: start_g = st.date_input("เริ่มวันที่", datetime.now().replace(day=1), key="g_s")
             with c_g2: end_g = st.date_input("ถึงวันที่", datetime.now(), key="g_e")
             with c_g3: filter_mode_g = st.selectbox("เงื่อนไขสินค้า (Fast Filter)",
-                ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 แสดงสินค้ากำไร", "💸 แสดงสินค้าขาดทุน", "📋 แสดงรายการทั้งหมด"], key="g_m")
+                ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 เฉพาะรายการที่ขายได้", "💸 ผลาญงบ (มี Ads แต่ขายไม่ได้)", "📋 แสดง Master ทั้งหมด"], key="g_m")
 
             c_sku, c_clear, c_run = st.columns([4, 0.5, 1])
             with c_sku: st.multiselect("เลือกสินค้าที่ต้องการดูกราฟ:", sku_options_list_global, key="selected_skus_g")
@@ -929,14 +910,14 @@ try:
         mask_g_date = (df_daily['Date'] >= pd.to_datetime(start_g).date()) & (df_daily['Date'] <= pd.to_datetime(end_g).date())
         df_range_g = df_daily[mask_g_date]
 
-        sku_stats_g = df_range_g.groupby('SKU_Main').agg({'รายละเอียดยอดที่ชำระแล้ว': 'sum', 'Ads_Amount': 'sum', 'Net_Profit': 'sum'}).reset_index()
+        sku_stats_g = df_range_g.groupby('SKU_Main').agg({'รายละเอียดยอดที่ชำระแล้ว': 'sum', 'Ads_Amount': 'sum'}).reset_index()
         auto_skus_g = []
 
-        if "แสดงสินค้ากำไร" in filter_mode_g:
-            auto_skus_g = sku_stats_g[sku_stats_g['Net_Profit'] > 0]['SKU_Main'].tolist()
-        elif "แสดงสินค้าขาดทุน" in filter_mode_g:
-            auto_skus_g = sku_stats_g[sku_stats_g['Net_Profit'] < 0]['SKU_Main'].tolist()
-        elif "แสดงรายการทั้งหมด" in filter_mode_g:
+        if "เฉพาะรายการที่ขายได้" in filter_mode_g:
+            auto_skus_g = sku_stats_g[sku_stats_g['รายละเอียดยอดที่ชำระแล้ว'] > 0]['SKU_Main'].tolist()
+        elif "ผลาญงบ" in filter_mode_g:
+            auto_skus_g = sku_stats_g[(sku_stats_g['Ads_Amount'] > 0) & (sku_stats_g['รายละเอียดยอดที่ชำระแล้ว'] == 0)]['SKU_Main'].tolist()
+        elif "แสดง Master ทั้งหมด" in filter_mode_g:
             auto_skus_g = all_skus_global
         else: # แสดงรายการที่มีการเคลื่อนไหว
             auto_skus_g = sku_stats_g[(sku_stats_g['รายละเอียดยอดที่ชำระแล้ว'] > 0) | (sku_stats_g['Ads_Amount'] > 0)]['SKU_Main'].tolist()
