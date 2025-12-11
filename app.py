@@ -103,11 +103,31 @@ st.markdown("""
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
     .custom-table tbody tr:hover td { background-color: #333; }
 
-    /* REPORT DAILY SPECIFIC - UPDATED COLORS (GREY/WHITE SCHEME) */
-    .custom-table.daily-table tbody tr:nth-child(even) td { background-color: #d9d9d9 !important; color: #000000; }
-    .custom-table.daily-table tbody tr:nth-child(odd) td { background-color: #ffffff !important; color: #000000; }
-    .custom-table.daily-table tbody tr:hover td { background-color: #e6e6e6 !important; color: #000000; }
-    .custom-table.daily-table tbody tr.footer-row td { position: sticky; bottom: 0; z-index: 100; background-color: #1e3c72 !important; font-weight: bold; color: white !important; border-top: 2px solid #f1c40f; }
+    /* REPORT DAILY SPECIFIC - UPDATED COLORS (GREY/WHITE SCHEME) [FIXED] */
+    /* 1. Set default text color separately */
+    .custom-table.daily-table tbody tr td { 
+        color: #000000; 
+    }
+    
+    /* 2. Set background colors without forcing text color, allowing inline styles (red) to work */
+    .custom-table.daily-table tbody tr:nth-child(even) td { 
+        background-color: #d9d9d9 !important; 
+    }
+    .custom-table.daily-table tbody tr:nth-child(odd) td { 
+        background-color: #ffffff !important; 
+    }
+    .custom-table.daily-table tbody tr:hover td { 
+        background-color: #e6e6e6 !important; 
+    }
+    
+    /* Footer Row */
+    .custom-table.daily-table tbody tr.footer-row td { 
+        position: sticky; bottom: 0; z-index: 100; 
+        background-color: #1e3c72 !important; 
+        font-weight: bold; 
+        color: white !important; 
+        border-top: 2px solid #f1c40f; 
+    }
 
     /* --- [FIX COMPACT SIZE] REPORT MONTH STICKY COLS --- */
     /* Total Width = 110 + 50 + 70 + 70 + 45 + 70 + 45 = 460px */
@@ -685,7 +705,6 @@ try:
                 row_html = f'<tr class="{row_cls}">'
                 row_html += f'<td class="fix-m-1" style="{style_bg} color: {lbl_color} !important;">{label}</td>'
                 
-                # --- CHANGE HERE: Empty string for Qty column in "Total Sales" row ---
                 val_qty = "" # Always empty in footer sub-rows except Grand Total
                 
                 row_html += f'<td class="fix-m-2" style="{style_bg} color:{grand_text_col};">{txt_val}</td>'
@@ -808,7 +827,7 @@ try:
 
             def get_cell_style(val):
                 if isinstance(val, (int, float)) and val < 0:
-                    return ' style="color: #FF0000 !important;"'
+                    return ' style="color: #FF0000 !important; font-weight: bold;"'
                 return '' 
 
             for i, (_, r) in enumerate(df_final_d.iterrows()):
@@ -854,7 +873,6 @@ try:
             f_roas = ts/ta if ta>0 else 0
             f_pp = (tp/ts*100) if ts>0 else 0
             
-            # --- FIX: Calculate values and use get_cell_style for correct coloring ---
             val_pct_cost = (tc/ts*100) if ts>0 else 0
             val_pct_oth = (t_oth/ts*100) if ts>0 else 0
             val_pct_ads = (ta/ts*100) if ts>0 else 0
