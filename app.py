@@ -103,51 +103,37 @@ st.markdown("""
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
     .custom-table tbody tr:hover td { background-color: #333; }
 
-    /* REPORT DAILY SPECIFIC - UPDATED COLORS (GREY/WHITE SCHEME) [FIXED] */
-    /* 1. กำหนดสีตัวอักษรเริ่มต้นให้เข้มขึ้น แต่ใช้ !important เพื่อให้ inline style ทำงานได้ */
+    /* REPORT DAILY SPECIFIC */
     .custom-table.daily-table tbody tr td { 
-        color: #333333 !important; /* สีเทาเข้มสำหรับตัวอักษรปกติ */
+        color: #333333 !important; 
         font-weight: 500;
     }
+    .custom-table.daily-table tbody tr:nth-child(even) td { background-color: #d9d9d9 !important; }
+    .custom-table.daily-table tbody tr:nth-child(odd) td { background-color: #ffffff !important; }
+    .custom-table.daily-table tbody tr:hover td { background-color: #e6e6e6 !important; }
     
-    /* 2. Set background colors */
-    .custom-table.daily-table tbody tr:nth-child(even) td { 
-        background-color: #d9d9d9 !important; 
-    }
-    .custom-table.daily-table tbody tr:nth-child(odd) td { 
-        background-color: #ffffff !important; 
-    }
-    .custom-table.daily-table tbody tr:hover td { 
-        background-color: #e6e6e6 !important; 
-    }
-    
-    /* 3. Override สำหรับค่าติดลบ - ใช้ inline style ที่มี !important หรือใช้ class ที่มี specificity สูงกว่า */
     .custom-table.daily-table tbody tr td.negative-value {
         color: #FF0000 !important;
         font-weight: bold !important;
     }
     
-    /* 4. ให้สี Ads (ส้ม) ทำงานได้ */
     .custom-table.daily-table tbody tr td[style*="color: #e67e22"],
     .custom-table.daily-table tbody tr td[style*="color:#e67e22"] {
         color: #e67e22 !important;
     }
     
-    /* 5. ให้สี SKU และชื่อสินค้า (น้ำเงิน) ทำงานได้ */
     .custom-table.daily-table tbody tr td[style*="color: #1e3c72"],
     .custom-table.daily-table tbody tr td[style*="color:#1e3c72"] {
         color: #1e3c72 !important;
         font-weight: bold !important;
     }
     
-    /* 6. ให้ inline style สำหรับสีแดงทำงานได้ */
     .custom-table.daily-table tbody tr td[style*="color: #FF0000"],
     .custom-table.daily-table tbody tr td[style*="color:#FF0000"] {
         color: #FF0000 !important;
         font-weight: bold !important;
     }
     
-    /* Footer Row */
     .custom-table.daily-table tbody tr.footer-row td { 
         position: sticky; bottom: 0; z-index: 100; 
         background-color: #1e3c72 !important; 
@@ -157,7 +143,6 @@ st.markdown("""
     }
 
     /* --- [FIX COMPACT SIZE] REPORT MONTH STICKY COLS --- */
-    /* Total Width = 110 + 50 + 70 + 70 + 45 + 70 + 45 = 460px */
     .fix-m-1 { position: sticky; left: 0px !important;   z-index: 20; width: 110px !important; min-width: 110px !important; border-right: 1px solid #444; }
     .fix-m-2 { position: sticky; left: 110px !important; z-index: 20; width: 80px !important;  min-width: 80px !important;  border-right: 1px solid #444; }
     .fix-m-3 { position: sticky; left: 190px !important; z-index: 20; width: 50px !important;  min-width: 50px !important;  border-right: 1px solid #444; }
@@ -166,7 +151,6 @@ st.markdown("""
     .fix-m-6 { position: sticky; left: 355px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
     .fix-m-7 { position: sticky; left: 425px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 2px solid #bbb !important; }
 
-    /* Fix z-index for headers */
     .month-table thead th.fix-m-1, .month-table thead th.fix-m-2, 
     .month-table thead th.fix-m-3, .month-table thead th.fix-m-4,
     .month-table thead th.fix-m-5, .month-table thead th.fix-m-6,
@@ -174,7 +158,6 @@ st.markdown("""
         z-index: 30 !important;
     }
 
-    /* Force background for sticky cols */
     .custom-table tbody tr td.fix-m-1, .custom-table tbody tr td.fix-m-2,
     .custom-table tbody tr td.fix-m-3, .custom-table tbody tr td.fix-m-4,
     .custom-table tbody tr td.fix-m-5, .custom-table tbody tr td.fix-m-6,
@@ -188,7 +171,6 @@ st.markdown("""
         background-color: #262626; 
     }
 
-    /* --- FOOTER STICKY FOR REPORT MONTH --- */
     .month-table tfoot {
         position: sticky;
         bottom: 0;
@@ -366,7 +348,7 @@ def load_raw_files():
 def process_data():
     df_data, df_ads_raw, df_master, df_fix_cost = load_raw_files()
 
-    if df_data.empty: return pd.DataFrame(), pd.DataFrame(), {}, []
+    if df_data.empty: return pd.DataFrame(), pd.DataFrame(), {}, [], {}
 
     if not df_master.empty:
         df_master.columns = df_master.columns.astype(str).str.strip()
@@ -376,6 +358,12 @@ def process_data():
                 df_master.rename(columns={col_b: 'ชื่อสินค้า'}, inplace=True)
             else:
                 df_master['ชื่อสินค้า'] = df_master['SKU'] if 'SKU' in df_master.columns else "Unknown"
+        
+        # --- NEW: TYPE COLUMN HANDLING ---
+        if 'Type' not in df_master.columns:
+            df_master['Type'] = 'กลุ่ม ปกติ'
+        df_master['Type'] = df_master['Type'].fillna('กลุ่ม ปกติ').astype(str).str.strip()
+        # ---------------------------------
 
     cols_money = ['ต้นทุน', 'ราคากล่อง', 'ค่าส่งเฉลี่ย']
     cols_percent = ['ค่าคอมมิชชั่น Admin', 'ค่าคอมมิชชั่น Telesale', 
@@ -414,7 +402,8 @@ def process_data():
     
     df['SKU_Main'] = df['รูปแบบสินค้า'].astype(str).str.split('-').str[0].str.strip()
 
-    master_cols = [c for c in cols_money + cols_percent + ['SKU', 'ชื่อสินค้า'] if c in df_master.columns]
+    # --- UPDATED: Merge with Type ---
+    master_cols = [c for c in cols_money + cols_percent + ['SKU', 'ชื่อสินค้า', 'Type'] if c in df_master.columns]
     df_merged = pd.merge(df, df_master[master_cols].drop_duplicates('SKU'), left_on='SKU_Main', right_on='SKU', how='left')
 
     if 'ชื่อสินค้า_y' in df_merged.columns: df_merged.rename(columns={'ชื่อสินค้า_y': 'ชื่อสินค้า'}, inplace=True)
@@ -458,6 +447,7 @@ def process_data():
         'CAL_COST': 'sum', 'ราคากล่อง': 'max', 'ค่าส่งเฉลี่ย': 'max', 'CAL_COD_COST': 'sum',
         'CAL_COM_ADMIN': 'sum', 'CAL_COM_TELESALE': 'sum'
     }
+    if 'Type' in df_merged.columns: agg_dict['Type'] = 'first' # เก็บ Type ไว้ด้วย
     
     for c in agg_dict.keys():
         if c not in df_merged.columns: df_merged[c] = 0
@@ -497,13 +487,28 @@ def process_data():
     daily_skus_set = set(df_daily['SKU_Main'].unique())
     sku_list = sorted(list(daily_skus_set.union(master_skus_set)))
 
-    return df_daily, df_fix_cost, sku_map, sku_list
+    # --- NEW: Create SKU -> Type Map ---
+    sku_type_map = {}
+    if not df_master.empty and 'SKU' in df_master.columns and 'Type' in df_master.columns:
+        sku_type_map = df_master.set_index('SKU')['Type'].to_dict()
+    
+    # Fallback to Daily if not in master (unlikely but safe)
+    if 'Type' in df_daily.columns:
+        daily_type_map = df_daily.groupby('SKU_Main')['Type'].first().to_dict()
+        for k, v in daily_type_map.items():
+            if k not in sku_type_map:
+                sku_type_map[k] = v
+            elif pd.isna(sku_type_map[k]) or sku_type_map[k] == '':
+                sku_type_map[k] = v
+    # -----------------------------------
+
+    return df_daily, df_fix_cost, sku_map, sku_list, sku_type_map
 
 # ==========================================
 # 5. FRONTEND: UI
 # ==========================================
 try:
-    df_daily, df_fix_cost, master_map_lookup, master_sku_list = process_data()
+    df_daily, df_fix_cost, master_map_lookup, master_sku_list, sku_type_map = process_data()
 
     if df_daily.empty:
         st.warning("⚠️ ไม่พบข้อมูล กรุณาตรวจสอบ Google Drive")
@@ -521,6 +526,22 @@ try:
         label = f"{sku} : {name}"
         sku_options_list_global.append(label)
         sku_map_reverse_global[label] = sku
+
+    # --- CATEGORY SETTINGS ---
+    CATEGORY_OPTIONS = ["แสดงทั้งหมด", "กลุ่ม DKUB", "กลุ่ม SMASH", "กลุ่ม อาหารเสริม"]
+
+    def filter_skus_by_category(current_skus, selected_category, type_map):
+        if selected_category == "แสดงทั้งหมด":
+            return current_skus
+        
+        filtered = []
+        for sku in current_skus:
+            # Default to 'กลุ่ม ปกติ' if not found
+            sku_type = type_map.get(sku, 'กลุ่ม ปกติ')
+            if sku_type == selected_category:
+                filtered.append(sku)
+        return filtered
+    # -------------------------
 
     if 'selected_skus' not in st.session_state: st.session_state.selected_skus = []
     if 'selected_skus_d' not in st.session_state: st.session_state.selected_skus_d = []
@@ -558,12 +579,19 @@ try:
             with c_s: start_date_m = st.date_input("วันที่เริ่มต้น", default_start, key="m_d_start")
             with c_e: end_date_m = st.date_input("วันที่สิ้นสุด", default_end, key="m_d_end")
 
-            c_type, c_sku, c_clear, c_run = st.columns([1.5, 4, 0.5, 1])
+            # --- MODIFIED LAYOUT FOR CATEGORY ---
+            c_type, c_cat, c_sku, c_clear, c_run = st.columns([1.5, 1.5, 2.5, 0.5, 1])
+            
             with c_type:
                 filter_mode = st.selectbox("เงื่อนไขสินค้า (Fast Filter)",
                     ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 แสดงสินค้ากำไร", "💸 แสดงสินค้าขาดทุน", "📋 แสดงรายการทั้งหมด"])
             
-            with c_sku: st.multiselect("รายการที่เลือก (Choose options):", sku_options_list_global, key="selected_skus")
+            with c_cat:
+                sel_category = st.selectbox("หมวดหมู่สินค้า", CATEGORY_OPTIONS, key="m_cat")
+            
+            with c_sku: 
+                st.multiselect("รายการที่เลือก (Choose options):", sku_options_list_global, key="selected_skus")
+            
             with c_clear:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
                 st.button("🧹", type="secondary", use_container_width=True, key="btn_clear_m", on_click=cb_clear_m)
@@ -583,9 +611,12 @@ try:
 
         selected_labels = st.session_state.selected_skus
         selected_skus_real = [sku_map_reverse_global[l] for l in selected_labels]
-        final_skus = sorted(selected_skus_real) if selected_skus_real else sorted(auto_skus)
+        
+        # --- APPLY CATEGORY FILTER ---
+        pre_final_skus = sorted(selected_skus_real) if selected_skus_real else sorted(auto_skus)
+        final_skus = filter_skus_by_category(pre_final_skus, sel_category, sku_type_map)
 
-        if not final_skus: st.warning(f"⚠️ ไม่พบข้อมูลสินค้าตามเงื่อนไข ในช่วงวันที่ {start_date_m} ถึง {end_date_m}")
+        if not final_skus: st.warning(f"⚠️ ไม่พบข้อมูลสินค้าตามเงื่อนไข ในช่วงวันที่ {start_date_m} ถึง {end_date_m} (หมวดหมู่: {sel_category})")
         else:
             df_view = df_base[df_base['SKU_Main'].isin(final_skus)]
         
@@ -678,7 +709,7 @@ try:
             g_sales = total_sales; g_ads = total_ads; g_cost = total_cost_ops; g_profit = net_profit
             g_qty = df_view['จำนวน'].sum()
 
-            # --- [INSERTED] GRAND TOTAL ROW ---
+            # --- GRAND TOTAL ROW ---
             g_pct_profit = (g_profit / g_sales * 100) if g_sales else 0
             g_pct_ads = (g_ads / g_sales * 100) if g_sales else 0
             bg_total = "#010538"; c_total = "#ffffff"
@@ -698,8 +729,7 @@ try:
                 c_sku = "#7CFC00" if val >= 0 else "#FF0000"
                 html += f'<td style="background-color: {bg_total}; color: {c_sku};">{fmt_n(val)}</td>'
             html += '</tr>'
-            # ----------------------------------
-
+            
             def create_footer_row_new(row_cls, label, data_dict, val_type='num', dark_bg=False):
                 if "row-sales" in row_cls: bg_color = "#B8860B"       
                 elif "row-cost" in row_cls: bg_color = "#3366FF"      
@@ -788,7 +818,11 @@ try:
             with c3: end_d = st.date_input("ถึงวันที่", datetime.now(), key="d_e")
             with c4: filter_mode_d = st.selectbox("เงื่อนไขสินค้า (Fast Filter)", ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 แสดงสินค้ากำไร", "💸 แสดงสินค้าขาดทุน", "📋 แสดงรายการทั้งหมด"], key="d_m")
 
-            c_sku, c_clear, c_run = st.columns([4, 0.5, 1])
+            # --- MODIFIED LAYOUT FOR CATEGORY ---
+            c_cat, c_sku, c_clear, c_run = st.columns([1.5, 3, 0.5, 1])
+            with c_cat:
+                sel_category_d = st.selectbox("หมวดหมู่สินค้า", CATEGORY_OPTIONS, key="d_cat")
+
             with c_sku: st.multiselect("รายการที่เลือก (Choose options):", sku_options_list_global, key="selected_skus_d")
             with c_clear:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
@@ -815,11 +849,14 @@ try:
 
         selected_labels_d = st.session_state.selected_skus_d
         selected_skus_real_d = [sku_map_reverse_global[l] for l in selected_labels_d]
-        final_skus_d = sorted(selected_skus_real_d) if selected_skus_real_d else sorted(auto_skus_d)
+        
+        # --- APPLY CATEGORY FILTER ---
+        pre_final_skus_d = sorted(selected_skus_real_d) if selected_skus_real_d else sorted(auto_skus_d)
+        final_skus_d = filter_skus_by_category(pre_final_skus_d, sel_category_d, sku_type_map)
 
         df_final_d = df_grouped[df_grouped['SKU_Main'].isin(final_skus_d)].copy()
 
-        if df_final_d.empty: st.warning("⚠️ ไม่พบข้อมูลตามเงื่อนไขในช่วงเวลานี้")
+        if df_final_d.empty: st.warning(f"⚠️ ไม่พบข้อมูลตามเงื่อนไข ({sel_category_d}) ในช่วงเวลานี้")
         else:
             sum_sales = df_final_d['รายละเอียดยอดที่ชำระแล้ว'].sum()
             sum_ads = df_final_d['Ads_Amount'].sum()
@@ -847,7 +884,6 @@ try:
 
             def get_cell_style(val):
                 if isinstance(val, (int, float)) and val < 0:
-                    # ใช้ inline style ที่มี !important และเพิ่ม class negative-value
                     return ' style="color: #FF0000 !important; font-weight: bold !important;" class="negative-value"'
                 return '' 
 
@@ -924,7 +960,11 @@ try:
             with c_g3: filter_mode_g = st.selectbox("เงื่อนไขสินค้า (Fast Filter)",
                 ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 แสดงสินค้ากำไร", "💸 แสดงสินค้าขาดทุน", "📋 แสดงรายการทั้งหมด"], key="g_m")
 
-            c_sku, c_clear, c_run = st.columns([4, 0.5, 1])
+            # --- MODIFIED LAYOUT FOR CATEGORY ---
+            c_cat, c_sku, c_clear, c_run = st.columns([1.5, 3, 0.5, 1])
+            with c_cat:
+                sel_category_g = st.selectbox("หมวดหมู่สินค้า", CATEGORY_OPTIONS, key="g_cat")
+
             with c_sku: st.multiselect("เลือกสินค้าที่ต้องการดูกราฟ:", sku_options_list_global, key="selected_skus_g")
             with c_clear:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
@@ -951,10 +991,12 @@ try:
         selected_labels_g = st.session_state.selected_skus_g
         real_selected_g = [sku_map_reverse_global[l] for l in selected_labels_g]
 
-        final_skus_g = sorted(real_selected_g) if real_selected_g else sorted(auto_skus_g)
+        # --- APPLY CATEGORY FILTER ---
+        pre_final_skus_g = sorted(real_selected_g) if real_selected_g else sorted(auto_skus_g)
+        final_skus_g = filter_skus_by_category(pre_final_skus_g, sel_category_g, sku_type_map)
 
         if not final_skus_g:
-            st.info("👈 ไม่พบข้อมูลตามเงื่อนไข หรือกรุณาเลือกสินค้า")
+            st.info(f"👈 ไม่พบข้อมูลตามเงื่อนไข ({sel_category_g}) หรือกรุณาเลือกสินค้า")
         else:
             df_graph = df_range_g[df_range_g['SKU_Main'].isin(final_skus_g)].copy()
 
