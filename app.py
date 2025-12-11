@@ -26,6 +26,83 @@ COLOR_NEGATIVE = "#FF0000"
 # ==========================================
 st.set_page_config(page_title="Shop Analytics Dashboard", layout="wide", page_icon="📊")
 
+# ==========================================
+# 0. LOGIN SYSTEM
+# ==========================================
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+
+def check_login():
+    password = st.session_state.get("password_input", "")
+    if password == "Mos2025":
+        st.session_state.logged_in = True
+        st.session_state.login_error = None
+    else:
+        st.session_state.login_error = "❌ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่"
+
+if not st.session_state.logged_in:
+    # จัด CSS เฉพาะหน้า Login ให้ดูสวยงามคล้ายรูปตัวอย่าง
+    st.markdown("""
+        <style>
+            .stTextInput input {
+                color: #333 !important;
+                background-color: #ffffff !important;
+                border: 2px solid #6c5ce7 !important;
+                border-radius: 10px !important;
+                padding: 10px !important;
+            }
+            .stButton button {
+                background-color: #6c5ce7 !important;
+                color: white !important;
+                border-radius: 10px !important;
+                border: none !important;
+                font-size: 18px !important;
+                padding: 10px !important;
+            }
+            .stButton button:hover {
+                background-color: #5a4ad1 !important;
+                color: white !important;
+            }
+            .login-header {
+                font-size: 28px;
+                font-weight: 700;
+                text-align: center;
+                margin-bottom: 10px;
+                color: white;
+            }
+            .login-sub {
+                font-size: 14px;
+                text-align: center;
+                color: #aaa;
+                margin-bottom: 30px;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # สร้างคอลัมน์เพื่อให้ช่องกรอกอยู่ตรงกลางหน้าจอ
+    col1, col2, col3 = st.columns([1, 1, 1])
+
+    with col2:
+        st.markdown("<br><br><br>", unsafe_allow_html=True) # เว้นบรรทัดลงมาหน่อย
+        st.markdown('<div class="login-header">กรุณาใส่รหัสผ่าน</div>', unsafe_allow_html=True)
+        st.markdown('<div class="login-sub">สำหรับเข้าดูหน้านี้</div>', unsafe_allow_html=True)
+        
+        # ช่องกรอกรหัสผ่าน (type='password' จะซ่อนตัวอักษรและมีลูกตาให้กดดู)
+        st.text_input(
+            "Password", 
+            type="password", 
+            key="password_input", 
+            label_visibility="collapsed",
+            placeholder="รหัสผ่าน..."
+        )
+        
+        if st.session_state.get("login_error"):
+            st.error(st.session_state.login_error)
+
+        st.button("เข้าสู่ระบบ", on_click=check_login, use_container_width=True)
+
+    st.stop() # 🛑 สำคัญมาก: คำสั่งนี้จะหยุดไม่ให้โหลด Dashboard ด้านล่างถ้ารหัสไม่ผ่าน
+
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Prompt:wght@300;400;500;600&display=swap');
