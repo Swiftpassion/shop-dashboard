@@ -104,12 +104,12 @@ st.markdown("""
     .custom-table tbody tr:hover td { background-color: #333; }
 
     /* REPORT DAILY SPECIFIC - UPDATED COLORS (GREY/WHITE SCHEME) [FIXED] */
-    /* 1. Set default text color separately */
+    /* 1. Remove default text color to allow inline styles to work */
     .custom-table.daily-table tbody tr td { 
-        color: #000000; 
+        color: inherit; 
     }
     
-    /* 2. Set background colors without forcing text color, allowing inline styles (red) to work */
+    /* 2. Set background colors without forcing text color */
     .custom-table.daily-table tbody tr:nth-child(even) td { 
         background-color: #d9d9d9 !important; 
     }
@@ -118,6 +118,12 @@ st.markdown("""
     }
     .custom-table.daily-table tbody tr:hover td { 
         background-color: #e6e6e6 !important; 
+    }
+    
+    /* Force red color for negative values even with !important */
+    .custom-table.daily-table tbody tr td[style*="color: #FF0000"],
+    .custom-table.daily-table tbody tr td[style*="color:#FF0000"] {
+        color: #FF0000 !important;
     }
     
     /* Footer Row */
@@ -818,17 +824,17 @@ try:
                 text = f"{val:,.2f}%" if is_percent else f"{val:,.2f}"
                 return text
 
+            def get_cell_style(val):
+                if isinstance(val, (int, float)) and val < 0:
+                    return ' style="color: #FF0000; font-weight: bold;"'
+                return '' 
+
             st.markdown("##### 📋 รายละเอียดสินค้า")
             cols_cfg = [('SKU', 'SKU_Main', ''), ('ชื่อสินค้า', 'ชื่อสินค้า', ''), ('จำนวน', 'จำนวน', ''), ('ยอดขาย', 'รายละเอียดยอดที่ชำระแล้ว', ''), ('ต้นทุน', 'CAL_COST', ''), ('ค่ากล่อง', 'BOX_COST', ''), ('ค่าส่ง', 'DELIV_COST', ''), ('COD', 'CAL_COD_COST', ''), ('Admin', 'CAL_COM_ADMIN', ''), ('Tele', 'CAL_COM_TELESALE', ''), ('ค่า Ads', 'Ads_Amount', ''), ('กำไร', 'Net_Profit', ''), ('ROAS', 'ROAS', 'col-small'), ('%ทุน', '% ทุนสินค้า', 'col-small'), ('%อื่น', '% ทุนอื่น', 'col-small'), ('%Ads', '% Ads', 'col-small'), ('%กำไร', '% กำไร', 'col-small')]
 
             html = '<div class="table-wrapper"><table class="custom-table daily-table"><thead><tr>'
             for title, _, cls in cols_cfg: html += f'<th class="{cls}">{title}</th>'
             html += '</tr></thead><tbody>'
-
-            def get_cell_style(val):
-                if isinstance(val, (int, float)) and val < 0:
-                    return ' style="color: #FF0000 !important; font-weight: bold;"'
-                return '' 
 
             for i, (_, r) in enumerate(df_final_d.iterrows()):
                 html += '<tr>'
