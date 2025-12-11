@@ -562,26 +562,51 @@ try:
         all_years = sorted(df_daily['Year'].unique(), reverse=True)
         
         today = datetime.now().date()
-        first_day_curr = today.replace(day=1)
+        
+        # ---------------------------------------------------------
+        # 1. สร้างฟังก์ชัน Callback (ตัวสั่งการเมื่อเปลี่ยนเดือน)
+        # ---------------------------------------------------------
+        def update_m_dates():
+            # ดึงค่าปีและเดือนที่ผู้ใช้เลือก
+            y = st.session_state.m_y
+            m_str = st.session_state.m_m
+            try:
+                # แปลงชื่อเดือนเป็นตัวเลข และหาวันสุดท้ายของเดือน
+                m_idx = thai_months.index(m_str) + 1
+                days_in_m = calendar.monthrange(y, m_idx)[1]
+                
+                # สั่งอัปเดตวันที่ใน Session State (ตัวแปรระบบ)
+                st.session_state.m_d_start = date(y, m_idx, 1)
+                st.session_state.m_d_end = date(y, m_idx, days_in_m)
+            except:
+                pass # ถ้า error ให้ข้ามไป ไม่ทำให้เว็บพัง
 
         with st.container():
             c_y, c_m, c_s, c_e = st.columns([1, 1, 1, 1])
-            with c_y: sel_year = st.selectbox("เลือกปี (ตั้งค่าเริ่มต้น)", all_years, key="m_y")
-            with c_m: sel_month = st.selectbox("เลือกเดือน (ตั้งค่าเริ่มต้น)", thai_months, index=today.month-1, key="m_m")
             
-            try:
-                m_idx = thai_months.index(sel_month) + 1
-                days_in_m = calendar.monthrange(sel_year, m_idx)[1]
-                default_start = date(sel_year, m_idx, 1)
-                default_end = date(sel_year, m_idx, days_in_m)
-            except:
-                default_start = first_day_curr
-                default_end = today
+            # ---------------------------------------------------------
+            # 2. ตั้งค่า Default ครั้งแรก (กัน Error ตอนเปิดหน้า)
+            # ---------------------------------------------------------
+            if "m_d_start" not in st.session_state:
+                # ตั้งค่าเริ่มต้นเป็นเดือนปัจจุบัน
+                st.session_state.m_d_start = today.replace(day=1)
+                st.session_state.m_d_end = today
 
-            with c_s: start_date_m = st.date_input("วันที่เริ่มต้น", default_start, key="m_d_start")
-            with c_e: end_date_m = st.date_input("วันที่สิ้นสุด", default_end, key="m_d_end")
+            # ---------------------------------------------------------
+            # 3. สร้างปุ่มเลือก (ใส่ on_change=update_m_dates)
+            # ---------------------------------------------------------
+            with c_y: 
+                sel_year = st.selectbox("เลือกปี (ตั้งค่าเริ่มต้น)", all_years, key="m_y", on_change=update_m_dates)
+            with c_m: 
+                sel_month = st.selectbox("เลือกเดือน (ตั้งค่าเริ่มต้น)", thai_months, index=today.month-1, key="m_m", on_change=update_m_dates)
+            
+            # ดึงค่าวันที่ปัจจุบันจากระบบมาใช้ (ไม่ต้องใส่ value=... เพราะระบบจัดการเองผ่าน key)
+            with c_s: 
+                start_date_m = st.date_input("วันที่เริ่มต้น", key="m_d_start")
+            with c_e: 
+                end_date_m = st.date_input("วันที่สิ้นสุด", key="m_d_end")
 
-            # --- MODIFIED LAYOUT FOR CATEGORY ---
+            # --- ส่วน Filter อื่นๆ คงเดิม ---
             c_type, c_cat, c_sku, c_clear, c_run = st.columns([1.5, 1.5, 2.5, 0.5, 1])
             
             with c_type:
