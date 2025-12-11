@@ -103,7 +103,7 @@ st.markdown("""
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
     .custom-table tbody tr:hover td { background-color: #333; }
 
-    /* REPORT DAILY SPECIFIC - UPDATED COLORS */
+    /* REPORT DAILY SPECIFIC - UPDATED COLORS (GREY/WHITE SCHEME) */
     .custom-table.daily-table tbody tr:nth-child(even) td { background-color: #d9d9d9 !important; color: #000000; }
     .custom-table.daily-table tbody tr:nth-child(odd) td { background-color: #ffffff !important; color: #000000; }
     .custom-table.daily-table tbody tr:hover td { background-color: #e6e6e6 !important; color: #000000; }
@@ -853,11 +853,18 @@ try:
 
             f_roas = ts/ta if ta>0 else 0
             f_pp = (tp/ts*100) if ts>0 else 0
-            html += f'<td class="col-small" style="color:#ffffff;">{fmt(f_roas)}</td>'
-            html += f'<td class="col-small" style="color:#ffffff;">{fmt((tc/ts*100) if ts>0 else 0,True)}</td>'
-            html += f'<td class="col-small" style="color:#ffffff;">{fmt((t_oth/ts*100) if ts>0 else 0,True)}</td>'
-            html += f'<td class="col-small" style="color:#ffffff;">{fmt((ta/ts*100) if ts>0 else 0,True)}</td>'
-            html += f'<td class="col-small"{get_cell_style(f_pp)}>{fmt(f_pp,True)}</td></tr></tbody></table></div>'
+            
+            # --- FIX: Calculate values and use get_cell_style for correct coloring ---
+            val_pct_cost = (tc/ts*100) if ts>0 else 0
+            val_pct_oth = (t_oth/ts*100) if ts>0 else 0
+            val_pct_ads = (ta/ts*100) if ts>0 else 0
+            val_pct_profit = f_pp
+            
+            html += f'<td class="col-small"{get_cell_style(f_roas)}>{fmt(f_roas)}</td>'
+            html += f'<td class="col-small"{get_cell_style(val_pct_cost)}>{fmt(val_pct_cost,True)}</td>'
+            html += f'<td class="col-small"{get_cell_style(val_pct_oth)}>{fmt(val_pct_oth,True)}</td>'
+            html += f'<td class="col-small"{get_cell_style(val_pct_ads)}>{fmt(val_pct_ads,True)}</td>'
+            html += f'<td class="col-small"{get_cell_style(val_pct_profit)}>{fmt(val_pct_profit,True)}</td></tr></tbody></table></div>'
             st.markdown(html, unsafe_allow_html=True)
 
     # --- PAGE 3: PRODUCT GRAPH ---
