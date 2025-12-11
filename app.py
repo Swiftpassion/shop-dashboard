@@ -103,32 +103,48 @@ st.markdown("""
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
     .custom-table tbody tr:hover td { background-color: #333; }
 
-    /* ================================================================
-       REPORT DAILY SPECIFIC STYLES - MODIFIED HERE 
-       ================================================================
-    */
-    /* Row Backgrounds & Text Colors */
+    /* REPORT DAILY SPECIFIC - UPDATED COLORS (GREY/WHITE SCHEME) [FIXED] */
+    /* 1. กำหนดสีตัวอักษรเริ่มต้นให้เข้มขึ้น แต่ใช้ !important เพื่อให้ inline style ทำงานได้ */
+    .custom-table.daily-table tbody tr td { 
+        color: #333333 !important; /* สีเทาเข้มสำหรับตัวอักษรปกติ */
+        font-weight: 500;
+    }
+    
+    /* 2. Set background colors */
     .custom-table.daily-table tbody tr:nth-child(even) td { 
         background-color: #d9d9d9 !important; 
-        color: #3b3b3b !important;
     }
     .custom-table.daily-table tbody tr:nth-child(odd) td { 
         background-color: #ffffff !important; 
-        color: #000000 !important;
     }
-    
-    /* Hover Effect */
     .custom-table.daily-table tbody tr:hover td { 
         background-color: #e6e6e6 !important; 
-        color: #000000 !important;
     }
     
-    /* Force RED color for negative values (overriding the row colors above) */
-    .custom-table.daily-table tbody tr td.neg-val,
+    /* 3. Override สำหรับค่าติดลบ - ใช้ inline style ที่มี !important หรือใช้ class ที่มี specificity สูงกว่า */
+    .custom-table.daily-table tbody tr td.negative-value {
+        color: #FF0000 !important;
+        font-weight: bold !important;
+    }
+    
+    /* 4. ให้สี Ads (ส้ม) ทำงานได้ */
+    .custom-table.daily-table tbody tr td[style*="color: #e67e22"],
+    .custom-table.daily-table tbody tr td[style*="color:#e67e22"] {
+        color: #e67e22 !important;
+    }
+    
+    /* 5. ให้สี SKU และชื่อสินค้า (น้ำเงิน) ทำงานได้ */
+    .custom-table.daily-table tbody tr td[style*="color: #1e3c72"],
+    .custom-table.daily-table tbody tr td[style*="color:#1e3c72"] {
+        color: #1e3c72 !important;
+        font-weight: bold !important;
+    }
+    
+    /* 6. ให้ inline style สำหรับสีแดงทำงานได้ */
     .custom-table.daily-table tbody tr td[style*="color: #FF0000"],
     .custom-table.daily-table tbody tr td[style*="color:#FF0000"] {
         color: #FF0000 !important;
-        font-weight: bold;
+        font-weight: bold !important;
     }
     
     /* Footer Row */
@@ -191,7 +207,7 @@ st.markdown("""
 
     .th-sku { background-color: #1e3c72 !important; color: white !important; min-width: 80px; }
     .sku-header { font-size: 10px; color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
-    .col-small { width: 70px; min-width: 70px; max-width: 70px; font-size: 11px; }
+    .col-small { width: 70px; min-width: 70px; max-width: 70px; font-size: 11px; color: #333333 !important; }
 
     .pnl-container { font-family: 'Prompt', sans-serif; color: #ffffff; }
     .header-gradient-pnl { background-image: linear-gradient(135deg, #0f172a 0%, #334155 100%); padding: 20px 25px; border-radius: 12px; color: white; margin-bottom: 25px; }
@@ -830,9 +846,9 @@ try:
                 return text
 
             def get_cell_style(val):
-                # Ensure negative values are RED with !important priority
                 if isinstance(val, (int, float)) and val < 0:
-                    return ' style="color: #FF0000 !important; font-weight: bold;"'
+                    # ใช้ inline style ที่มี !important และเพิ่ม class negative-value
+                    return ' style="color: #FF0000 !important; font-weight: bold !important;" class="negative-value"'
                 return '' 
 
             st.markdown("##### 📋 รายละเอียดสินค้า")
@@ -844,9 +860,8 @@ try:
 
             for i, (_, r) in enumerate(df_final_d.iterrows()):
                 html += '<tr>'
-                # Remove hardcoded colors so CSS can take effect (except for inline negatives)
-                html += f'<td style="font-weight:bold;">{r["SKU_Main"]}</td>'
-                html += f'<td style="text-align:left;font-size:11px;">{r["ชื่อสินค้า"]}</td>'
+                html += f'<td style="font-weight:bold;color:#1e3c72 !important;">{r["SKU_Main"]}</td>'
+                html += f'<td style="text-align:left;font-size:11px;color:#1e3c72 !important;">{r["ชื่อสินค้า"]}</td>'
 
                 html += f'<td{get_cell_style(r["จำนวน"])}>{fmt(r["จำนวน"])}</td>'
                 html += f'<td{get_cell_style(r["รายละเอียดยอดที่ชำระแล้ว"])}>{fmt(r["รายละเอียดยอดที่ชำระแล้ว"])}</td>'
@@ -857,13 +872,13 @@ try:
                 html += f'<td{get_cell_style(r["CAL_COM_ADMIN"])}>{fmt(r["CAL_COM_ADMIN"])}</td>'
                 html += f'<td{get_cell_style(r["CAL_COM_TELESALE"])}>{fmt(r["CAL_COM_TELESALE"])}</td>'
 
-                html += f'<td style="color:#e67e22; font-weight:bold;">{fmt(r["Ads_Amount"])}</td>'
+                html += f'<td style="color:#e67e22 !important;">{fmt(r["Ads_Amount"])}</td>'
                 html += f'<td{get_cell_style(r["Net_Profit"])}>{fmt(r["Net_Profit"])}</td>'
 
-                html += f'<td class="col-small">{fmt(r["ROAS"])}</td>'
-                html += f'<td class="col-small">{fmt(r["% ทุนสินค้า"],True)}</td>'
-                html += f'<td class="col-small">{fmt(r["% ทุนอื่น"],True)}</td>'
-                html += f'<td class="col-small">{fmt(r["% Ads"],True)}</td>'
+                html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["ROAS"])}</td>'
+                html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["% ทุนสินค้า"],True)}</td>'
+                html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["% ทุนอื่น"],True)}</td>'
+                html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["% Ads"],True)}</td>'
                 html += f'<td class="col-small"{get_cell_style(r["% กำไร"])}>{fmt(r["% กำไร"],True)}</td>'
                 html += '</tr>'
 
