@@ -840,25 +840,51 @@ try:
         all_years = sorted(df_daily['Year'].unique(), reverse=True)
         
         today = datetime.now().date()
-        first_day_curr = today.replace(day=1)
+        
+        # ---------------------------------------------------------
+        # 1. สร้างฟังก์ชัน Callback สำหรับหน้า ADS (ตั้งชื่อไม่ให้ซ้ำกับหน้า Month)
+        # ---------------------------------------------------------
+        def update_a_dates():
+            # ดึงค่าจาก Key ของหน้า ADS (a_y, a_m)
+            y = st.session_state.a_y
+            m_str = st.session_state.a_m
+            try:
+                m_idx = thai_months.index(m_str) + 1
+                days_in_m = calendar.monthrange(y, m_idx)[1]
+                
+                # อัปเดตวันที่ลง Key ของหน้า ADS (a_d_start, a_d_end)
+                st.session_state.a_d_start = date(y, m_idx, 1)
+                st.session_state.a_d_end = date(y, m_idx, days_in_m)
+            except:
+                pass
 
         with st.container():
             c_y, c_m, c_s, c_e = st.columns([1, 1, 1, 1])
-            with c_y: sel_year_a = st.selectbox("เลือกปี (ตั้งค่าเริ่มต้น)", all_years, key="a_y")
-            with c_m: sel_month_a = st.selectbox("เลือกเดือน (ตั้งค่าเริ่มต้น)", thai_months, index=today.month-1, key="a_m")
             
-            try:
-                m_idx_a = thai_months.index(sel_month_a) + 1
-                days_in_m_a = calendar.monthrange(sel_year_a, m_idx_a)[1]
-                default_start_a = date(sel_year_a, m_idx_a, 1)
-                default_end_a = date(sel_year_a, m_idx_a, days_in_m_a)
-            except:
-                default_start_a = first_day_curr
-                default_end_a = today
+            # ---------------------------------------------------------
+            # 2. ตั้งค่า Default ครั้งแรกสำหรับหน้า ADS
+            # ---------------------------------------------------------
+            if "a_d_start" not in st.session_state:
+                st.session_state.a_d_start = today.replace(day=1)
+                st.session_state.a_d_end = today
 
-            with c_s: start_date_a = st.date_input("วันที่เริ่มต้น", default_start_a, key="a_d_start")
-            with c_e: end_date_a = st.date_input("วันที่สิ้นสุด", default_end_a, key="a_d_end")
+            # ---------------------------------------------------------
+            # 3. ผูกฟังก์ชัน update_a_dates ไว้ที่ on_change
+            # ---------------------------------------------------------
+            with c_y: 
+                sel_year_a = st.selectbox("เลือกปี (ตั้งค่าเริ่มต้น)", all_years, key="a_y", on_change=update_a_dates)
+            with c_m: 
+                sel_month_a = st.selectbox("เลือกเดือน (ตั้งค่าเริ่มต้น)", thai_months, index=today.month-1, key="a_m", on_change=update_a_dates)
+            
+            # ---------------------------------------------------------
+            # 4. Date Input ดึงค่าจาก Key อัตโนมัติ
+            # ---------------------------------------------------------
+            with c_s: 
+                start_date_a = st.date_input("วันที่เริ่มต้น", key="a_d_start")
+            with c_e: 
+                end_date_a = st.date_input("วันที่สิ้นสุด", key="a_d_end")
 
+            # --- ส่วน Filter อื่นๆ คงเดิม ---
             c_type, c_cat, c_sku, c_clear, c_run = st.columns([1.5, 1.5, 2.5, 0.5, 1])
             with c_type:
                 filter_mode_a = st.selectbox("เงื่อนไขสินค้า (Fast Filter)",
