@@ -459,7 +459,7 @@ try:
     df_daily, df_fix_cost, master_map_lookup, master_sku_list = process_data()
 
     if df_daily.empty:
-        st.warning(⚠️ ไม่พบข้อมูล กรุณาตรวจสอบ Google Drive")
+        st.warning("⚠️ ไม่พบข้อมูล กรุณาตรวจสอบ Google Drive")
         st.stop()
 
     sku_name_lookup = df_daily.groupby('SKU_Main')['ชื่อสินค้า'].last().to_dict()
@@ -514,7 +514,7 @@ try:
             c_type, c_sku, c_clear, c_run = st.columns([1.5, 4, 0.5, 1])
             with c_type:
                 filter_mode = st.selectbox("เงื่อนไขสินค้า (Fast Filter)",
-                    ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 แสดงสินค้ากำไร", "💸 แสดงสินค้าขาดทุน", "📋 แสดงรายการทั้งหมด"])
+                    ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 เฉพาะรายการที่ขายได้", "💸 ผลาญงบ (มี Ads แต่ขายไม่ได้)", "📋 แสดง Master ทั้งหมด"])
             
             with c_sku: st.multiselect("รายการที่เลือก (Choose options):", sku_options_list_global, key="selected_skus")
             with c_clear:
@@ -527,18 +527,12 @@ try:
         mask_date = (df_daily['Date'] >= start_date_m) & (df_daily['Date'] <= end_date_m)
         df_base = df_daily[mask_date]
 
-        # --- UPDATED FILTER LOGIC (MONTH) ---
-        sku_summary = df_base.groupby('SKU_Main').agg({'รายละเอียดยอดที่ชำระแล้ว': 'sum', 'Ads_Amount': 'sum', 'Net_Profit': 'sum'}).reset_index()
+        sku_summary = df_base.groupby('SKU_Main').agg({'รายละเอียดยอดที่ชำระแล้ว': 'sum', 'Ads_Amount': 'sum'}).reset_index()
         auto_skus = []
-        
-        if "แสดงสินค้ากำไร" in filter_mode: 
-            auto_skus = sku_summary[sku_summary['Net_Profit'] > 0]['SKU_Main'].tolist()
-        elif "แสดงสินค้าขาดทุน" in filter_mode: 
-            auto_skus = sku_summary[sku_summary['Net_Profit'] < 0]['SKU_Main'].tolist()
-        elif "แสดงรายการทั้งหมด" in filter_mode: 
-            auto_skus = all_skus_global
-        else: 
-            auto_skus = sku_summary[(sku_summary['รายละเอียดยอดที่ชำระแล้ว'] > 0) | (sku_summary['Ads_Amount'] > 0)]['SKU_Main'].tolist()
+        if "เฉพาะรายการที่ขายได้" in filter_mode: auto_skus = sku_summary[sku_summary['รายละเอียดยอดที่ชำระแล้ว'] > 0]['SKU_Main'].tolist()
+        elif "ผลาญงบ" in filter_mode: auto_skus = sku_summary[(sku_summary['Ads_Amount'] > 0) & (sku_summary['รายละเอียดยอดที่ชำระแล้ว'] == 0)]['SKU_Main'].tolist()
+        elif "แสดง Master ทั้งหมด" in filter_mode: auto_skus = all_skus_global
+        else: auto_skus = sku_summary[(sku_summary['รายละเอียดยอดที่ชำระแล้ว'] > 0) | (sku_summary['Ads_Amount'] > 0)]['SKU_Main'].tolist()
 
         selected_labels = st.session_state.selected_skus
         selected_skus_real = [sku_map_reverse_global[l] for l in selected_labels]
@@ -691,7 +685,8 @@ try:
                 row_html = f'<tr class="{row_cls}">'
                 row_html += f'<td class="fix-m-1" style="{style_bg} color: {lbl_color} !important;">{label}</td>'
                 
-                val_qty = ""
+                # --- CHANGE HERE: Empty string for Qty column in "Total Sales" row ---
+                val_qty = "" # Always empty in footer sub-rows except Grand Total
                 
                 row_html += f'<td class="fix-m-2" style="{style_bg} color:{grand_text_col};">{txt_val}</td>'
                 row_html += f'<td class="fix-m-3" style="{style_bg} color:{grand_text_col};">{val_qty}</td>'
@@ -745,7 +740,7 @@ try:
             with c1: sel_year_d = st.selectbox("เลือกปี", sorted(df_daily['Year'].unique(), reverse=True), key="d_y")
             with c2: start_d = st.date_input("เริ่มวันที่", datetime.now().replace(day=1), key="d_s")
             with c3: end_d = st.date_input("ถึงวันที่", datetime.now(), key="d_e")
-            with c4: filter_mode_d = st.selectbox("เงื่อนไขสินค้า (Fast Filter)", ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 แสดงสินค้ากำไร", "💸 แสดงสินค้าขาดทุน", "📋 แสดงรายการทั้งหมด"], key="d_m")
+            with c4: filter_mode_d = st.selectbox("เงื่อนไขสินค้า (Fast Filter)", ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 เฉพาะรายการที่ขายได้", "💸 ผลาญงบ (มี Ads แต่ขายไม่ได้)", "📋 แสดง Master ทั้งหมด"], key="d_m")
 
             c_sku, c_clear, c_run = st.columns([4, 0.5, 1])
             with c_sku: st.multiselect("รายการที่เลือก (Choose options):", sku_options_list_global, key="selected_skus_d")
@@ -766,16 +761,11 @@ try:
         }).reset_index()
         df_grouped['ชื่อสินค้า'] = df_grouped['SKU_Main'].map(sku_name_lookup).fillna("ไม่ระบุชื่อ")
 
-        # --- UPDATED FILTER LOGIC (DAILY) ---
         auto_skus_d = []
-        if "แสดงสินค้ากำไร" in filter_mode_d: 
-            auto_skus_d = df_grouped[df_grouped['Net_Profit'] > 0]['SKU_Main'].tolist()
-        elif "แสดงสินค้าขาดทุน" in filter_mode_d: 
-            auto_skus_d = df_grouped[df_grouped['Net_Profit'] < 0]['SKU_Main'].tolist()
-        elif "แสดงรายการทั้งหมด" in filter_mode_d: 
-            auto_skus_d = all_skus_global
-        else: 
-            auto_skus_d = df_grouped[(df_grouped['รายละเอียดยอดที่ชำระแล้ว'] > 0) | (df_grouped['Ads_Amount'] > 0)]['SKU_Main'].tolist()
+        if "เฉพาะรายการที่ขายได้" in filter_mode_d: auto_skus_d = df_grouped[df_grouped['รายละเอียดยอดที่ชำระแล้ว'] > 0]['SKU_Main'].tolist()
+        elif "ผลาญงบ" in filter_mode_d: auto_skus_d = df_grouped[(df_grouped['Ads_Amount'] > 0) & (df_grouped['รายละเอียดยอดที่ชำระแล้ว'] == 0)]['SKU_Main'].tolist()
+        elif "แสดง Master ทั้งหมด" in filter_mode_d: auto_skus_d = all_skus_global
+        else: auto_skus_d = df_grouped[(df_grouped['รายละเอียดยอดที่ชำระแล้ว'] > 0) | (df_grouped['Ads_Amount'] > 0)]['SKU_Main'].tolist()
 
         selected_labels_d = st.session_state.selected_skus_d
         selected_skus_real_d = [sku_map_reverse_global[l] for l in selected_labels_d]
@@ -879,7 +869,7 @@ try:
             with c_g1: start_g = st.date_input("เริ่มวันที่", datetime.now().replace(day=1), key="g_s")
             with c_g2: end_g = st.date_input("ถึงวันที่", datetime.now(), key="g_e")
             with c_g3: filter_mode_g = st.selectbox("เงื่อนไขสินค้า (Fast Filter)",
-                ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 แสดงสินค้ากำไร", "💸 แสดงสินค้าขาดทุน", "📋 แสดงรายการทั้งหมด"], key="g_m")
+                ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 เฉพาะรายการที่ขายได้", "💸 ผลาญงบ (มี Ads แต่ขายไม่ได้)", "📋 แสดง Master ทั้งหมด"], key="g_m")
 
             c_sku, c_clear, c_run = st.columns([4, 0.5, 1])
             with c_sku: st.multiselect("เลือกสินค้าที่ต้องการดูกราฟ:", sku_options_list_global, key="selected_skus_g")
@@ -893,17 +883,16 @@ try:
         mask_g_date = (df_daily['Date'] >= pd.to_datetime(start_g).date()) & (df_daily['Date'] <= pd.to_datetime(end_g).date())
         df_range_g = df_daily[mask_g_date]
 
-        # --- UPDATED FILTER LOGIC (GRAPH) ---
-        sku_stats_g = df_range_g.groupby('SKU_Main').agg({'รายละเอียดยอดที่ชำระแล้ว': 'sum', 'Ads_Amount': 'sum', 'Net_Profit': 'sum'}).reset_index()
+        sku_stats_g = df_range_g.groupby('SKU_Main').agg({'รายละเอียดยอดที่ชำระแล้ว': 'sum', 'Ads_Amount': 'sum'}).reset_index()
         auto_skus_g = []
 
-        if "แสดงสินค้ากำไร" in filter_mode_g:
-            auto_skus_g = sku_stats_g[sku_stats_g['Net_Profit'] > 0]['SKU_Main'].tolist()
-        elif "แสดงสินค้าขาดทุน" in filter_mode_g:
-            auto_skus_g = sku_stats_g[sku_stats_g['Net_Profit'] < 0]['SKU_Main'].tolist()
-        elif "แสดงรายการทั้งหมด" in filter_mode_g:
+        if "เฉพาะรายการที่ขายได้" in filter_mode_g:
+            auto_skus_g = sku_stats_g[sku_stats_g['รายละเอียดยอดที่ชำระแล้ว'] > 0]['SKU_Main'].tolist()
+        elif "ผลาญงบ" in filter_mode_g:
+            auto_skus_g = sku_stats_g[(sku_stats_g['Ads_Amount'] > 0) & (sku_stats_g['รายละเอียดยอดที่ชำระแล้ว'] == 0)]['SKU_Main'].tolist()
+        elif "แสดง Master ทั้งหมด" in filter_mode_g:
             auto_skus_g = all_skus_global
-        else:
+        else: # แสดงรายการที่มีการเคลื่อนไหว
             auto_skus_g = sku_stats_g[(sku_stats_g['รายละเอียดยอดที่ชำระแล้ว'] > 0) | (sku_stats_g['Ads_Amount'] > 0)]['SKU_Main'].tolist()
 
         selected_labels_g = st.session_state.selected_skus_g
