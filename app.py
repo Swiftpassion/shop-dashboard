@@ -27,7 +27,7 @@ COLOR_NEGATIVE = "#FF0000"
 st.set_page_config(page_title="Shop Analytics Dashboard", layout="wide", page_icon="📊")
 
 # ==========================================
-# 0. LOGIN SYSTEM
+# 0. LOGIN SYSTEM (BEAUTIFUL & COMPACT VERSION)
 # ==========================================
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
@@ -38,70 +38,102 @@ def check_login():
         st.session_state.logged_in = True
         st.session_state.login_error = None
     else:
-        st.session_state.login_error = "❌ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่"
+        st.session_state.login_error = "⚠️ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่"
 
 if not st.session_state.logged_in:
-    # จัด CSS เฉพาะหน้า Login ให้ดูสวยงามคล้ายรูปตัวอย่าง
+    # --- CSS Styling (ปรับแต่งความสวยงาม) ---
     st.markdown("""
         <style>
+            /* ปรับช่องกรอกรหัสผ่าน */
             .stTextInput input {
-                color: #333 !important;
-                background-color: #ffffff !important;
-                border: 2px solid #6c5ce7 !important;
-                border-radius: 10px !important;
-                padding: 10px !important;
+                color: #ffffff !important;
+                background-color: #1e1e1e !important; /* พื้นหลังเข้ม */
+                border: 1px solid #444 !important;
+                border-radius: 8px !important;
+                padding: 12px !important;
+                font-size: 16px !important;
             }
+            .stTextInput input:focus {
+                border-color: #6c5ce7 !important;
+                box-shadow: 0 0 5px rgba(108, 92, 231, 0.5);
+            }
+            
+            /* ปรับปุ่มกด */
             .stButton button {
-                background-color: #6c5ce7 !important;
+                width: 100%;
+                background: linear-gradient(90deg, #6c5ce7 0%, #a29bfe 100%) !important;
                 color: white !important;
-                border-radius: 10px !important;
+                border-radius: 8px !important;
                 border: none !important;
-                font-size: 18px !important;
-                padding: 10px !important;
+                font-size: 16px !important;
+                font-weight: 600 !important;
+                padding: 12px !important;
+                margin-top: 10px;
+                transition: all 0.3s ease;
             }
             .stButton button:hover {
-                background-color: #5a4ad1 !important;
-                color: white !important;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 10px rgba(108, 92, 231, 0.4);
             }
+
+            /* Header จัดกึ่งกลาง */
             .login-header {
-                font-size: 28px;
+                font-size: 26px;
                 font-weight: 700;
                 text-align: center;
-                margin-bottom: 10px;
+                margin-bottom: 5px;
                 color: white;
+                font-family: 'Prompt', sans-serif;
             }
             .login-sub {
                 font-size: 14px;
                 text-align: center;
                 color: #aaa;
-                margin-bottom: 30px;
+                margin-bottom: 25px;
+                font-family: 'Sarabun', sans-serif;
+            }
+
+            /* กล่องแจ้งเตือน Error แบบสวย (Custom) */
+            .custom-error {
+                background-color: #ff4d4d20; /* สีแดงจางๆ โปร่งใส */
+                border: 1px solid #ff4d4d;
+                color: #ff4d4d;
+                padding: 10px;
+                border-radius: 8px;
+                text-align: center;
+                font-size: 14px;
+                margin-top: 10px;
+                margin-bottom: 10px;
             }
         </style>
     """, unsafe_allow_html=True)
 
-    # สร้างคอลัมน์เพื่อให้ช่องกรอกอยู่ตรงกลางหน้าจอ
-    col1, col2, col3 = st.columns([1, 1, 1])
+    # --- LAYOUT จัดหน้า (ปรับขนาดให้แคบลง) ---
+    # ใช้สัดส่วน [2, 1.2, 2] หมายถึง ตรงกลางกว้างแค่ 1.2 ส่วน (แคบกว่าเดิมมาก)
+    col1, col2, col3 = st.columns([2, 1.2, 2])
 
     with col2:
-        st.markdown("<br><br><br>", unsafe_allow_html=True) # เว้นบรรทัดลงมาหน่อย
+        st.markdown("<br><br><br>", unsafe_allow_html=True) # ดันลงมาให้อยู่กลางจอแนวตั้ง
         st.markdown('<div class="login-header">กรุณาใส่รหัสผ่าน</div>', unsafe_allow_html=True)
         st.markdown('<div class="login-sub">สำหรับเข้าดูหน้านี้</div>', unsafe_allow_html=True)
         
-        # ช่องกรอกรหัสผ่าน (type='password' จะซ่อนตัวอักษรและมีลูกตาให้กดดู)
+        # Input Field
         st.text_input(
             "Password", 
             type="password", 
             key="password_input", 
             label_visibility="collapsed",
-            placeholder="รหัสผ่าน..."
+            placeholder="🔒 กรอกรหัสผ่าน..."
         )
         
+        # แสดง Error (ถ้ามี) แบบ Custom Div
         if st.session_state.get("login_error"):
-            st.error(st.session_state.login_error)
+            st.markdown(f'<div class="custom-error">{st.session_state.login_error}</div>', unsafe_allow_html=True)
 
+        # ปุ่มกด
         st.button("เข้าสู่ระบบ", on_click=check_login, use_container_width=True)
 
-    st.stop() # 🛑 สำคัญมาก: คำสั่งนี้จะหยุดไม่ให้โหลด Dashboard ด้านล่างถ้ารหัสไม่ผ่าน
+    st.stop()
 
 st.markdown("""
 <style>
