@@ -485,7 +485,7 @@ try:
     df_daily, df_fix_cost, master_map_lookup, master_sku_list = process_data()
 
     if df_daily.empty:
-        st.warning(⚠️ ไม่พบข้อมูล กรุณาตรวจสอบ Google Drive")
+        st.warning("⚠️ ไม่พบข้อมูล กรุณาตรวจสอบ Google Drive")
         st.stop()
 
     sku_name_lookup = df_daily.groupby('SKU_Main')['ชื่อสินค้า'].last().to_dict()
