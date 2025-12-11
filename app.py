@@ -104,12 +104,13 @@ st.markdown("""
     .custom-table tbody tr:hover td { background-color: #333; }
 
     /* REPORT DAILY SPECIFIC - UPDATED COLORS (GREY/WHITE SCHEME) [FIXED] */
-    /* 1. Remove default text color to allow inline styles to work */
+    /* 1. กำหนดสีตัวอักษรเริ่มต้นให้เข้มขึ้นเพื่อให้อ่านง่าย */
     .custom-table.daily-table tbody tr td { 
-        color: inherit; 
+        color: #333333 !important; /* สีเทาเข้มสำหรับตัวอักษรปกติ */
+        font-weight: 500;
     }
     
-    /* 2. Set background colors without forcing text color */
+    /* 2. Set background colors */
     .custom-table.daily-table tbody tr:nth-child(even) td { 
         background-color: #d9d9d9 !important; 
     }
@@ -120,10 +121,24 @@ st.markdown("""
         background-color: #e6e6e6 !important; 
     }
     
-    /* Force red color for negative values even with !important */
+    /* 3. Force red color for negative values */
     .custom-table.daily-table tbody tr td[style*="color: #FF0000"],
     .custom-table.daily-table tbody tr td[style*="color:#FF0000"] {
         color: #FF0000 !important;
+        font-weight: bold !important;
+    }
+    
+    /* 4. ให้สี Ads (ส้ม) ทำงานได้ */
+    .custom-table.daily-table tbody tr td[style*="color: #e67e22"],
+    .custom-table.daily-table tbody tr td[style*="color:#e67e22"] {
+        color: #e67e22 !important;
+    }
+    
+    /* 5. ให้สี SKU และชื่อสินค้า (น้ำเงิน) ทำงานได้ */
+    .custom-table.daily-table tbody tr td[style*="color: #1e3c72"],
+    .custom-table.daily-table tbody tr td[style*="color:#1e3c72"] {
+        color: #1e3c72 !important;
+        font-weight: bold !important;
     }
     
     /* Footer Row */
@@ -186,7 +201,7 @@ st.markdown("""
 
     .th-sku { background-color: #1e3c72 !important; color: white !important; min-width: 80px; }
     .sku-header { font-size: 10px; color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
-    .col-small { width: 70px; min-width: 70px; max-width: 70px; font-size: 11px; }
+    .col-small { width: 70px; min-width: 70px; max-width: 70px; font-size: 11px; color: #333333 !important; }
 
     .pnl-container { font-family: 'Prompt', sans-serif; color: #ffffff; }
     .header-gradient-pnl { background-image: linear-gradient(135deg, #0f172a 0%, #334155 100%); padding: 20px 25px; border-radius: 12px; color: white; margin-bottom: 25px; }
