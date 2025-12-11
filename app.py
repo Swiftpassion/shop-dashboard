@@ -103,10 +103,10 @@ st.markdown("""
     .custom-table tbody tr:nth-child(odd) td { background-color: #1c1c1c; }
     .custom-table tbody tr:hover td { background-color: #333; }
 
-    /* REPORT DAILY SPECIFIC */
-    .custom-table.daily-table tbody tr:nth-child(even) td { background-color: #636363 !important; color: #ffffff; }
-    .custom-table.daily-table tbody tr:nth-child(odd) td { background-color: #999999 !important; color: #000000; }
-    .custom-table.daily-table tbody tr:hover td { background-color: #555555 !important; color: #ffffff; }
+    /* REPORT DAILY SPECIFIC - UPDATED COLORS */
+    .custom-table.daily-table tbody tr:nth-child(even) td { background-color: #d9d9d9 !important; color: #000000; }
+    .custom-table.daily-table tbody tr:nth-child(odd) td { background-color: #ffffff !important; color: #000000; }
+    .custom-table.daily-table tbody tr:hover td { background-color: #e6e6e6 !important; color: #000000; }
     .custom-table.daily-table tbody tr.footer-row td { position: sticky; bottom: 0; z-index: 100; background-color: #1e3c72 !important; font-weight: bold; color: white !important; border-top: 2px solid #f1c40f; }
 
     /* --- [FIX COMPACT SIZE] REPORT MONTH STICKY COLS --- */
