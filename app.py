@@ -900,12 +900,12 @@ try:
                 if "row-sales" in row_cls: bg_color = "#B8860B"       
                 elif "row-cost" in row_cls: bg_color = "#3366FF"      
                 elif "row-ads" in row_cls: bg_color = "#9400D3"       
-                elif "row-ops" in row_cls: bg_color = "#3498db"       # ใหม่: สีค่าดำเนินการ
-                elif "row-com" in row_cls: bg_color = "#FFD700"       # ใหม่: สีค่าคอมมิชชั่น
+                elif "row-ops" in row_cls: bg_color = "#039be5"       # ใหม่: สีค่าดำเนินการ
+                elif "row-com" in row_cls: bg_color = "#00acc1"       # ใหม่: สีค่าคอมมิชชั่น
                 elif "row-pct-ads" in row_cls: bg_color = "#b802b8"    
                 elif "row-pct-cost" in row_cls: bg_color = "#A020F0"   
                 elif "row-pct-ops" in row_cls: bg_color = "#1E90FF"   # ใหม่: สีเปอร์เซ็นต์ค่าดำเนินการ
-                elif "row-pct-com" in row_cls: bg_color = "#FFA500"    # ใหม่: สีเปอร์เซ็นต์ค่าคอมมิชชั่น
+                elif "row-pct-com" in row_cls: bg_color = "#5e35b1"    # ใหม่: สีเปอร์เซ็นต์ค่าคอมมิชชั่น
                 else: bg_color = "#ffffff"
 
                 if bg_color != "#ffffff": dark_bg = True
