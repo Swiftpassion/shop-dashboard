@@ -462,8 +462,11 @@ def load_raw_files():
             done = False
             while done is False: status, done = downloader.next_chunk()
             fh.seek(0)
-            if filename.lower().endswith('.csv'): return pd.read_csv(fh, dtype={'หมายเลขคำสั่งซื้อออนไลน์': str})
-            elif filename.lower().endswith(('.xlsx', '.xls')): return pd.read_excel(fh)
+            # [FIX CRITICAL] เอา dtype ออก เพื่อให้โหลดไฟล์ได้ก่อน แล้วค่อยไปแก้ชื่อคอลัมน์ทีหลัง
+            if filename.lower().endswith('.csv'): 
+                return pd.read_csv(fh)
+            elif filename.lower().endswith(('.xlsx', '.xls')): 
+                return pd.read_excel(fh)
         except: pass
         return None
 
@@ -472,9 +475,9 @@ def load_raw_files():
     for f in files_data:
         df = read_file(f['id'], f['name'])
         if df is not None:
-            if 'หมายเลขคำสั่งซื้อออนไลน์' in df.columns:
-                df['หมายเลขคำสั่งซื้อออนไลน์'] = df['หมายเลขคำสั่งซื้อออนไลน์'].astype(str).str.replace(r'\.0$', '', regex=True)
+            # ลบคอลัมน์ logic เดิมทิ้งไปก่อน เดี๋ยวไปทำใน process_data ทีเดียว
             df_list.append(df)
+            
     df_data = pd.concat(df_list, ignore_index=True) if df_list else pd.DataFrame()
 
     files_ads = get_files(FOLDER_ID_ADS)
@@ -531,6 +534,10 @@ def process_data():
              st.error(f"❌ เกิดข้อผิดพลาด: ไม่พบคอลัมน์ 'หมายเลขคำสั่งซื้อออนไลน์' ในไฟล์ข้อมูล")
              st.write("คอลัมน์ที่พบในไฟล์:", df_data.columns.tolist())
              return pd.DataFrame(), pd.DataFrame(), {}, [], {}
+    
+    # 4. แปลงให้เป็น String และตัด .0 ทิ้ง (กรณีเป็นตัวเลขมาจาก CSV/Excel)
+    df_data['หมายเลขคำสั่งซื้อออนไลน์'] = df_data['หมายเลขคำสั่งซื้อออนไลน์'].astype(str).str.replace(r'\.0$', '', regex=True)
+
     # ============================================================================================
 
     # --- 1. PREPARE MASTER ITEM ---
@@ -548,7 +555,6 @@ def process_data():
         df_master['Type'] = df_master['Type'].fillna('กลุ่ม ปกติ').astype(str).str.strip()
 
     # --- 2. PREPARE DATA ---
-    # ตอนนี้มั่นใจแล้วว่ามี 'หมายเลขคำสั่งซื้อออนไลน์' แน่นอน
     target_cols = ['หมายเลขคำสั่งซื้อออนไลน์', 'สถานะคำสั่งซื้อ', 
             'บริษัทขนส่ง', 'เวลาสั่งซื้อ', 'รูปแบบสินค้า', 'จำนวน', 
             'รายละเอียดยอดที่ชำระแล้ว', 'ผู้สร้างคำสั่งซื้อ', 
