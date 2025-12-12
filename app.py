@@ -1217,6 +1217,9 @@ try:
         if df_final_d.empty: st.warning(f"⚠️ ไม่พบข้อมูลตามเงื่อนไข ({sel_category_d}) ในช่วงเวลานี้")
         else:
             # คำนวณค่าใหม่สำหรับกล่อง 6 กล่อง
+            # ... (ส่วนก่อนหน้านี้ใน REPORT DAILY คงเดิม) ...
+            
+            # คำนวณค่าใหม่สำหรับกล่อง 6 กล่อง
             sum_sales = df_final_d['รายละเอียดยอดที่ชำระแล้ว'].sum()
             sum_ads = df_final_d['Ads_Amount'].sum()
             sum_cost_prod = df_final_d['CAL_COST'].sum()
@@ -1231,11 +1234,23 @@ try:
             df_final_d['กำไร/ขาดทุน'] = df_final_d['Net_Profit']
             df_final_d['ROAS'] = np.where(df_final_d['Ads_Amount']>0, df_final_d['รายละเอียดยอดที่ชำระแล้ว']/df_final_d['Ads_Amount'], 0)
             sls = df_final_d['รายละเอียดยอดที่ชำระแล้ว']
+
+            # --- [UPDATED] การคำนวณเปอร์เซ็นต์แบบใหม่ ---
+            # 1. % ค่าดำเนินการ = (ค่ากล่อง + ค่าส่ง + COD) / ยอดขาย
+            val_ops_item = df_final_d['BOX_COST'] + df_final_d['DELIV_COST'] + df_final_d['CAL_COD_COST']
+            df_final_d['% ค่าดำเนินการ'] = np.where(sls>0, (val_ops_item/sls)*100, 0)
+
+            # 2. % ค่าคอมมิชชัน = (Admin + Tele) / ยอดขาย
+            val_com_item = df_final_d['CAL_COM_ADMIN'] + df_final_d['CAL_COM_TELESALE']
+            df_final_d['% ค่าคอมมิชชัน'] = np.where(sls>0, (val_com_item/sls)*100, 0)
+
+            # 3. % ทุน = ทุนสินค้า / ยอดขาย
             df_final_d['% ทุนสินค้า'] = np.where(sls>0, (df_final_d['CAL_COST']/sls)*100, 0)
-            oth = df_final_d['BOX_COST']+df_final_d['DELIV_COST']+df_final_d['CAL_COD_COST']+df_final_d['CAL_COM_ADMIN']+df_final_d['CAL_COM_TELESALE']
-            df_final_d['% ทุนอื่น'] = np.where(sls>0, (oth/sls)*100, 0)
+
+            # อื่นๆ
             df_final_d['% Ads'] = np.where(sls>0, (df_final_d['Ads_Amount']/sls)*100, 0)
             df_final_d['% กำไร'] = np.where(sls>0, (df_final_d['Net_Profit']/sls)*100, 0)
+            
             df_final_d = df_final_d.sort_values('กำไร/ขาดทุน', ascending=False)
 
             def fmt(val, is_percent=False):
@@ -1249,7 +1264,28 @@ try:
                 return '' 
 
             st.markdown("##### 📋 รายละเอียดสินค้า")
-            cols_cfg = [('SKU', 'SKU_Main', ''), ('ชื่อสินค้า', 'ชื่อสินค้า', ''), ('จำนวน', 'จำนวน', ''), ('ยอดขาย', 'รายละเอียดยอดที่ชำระแล้ว', ''), ('ต้นทุน', 'CAL_COST', ''), ('ค่ากล่อง', 'BOX_COST', ''), ('ค่าส่ง', 'DELIV_COST', ''), ('COD', 'CAL_COD_COST', ''), ('Admin', 'CAL_COM_ADMIN', ''), ('Tele', 'CAL_COM_TELESALE', ''), ('ค่า Ads', 'Ads_Amount', ''), ('กำไร', 'Net_Profit', ''), ('ROAS', 'ROAS', 'col-small'), ('%ทุน', '% ทุนสินค้า', 'col-small'), ('%อื่น', '% ทุนอื่น', 'col-small'), ('%Ads', '% Ads', 'col-small'), ('%กำไร', '% กำไร', 'col-small')]
+            
+            # --- [UPDATED] Config Column ใหม่ ---
+            cols_cfg = [
+                ('SKU', 'SKU_Main', ''), 
+                ('ชื่อสินค้า', 'ชื่อสินค้า', ''), 
+                ('จำนวน', 'จำนวน', ''), 
+                ('ยอดขาย', 'รายละเอียดยอดที่ชำระแล้ว', ''), 
+                ('ต้นทุน', 'CAL_COST', ''), 
+                ('ค่ากล่อง', 'BOX_COST', ''), 
+                ('ค่าส่ง', 'DELIV_COST', ''), 
+                ('COD', 'CAL_COD_COST', ''), 
+                ('Admin', 'CAL_COM_ADMIN', ''), 
+                ('Tele', 'CAL_COM_TELESALE', ''), 
+                ('ค่า Ads', 'Ads_Amount', ''), 
+                ('กำไร', 'Net_Profit', ''), 
+                ('ROAS', 'ROAS', 'col-small'), 
+                ('%ค่าดำเนินการ', '% ค่าดำเนินการ', 'col-small'), # New
+                ('%ค่าคอม', '% ค่าคอมมิชชัน', 'col-small'),       # New
+                ('%ทุน', '% ทุนสินค้า', 'col-small'), 
+                ('%Ads', '% Ads', 'col-small'), 
+                ('%กำไร', '% กำไร', 'col-small')
+            ]
 
             html = '<div class="table-wrapper"><table class="custom-table daily-table"><thead><tr>'
             for title, _, cls in cols_cfg: html += f'<th class="{cls}">{title}</th>'
@@ -1273,8 +1309,12 @@ try:
                 html += f'<td{get_cell_style(r["Net_Profit"])}>{fmt(r["Net_Profit"])}</td>'
 
                 html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["ROAS"])}</td>'
+                
+                # --- [UPDATED] แสดงผลคอลัมน์ใหม่ ---
+                html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["% ค่าดำเนินการ"],True)}</td>'
+                html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["% ค่าคอมมิชชัน"],True)}</td>'
+                
                 html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["% ทุนสินค้า"],True)}</td>'
-                html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["% ทุนอื่น"],True)}</td>'
                 html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["% Ads"],True)}</td>'
                 html += f'<td class="col-small"{get_cell_style(r["% กำไร"])}>{fmt(r["% กำไร"],True)}</td>'
                 html += '</tr>'
@@ -1282,30 +1322,38 @@ try:
             html += '<tr class="footer-row"><td>TOTAL</td><td></td>'
             ts = df_final_d['รายละเอียดยอดที่ชำระแล้ว'].sum(); tp = df_final_d['Net_Profit'].sum()
             ta = df_final_d['Ads_Amount'].sum(); tc = df_final_d['CAL_COST'].sum()
-            t_oth = df_final_d['BOX_COST'].sum() + df_final_d['DELIV_COST'].sum() + df_final_d['CAL_COD_COST'].sum() + df_final_d['CAL_COM_ADMIN'].sum() + df_final_d['CAL_COM_TELESALE'].sum()
+            
+            # Sums for columns
+            t_box = df_final_d['BOX_COST'].sum()
+            t_ship = df_final_d['DELIV_COST'].sum()
+            t_cod = df_final_d['CAL_COD_COST'].sum()
+            t_adm = df_final_d['CAL_COM_ADMIN'].sum()
+            t_tel = df_final_d['CAL_COM_TELESALE'].sum()
 
             html += f'<td{get_cell_style(df_final_d["จำนวน"].sum())}>{fmt(df_final_d["จำนวน"].sum())}</td>'
             html += f'<td{get_cell_style(ts)}>{fmt(ts)}</td>'
             html += f'<td{get_cell_style(tc)}>{fmt(tc)}</td>'
-            html += f'<td{get_cell_style(df_final_d["BOX_COST"].sum())}>{fmt(df_final_d["BOX_COST"].sum())}</td>'
-            html += f'<td{get_cell_style(df_final_d["DELIV_COST"].sum())}>{fmt(df_final_d["DELIV_COST"].sum())}</td>'
-            html += f'<td{get_cell_style(df_final_d["CAL_COD_COST"].sum())}>{fmt(df_final_d["CAL_COD_COST"].sum())}</td>'
-            html += f'<td{get_cell_style(df_final_d["CAL_COM_ADMIN"].sum())}>{fmt(df_final_d["CAL_COM_ADMIN"].sum())}</td>'
-            html += f'<td{get_cell_style(df_final_d["CAL_COM_TELESALE"].sum())}>{fmt(df_final_d["CAL_COM_TELESALE"].sum())}</td>'
+            html += f'<td{get_cell_style(t_box)}>{fmt(t_box)}</td>'
+            html += f'<td{get_cell_style(t_ship)}>{fmt(t_ship)}</td>'
+            html += f'<td{get_cell_style(t_cod)}>{fmt(t_cod)}</td>'
+            html += f'<td{get_cell_style(t_adm)}>{fmt(t_adm)}</td>'
+            html += f'<td{get_cell_style(t_tel)}>{fmt(t_tel)}</td>'
             html += f'<td{get_cell_style(ta)}>{fmt(ta)}</td>'
             html += f'<td{get_cell_style(tp)}>{fmt(tp)}</td>'
 
             f_roas = ts/ta if ta>0 else 0
-            f_pp = (tp/ts*100) if ts>0 else 0
             
+            # --- [UPDATED] Footer Percentages Calculation ---
+            val_pct_ops = ((t_box + t_ship + t_cod)/ts*100) if ts>0 else 0
+            val_pct_comm = ((t_adm + t_tel)/ts*100) if ts>0 else 0
             val_pct_cost = (tc/ts*100) if ts>0 else 0
-            val_pct_oth = (t_oth/ts*100) if ts>0 else 0
             val_pct_ads = (ta/ts*100) if ts>0 else 0
-            val_pct_profit = f_pp
+            val_pct_profit = (tp/ts*100) if ts>0 else 0
             
             html += f'<td class="col-small"{get_cell_style(f_roas)}>{fmt(f_roas)}</td>'
+            html += f'<td class="col-small"{get_cell_style(val_pct_ops)}>{fmt(val_pct_ops,True)}</td>'
+            html += f'<td class="col-small"{get_cell_style(val_pct_comm)}>{fmt(val_pct_comm,True)}</td>'
             html += f'<td class="col-small"{get_cell_style(val_pct_cost)}>{fmt(val_pct_cost,True)}</td>'
-            html += f'<td class="col-small"{get_cell_style(val_pct_oth)}>{fmt(val_pct_oth,True)}</td>'
             html += f'<td class="col-small"{get_cell_style(val_pct_ads)}>{fmt(val_pct_ads,True)}</td>'
             html += f'<td class="col-small"{get_cell_style(val_pct_profit)}>{fmt(val_pct_profit,True)}</td></tr></tbody></table></div>'
             st.markdown(html, unsafe_allow_html=True)
