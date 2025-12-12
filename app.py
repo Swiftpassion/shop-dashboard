@@ -907,12 +907,12 @@ try:
     		elif "row-pct-ads" in row_cls: bg_color = "#b802b8"    
     		elif "row-pct-cost" in row_cls: bg_color = "#A020F0"   
     		elif "row-pct-ops" in row_cls: bg_color = "#1E90FF"   
-    		elif "row-pct-com" in row_cls: bg_color = "#5e35b1"   
-   	 	else: bg_color = "#ffffff"
+   	 	elif "row-pct-com" in row_cls: bg_color = "#5e35b1"   
+    		else: bg_color = "#ffffff"
 
     		if bg_color != "#ffffff": dark_bg = True
     
-    		# เพิ่ม font-weight: bold สำหรับแถวเปอร์เซ็นต์ที่ระบุ
+    			# เพิ่ม font-weight: bold สำหรับแถวเปอร์เซ็นต์ที่ระบุ
     		if row_cls in ["row-pct-ads", "row-pct-cost", "row-pct-ops", "row-pct-com"]:
         	style_bg = f"background-color:{bg_color}; font-weight: bold;"
     		else:
