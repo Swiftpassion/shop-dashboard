@@ -901,7 +901,7 @@ try:
                 elif "row-cost" in row_cls: bg_color = "#3366FF"      
                 elif "row-ads" in row_cls: bg_color = "#9400D3"       
                 elif "row-ops" in row_cls: bg_color = "#039be5"       # ใหม่: สีค่าดำเนินการ
-                elif "row-com" in row_cls: bg_color = "#00acc1"       # ใหม่: สีค่าคอมมิชชั่น
+                elif "row-com" in row_cls: bg_color = "#fbc02d"       # ใหม่: สีค่าคอมมิชชั่น
                 elif "row-pct-ads" in row_cls: bg_color = "#b802b8"    
                 elif "row-pct-cost" in row_cls: bg_color = "#A020F0"   
                 elif "row-pct-ops" in row_cls: bg_color = "#1E90FF"   # ใหม่: สีเปอร์เซ็นต์ค่าดำเนินการ
