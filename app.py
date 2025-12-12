@@ -297,7 +297,7 @@ st.markdown("""
     }
 
     .th-sku { background-color: #1e3c72 !important; color: white !important; min-width: 80px; }
-    .sku-header { font-size: 10px; color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
+    .sku-header { font-size: 10px; color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis; max-width: 100px; margin: 0 auto; text-align: center; }
     .col-small { width: 70px; min-width: 70px; max-width: 70px; font-size: 11px; color: #333333 !important; }
 
     .pnl-container { font-family: 'Prompt', sans-serif; color: #ffffff; }
