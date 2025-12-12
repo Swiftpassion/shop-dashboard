@@ -16,7 +16,9 @@ thai_months = ["มกราคม", "กุมภาพันธ์", "มี�
 
 # --- COLOR SETTINGS ---
 COLOR_SALES = "#33FFFF"
-COLOR_COST = "#A020F0"
+COLOR_OPS = "#3498db"  # ค่าดำเนินการ
+COLOR_COM = "#FFD700"  # ค่าคอมมิชชั่น (ทอง)
+COLOR_COST_PROD = "#A020F0"  # ทุนสินค้า
 COLOR_ADS = "#FF6633"
 COLOR_PROFIT = "#7CFC00"
 COLOR_NEGATIVE = "#FF0000"
@@ -147,8 +149,14 @@ st.markdown("""
     .val-sales { color: #33FFFF !important; font-size: 24px; font-weight: 700; }
     .sub-sales { color: #33FFFF !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
 
-    .val-cost { color: #9400D3 !important; font-size: 24px; font-weight: 700; }
-    .sub-cost { color: #9400D3 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
+    .val-ops { color: #3498db !important; font-size: 24px; font-weight: 700; }
+    .sub-ops { color: #3498db !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
+
+    .val-com { color: #FFD700 !important; font-size: 24px; font-weight: 700; }
+    .sub-com { color: #FFD700 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
+
+    .val-costprod { color: #A020F0 !important; font-size: 24px; font-weight: 700; }
+    .sub-costprod { color: #A020F0 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
 
     .val-ads { color: #FF6633 !important; font-size: 24px; font-weight: 700; }
     .sub-ads { color: #FF6633 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
@@ -159,11 +167,10 @@ st.markdown("""
     .val-neg { color: #FF0000 !important; font-size: 24px; font-weight: 700; }
     .sub-neg { color: #FF0000 !important; font-size: 13px; font-weight: 600; margin-top: 5px; }
 
-
     /* --- 2. การจัดวาง (LAYOUT FIX) --- */
     .metric-container { 
         display: grid !important; 
-        grid-template-columns: repeat(6, 1fr) !important; /* <--- MODIFIED TO 6 COLUMNS */
+        grid-template-columns: repeat(6, 1fr) !important; 
         gap: 15px !important; 
         margin-bottom: 20px; 
         width: 100%;
@@ -183,10 +190,12 @@ st.markdown("""
     .neg { color: #FF0000 !important; }
     .pos { color: #ffffff !important; }
 
-    .border-blue { border-left-color: #3498db; }
-    .border-purple { border-left-color: #9b59b6; }
-    .border-orange { border-left-color: #e67e22; }
-    .border-green { border-left-color: #27ae60; }
+    .border-blue { border-left-color: #33FFFF; }
+    .border-ops { border-left-color: #3498db; }
+    .border-com { border-left-color: #FFD700; }
+    .border-costprod { border-left-color: #A020F0; }
+    .border-orange { border-left-color: #FF6633; }
+    .border-green { border-left-color: #7CFC00; }
 
     /* Inputs */
     .stTextInput input { color: #ffffff !important; caret-color: white; background-color: #262730 !important; border: 1px solid #555 !important; }
@@ -347,26 +356,24 @@ def get_val_color(val, default_hex):
     return default_hex
 
 # ------------------------------
-# GLOBAL METRIC CARD COMPONENT (MODIFIED FOR 6 METRICS - v2)
+# GLOBAL METRIC CARD COMPONENT (อัปเดตเป็น 6 กล่อง)
 # ------------------------------
-def render_metric_row_v2(total_sales, op_cost, total_com, prod_cost, total_ads, total_profit):
-    # คำนวณเปอร์เซ็นต์เทียบกับยอดขาย
+def render_metric_row(total_sales, total_ops, total_com, total_cost_prod, total_ads, total_profit):
     pct_sales = 100
-    pct_op_cost = (op_cost / total_sales * 100) if total_sales > 0 else 0
+    pct_ops = (total_ops / total_sales * 100) if total_sales > 0 else 0
     pct_com = (total_com / total_sales * 100) if total_sales > 0 else 0
-    pct_prod_cost = (prod_cost / total_sales * 100) if total_sales > 0 else 0
+    pct_cost_prod = (total_cost_prod / total_sales * 100) if total_sales > 0 else 0
     pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
     pct_profit = (total_profit / total_sales * 100) if total_sales > 0 else 0
 
-    # กำหนด Class สำหรับสี
     cls_sales_v = "val-neg" if total_sales < 0 else "val-sales"
     cls_sales_s = "sub-neg" if total_sales < 0 else "sub-sales"
-    cls_op_v = "val-neg" if op_cost < 0 else "val-cost" # ใช้สี cost เดิม
-    cls_op_s = "sub-neg" if op_cost < 0 else "sub-cost"
-    cls_com_v = "val-neg" if total_com < 0 else "val-cost"
-    cls_com_s = "sub-neg" if total_com < 0 else "sub-cost"
-    cls_prod_v = "val-neg" if prod_cost < 0 else "val-cost"
-    cls_prod_s = "sub-neg" if prod_cost < 0 else "sub-cost"
+    cls_ops_v = "val-neg" if total_ops < 0 else "val-ops"
+    cls_ops_s = "sub-neg" if total_ops < 0 else "sub-ops"
+    cls_com_v = "val-neg" if total_com < 0 else "val-com"
+    cls_com_s = "sub-neg" if total_com < 0 else "sub-com"
+    cls_costprod_v = "val-neg" if total_cost_prod < 0 else "val-costprod"
+    cls_costprod_s = "sub-neg" if total_cost_prod < 0 else "sub-costprod"
     cls_ads_v = "val-neg" if total_ads < 0 else "val-ads"
     cls_ads_s = "sub-neg" if total_ads < 0 else "sub-ads"
     cls_prof_v = "val-neg" if total_profit < 0 else "val-profit"
@@ -374,40 +381,39 @@ def render_metric_row_v2(total_sales, op_cost, total_com, prod_cost, total_ads, 
 
     html = f"""
 <div class="metric-container">
-    <div class="custom-card border-blue">
-        <div class="card-label">1. ยอดขายรวม</div>
-        <div class="{cls_sales_v}">{total_sales:,.0f}</div>
-        <div class="{cls_sales_s}">{pct_sales:.0f}%</div>
-    </div>
-    <div class="custom-card border-purple">
-        <div class="card-label">2. ค่าดำเนินการ (กล่อง+ส่ง+COD)</div>
-        <div class="{cls_op_v}">{op_cost:,.0f}</div>
-        <div class="{cls_op_s}">{pct_op_cost:.1f}%</div>
-    </div>
-    <div class="custom-card border-purple">
-        <div class="card-label">3. ค่าคอม (Admin+Tele)</div>
-        <div class="{cls_com_v}">{total_com:,.0f}</div>
-        <div class="{cls_com_s}">{pct_com:.1f}%</div>
-    </div>
-    <div class="custom-card border-purple">
-        <div class="card-label">4. ทุนสินค้า (COGS)</div>
-        <div class="{cls_prod_v}">{prod_cost:,.0f}</div>
-        <div class="{cls_prod_s}">{pct_prod_cost:.1f}%</div>
-    </div>
-    <div class="custom-card border-orange">
-        <div class="card-label">5. ค่าโฆษณา</div>
-        <div class="{cls_ads_v}">{total_ads:,.0f}</div>
-        <div class="{cls_ads_s}">{pct_ads:.1f}%</div>
-    </div>
-    <div class="custom-card border-green">
-        <div class="card-label">6. กำไรสุทธิ</div>
-        <div class="{cls_prof_v}">{total_profit:,.0f}</div>
-        <div class="{cls_prof_s}">{pct_profit:.1f}%</div>
-    </div>
+<div class="custom-card border-blue">
+<div class="card-label">ยอดขายรวม</div>
+<div class="{cls_sales_v}">{total_sales:,.0f}</div>
+<div class="{cls_sales_s}">{pct_sales:.0f}%</div>
+</div>
+<div class="custom-card border-ops">
+<div class="card-label">ค่าดำเนินการ</div>
+<div class="{cls_ops_v}">{total_ops:,.0f}</div>
+<div class="{cls_ops_s}">{pct_ops:.1f}%</div>
+</div>
+<div class="custom-card border-com">
+<div class="card-label">ค่าคอมมิชชั่น</div>
+<div class="{cls_com_v}">{total_com:,.0f}</div>
+<div class="{cls_com_s}">{pct_com:.1f}%</div>
+</div>
+<div class="custom-card border-costprod">
+<div class="card-label">ทุนสินค้า</div>
+<div class="{cls_costprod_v}">{total_cost_prod:,.0f}</div>
+<div class="{cls_costprod_s}">{pct_cost_prod:.1f}%</div>
+</div>
+<div class="custom-card border-orange">
+<div class="card-label">ค่าโฆษณา</div>
+<div class="{cls_ads_v}">{total_ads:,.0f}</div>
+<div class="{cls_ads_s}">{pct_ads:.1f}%</div>
+</div>
+<div class="custom-card border-green">
+<div class="card-label">กำไรสุทธิ</div>
+<div class="{cls_prof_v}">{total_profit:,.0f}</div>
+<div class="{cls_prof_s}">{pct_profit:.1f}%</div>
+</div>
 </div>
 """
     st.markdown(html, unsafe_allow_html=True)
-
 
 @st.cache_resource
 def get_drive_service():
@@ -775,19 +781,17 @@ try:
         else:
             df_view = df_base[df_base['SKU_Main'].isin(final_skus)]
         
-            # --- CALCULATE 6 METRICS (MODIFIED) ---
+            # คำนวณค่าใหม่สำหรับกล่อง 6 กล่อง
             total_sales = df_view['รายละเอียดยอดที่ชำระแล้ว'].sum()
             total_ads = df_view['Ads_Amount'].sum()
-            net_profit = df_view['Net_Profit'].sum()
+            total_cost_prod = df_view['CAL_COST'].sum()
+            total_ops = df_view['BOX_COST'].sum() + df_view['DELIV_COST'].sum() + df_view['CAL_COD_COST'].sum()
+            total_com = df_view['CAL_COM_ADMIN'].sum() + df_view['CAL_COM_TELESALE'].sum()
+            total_cost_all = total_cost_prod + total_ops + total_com + total_ads
+            net_profit = total_sales - total_cost_all
 
-            total_prod_cost = df_view['CAL_COST'].sum() # 4. ทุนสินค้า
-            total_op_cost = df_view['BOX_COST'].sum() + df_view['DELIV_COST'].sum() + df_view['CAL_COD_COST'].sum() # 2. ค่าดำเนินการ
-            total_com_cost = df_view['CAL_COM_ADMIN'].sum() + df_view['CAL_COM_TELESALE'].sum() # 3. ค่าคอม
-            # --------------------------------------
-
-            # --- RENDER 6 METRICS (MODIFIED) ---
-            render_metric_row_v2(total_sales, total_op_cost, total_com_cost, total_prod_cost, total_ads, net_profit)
-            # -----------------------------------
+            # เรียกใช้ฟังก์ชันแสดงกล่อง 6 กล่อง
+            render_metric_row(total_sales, total_ops, total_com, total_cost_prod, total_ads, net_profit)
 
             date_list = pd.date_range(start_date_m, end_date_m)
             matrix_data = []
@@ -825,7 +829,7 @@ try:
             df_matrix = pd.DataFrame(matrix_data)
             
             footer_sums = df_view.groupby('SKU_Main').agg({'รายละเอียดยอดที่ชำระแล้ว': 'sum', 'จำนวน': 'sum', 'CAL_COST': 'sum', 'Other_Costs': 'sum', 'Ads_Amount': 'sum', 'Net_Profit': 'sum',
-                                                            'CAL_COM_ADMIN': 'sum', 'CAL_COM_TELESALE': 'sum', 'BOX_COST': 'sum', 'DELIV_COST': 'sum', 'CAL_COD_COST': 'sum'})
+                                                            'CAL_COM_ADMIN': 'sum', 'CAL_COM_TELESALE': 'sum'})
             footer_sums = footer_sums.reindex(final_skus, fill_value=0)
 
             def fmt_n(v): return f"{v:,.0f}" if v!=0 else "-"
@@ -868,12 +872,8 @@ try:
             html += '</tbody>'
             html += '<tfoot>'
 
-            g_sales = total_sales; g_ads = total_ads; g_profit = net_profit
+            g_sales = total_sales; g_ads = total_ads; g_cost = total_cost_prod + total_ops + total_com; g_profit = net_profit
             g_qty = df_view['จำนวน'].sum()
-            g_cost_prod = total_prod_cost
-            g_cost_op = total_op_cost
-            g_cost_com = total_com_cost
-            g_cost_total = g_cost_prod + g_cost_op + g_cost_com + g_ads
 
             # --- GRAND TOTAL ROW ---
             g_pct_profit = (g_profit / g_sales * 100) if g_sales else 0
@@ -897,35 +897,29 @@ try:
             html += '</tr>'
             
             def create_footer_row_new(row_cls, label, data_dict, val_type='num', dark_bg=False):
-                # Calculate Grand Totals for Footer Row
-                grand_val = 0
-                if label == "รวมยอดขาย": grand_val = g_sales
-                elif label == "รวมจำนวน": grand_val = g_qty
-                elif label == "รวมทุนสินค้า": grand_val = g_cost_prod
-                elif label == "รวมค่าดำเนินการ": grand_val = g_cost_op
-                elif label == "รวมค่าคอม": grand_val = g_cost_com
-                elif label == "รวมค่าแอด": grand_val = g_ads
-                elif label == "รวมกำไร": grand_val = g_profit
-                
-                elif label == "กำไร / ยอดขาย": grand_val = (g_profit/g_sales*100) if g_sales else 0
-                elif label == "ค่าแอด / ยอดขาย": grand_val = (g_ads/g_sales*100) if g_sales else 0
-                elif label == "ทุนสินค้า/ยอดขาย": grand_val = (g_cost_prod/g_sales*100) if g_sales else 0
-                elif label == "ค่าดำเนินการ/ยอดขาย": grand_val = (g_cost_op/g_sales*100) if g_sales else 0
-                elif label == "ค่าคอม/ยอดขาย": grand_val = (g_cost_com/g_sales*100) if g_sales else 0
-
-                # Define style based on row type
                 if "row-sales" in row_cls: bg_color = "#B8860B"       
-                elif "row-cost-prod" in row_cls: bg_color = "#3366FF"      
-                elif "row-cost-op" in row_cls: bg_color = "#9b59b6"      
-                elif "row-cost-com" in row_cls: bg_color = "#A020F0"
-                elif "row-ads" in row_cls: bg_color = "#FF6633"       
+                elif "row-cost" in row_cls: bg_color = "#3366FF"      
+                elif "row-ads" in row_cls: bg_color = "#9400D3"       
                 elif "row-profit" in row_cls: bg_color = "#006400"    
+                elif "row-pct-profit" in row_cls: bg_color = "#1E90FF" 
+                elif "row-pct-ads" in row_cls: bg_color = "#b802b8"    
+                elif "row-pct-cost" in row_cls: bg_color = "#A020F0"   
                 else: bg_color = "#ffffff"
 
                 if bg_color != "#ffffff": dark_bg = True
                 style_bg = f"background-color:{bg_color};"
                 lbl_color = "#ffffff" if dark_bg else "#000000"
                 
+                grand_val = 0
+                if label == "รวมทุนสินค้า": grand_val = g_cost
+                elif label == "รวมยอดขาย": grand_val = g_sales
+                elif label == "รวมจำนวน": grand_val = g_qty
+                elif label == "รวมกำไร": grand_val = g_profit
+                elif label == "รวมค่าแอด": grand_val = g_ads
+                elif label == "กำไร / ยอดขาย": grand_val = (g_profit/g_sales*100) if g_sales else 0
+                elif label == "ค่าแอด / ยอดขาย": grand_val = (g_ads/g_sales*100) if g_sales else 0
+                elif label == "ทุน/ยอดขาย": grand_val = (g_cost/g_sales*100) if g_sales else 0
+
                 txt_val = fmt_p(grand_val) if val_type=='pct' else fmt_n(grand_val)
                 grand_text_col = "#333333"
                 if grand_val < 0: grand_text_col = "#FF0000"
@@ -945,20 +939,20 @@ try:
 
                 for sku in final_skus:
                     val = 0
-                    s = data_dict.loc[sku, 'รายละเอียดยอดที่ชำระแล้ว']
-
-                    if label == "รวมยอดขาย": val = s
-                    elif label == "รวมทุนสินค้า": val = data_dict.loc[sku, 'CAL_COST']
-                    elif label == "รวมค่าดำเนินการ": val = data_dict.loc[sku, 'BOX_COST'] + data_dict.loc[sku, 'DELIV_COST'] + data_dict.loc[sku, 'CAL_COD_COST']
-                    elif label == "รวมค่าคอม": val = data_dict.loc[sku, 'CAL_COM_ADMIN'] + data_dict.loc[sku, 'CAL_COM_TELESALE']
-                    elif label == "รวมค่าแอด": val = data_dict.loc[sku, 'Ads_Amount']
+                    if label == "รวมทุนสินค้า": val = data_dict.loc[sku, 'CAL_COST'] + data_dict.loc[sku, 'Other_Costs']
+                    elif label == "รวมยอดขาย": val = data_dict.loc[sku, 'รายละเอียดยอดที่ชำระแล้ว']
                     elif label == "รวมกำไร": val = data_dict.loc[sku, 'Net_Profit']
-                    
-                    elif label == "กำไร / ยอดขาย": val = (data_dict.loc[sku, 'Net_Profit']/s*100) if s else 0
-                    elif label == "ค่าแอด / ยอดขาย": val = (data_dict.loc[sku, 'Ads_Amount']/s*100) if s else 0
-                    elif label == "ทุนสินค้า/ยอดขาย": val = (data_dict.loc[sku, 'CAL_COST']/s*100) if s else 0
-                    elif label == "ค่าดำเนินการ/ยอดขาย": val = ((data_dict.loc[sku, 'BOX_COST'] + data_dict.loc[sku, 'DELIV_COST'] + data_dict.loc[sku, 'CAL_COD_COST'])/s*100) if s else 0
-                    elif label == "ค่าคอม/ยอดขาย": val = ((data_dict.loc[sku, 'CAL_COM_ADMIN'] + data_dict.loc[sku, 'CAL_COM_TELESALE'])/s*100) if s else 0
+                    elif label == "รวมค่าแอด": val = data_dict.loc[sku, 'Ads_Amount']
+                    elif label == "กำไร / ยอดขาย":
+                        s = data_dict.loc[sku, 'รายละเอียดยอดที่ชำระแล้ว']
+                        val = (data_dict.loc[sku, 'Net_Profit']/s*100) if s else 0
+                    elif label == "ค่าแอด / ยอดขาย":
+                        s = data_dict.loc[sku, 'รายละเอียดยอดที่ชำระแล้ว']
+                        val = (data_dict.loc[sku, 'Ads_Amount']/s*100) if s else 0
+                    elif label == "ทุน/ยอดขาย":
+                        s = data_dict.loc[sku, 'รายละเอียดยอดที่ชำระแล้ว']
+                        cost = data_dict.loc[sku, 'CAL_COST'] + data_dict.loc[sku, 'Other_Costs']
+                        val = (cost/s*100) if s else 0
 
                     txt = fmt_p(val) if val_type=='pct' else fmt_n(val)
                     cell_text_col = "#333333"
@@ -970,18 +964,12 @@ try:
                 return row_html
 
             html += create_footer_row_new("row-sales", "รวมยอดขาย", footer_sums, 'num')
-            html += create_footer_row_new("row-cost-op", "รวมค่าดำเนินการ", footer_sums, 'num')
-            html += create_footer_row_new("row-cost-com", "รวมค่าคอม", footer_sums, 'num')
-            html += create_footer_row_new("row-cost-prod", "รวมทุนสินค้า", footer_sums, 'num')
+            html += create_footer_row_new("row-cost", "รวมทุนสินค้า", footer_sums, 'num')
             html += create_footer_row_new("row-ads", "รวมค่าแอด", footer_sums, 'num')
             html += create_footer_row_new("row-profit", "รวมกำไร", footer_sums, 'num')
-            
-            html += create_footer_row_new("row-pct-op", "ค่าดำเนินการ/ยอดขาย", footer_sums, 'pct')
-            html += create_footer_row_new("row-pct-com", "ค่าคอม/ยอดขาย", footer_sums, 'pct')
-            html += create_footer_row_new("row-pct-cost-prod", "ทุนสินค้า/ยอดขาย", footer_sums, 'pct')
-            html += create_footer_row_new("row-pct-ads", "ค่าแอด / ยอดขาย", footer_sums, 'pct')
             html += create_footer_row_new("row-pct-profit", "กำไร / ยอดขาย", footer_sums, 'pct')
-            
+            html += create_footer_row_new("row-pct-ads", "ค่าแอด / ยอดขาย", footer_sums, 'pct')
+            html += create_footer_row_new("row-pct-cost", "ทุน/ยอดขาย", footer_sums, 'pct')
             html += '</tfoot></table></div>'
             st.markdown(html, unsafe_allow_html=True)
             
@@ -1069,6 +1057,18 @@ try:
             st.warning(f"⚠️ ไม่พบข้อมูลสินค้าตามเงื่อนไข ในช่วงวันที่ {start_date_a} ถึง {end_date_a}")
         else:
             df_view_a = df_base_a[df_base_a['SKU_Main'].isin(final_skus_a)]
+            
+            # คำนวณค่าใหม่สำหรับกล่อง 6 กล่อง (เฉพาะในหน้านี้ไม่จำเป็นต้องแสดง แต่คำนวณเพื่อความสมบูรณ์)
+            total_sales = df_view_a['รายละเอียดยอดที่ชำระแล้ว'].sum()
+            total_ads = df_view_a['Ads_Amount'].sum()
+            total_cost_prod = df_view_a['CAL_COST'].sum()
+            total_ops = df_view_a['BOX_COST'].sum() + df_view_a['DELIV_COST'].sum() + df_view_a['CAL_COD_COST'].sum()
+            total_com = df_view_a['CAL_COM_ADMIN'].sum() + df_view_a['CAL_COM_TELESALE'].sum()
+            total_cost_all = total_cost_prod + total_ops + total_com + total_ads
+            net_profit = total_sales - total_cost_all
+
+            # แสดงกล่องสรุป 6 กล่อง
+            render_metric_row(total_sales, total_ops, total_com, total_cost_prod, total_ads, net_profit)
             
             # --- PREPARE DATA ---
             date_list_a = pd.date_range(start_date_a, end_date_a)
@@ -1190,28 +1190,24 @@ try:
 
         if df_final_d.empty: st.warning(f"⚠️ ไม่พบข้อมูลตามเงื่อนไข ({sel_category_d}) ในช่วงเวลานี้")
         else:
-            # --- CALCULATE 6 METRICS (MODIFIED) ---
+            # คำนวณค่าใหม่สำหรับกล่อง 6 กล่อง
             sum_sales = df_final_d['รายละเอียดยอดที่ชำระแล้ว'].sum()
             sum_ads = df_final_d['Ads_Amount'].sum()
+            sum_cost_prod = df_final_d['CAL_COST'].sum()
+            sum_ops = df_final_d['BOX_COST'].sum() + df_final_d['DELIV_COST'].sum() + df_final_d['CAL_COD_COST'].sum()
+            sum_com = df_final_d['CAL_COM_ADMIN'].sum() + df_final_d['CAL_COM_TELESALE'].sum()
+            sum_total_cost_ops = sum_cost_prod + sum_ops + sum_com + sum_ads
             sum_profit = df_final_d['Net_Profit'].sum()
             
-            sum_prod_cost = df_final_d['CAL_COST'].sum() # 4. ทุนสินค้า
-            sum_op_cost = df_final_d['BOX_COST'].sum() + df_final_d['DELIV_COST'].sum() + df_final_d['CAL_COD_COST'].sum() # 2. ค่าดำเนินการ
-            sum_com_cost = df_final_d['CAL_COM_ADMIN'].sum() + df_final_d['CAL_COM_TELESALE'].sum() # 3. ค่าคอม
-            # --------------------------------------
-
-            # --- RENDER 6 METRICS (MODIFIED) ---
-            render_metric_row_v2(sum_sales, sum_op_cost, sum_com_cost, sum_prod_cost, sum_ads, sum_profit)
-            # -----------------------------------
+            # แสดงกล่องสรุป 6 กล่อง
+            render_metric_row(sum_sales, sum_ops, sum_com, sum_cost_prod, sum_ads, sum_profit)
 
             df_final_d['กำไร/ขาดทุน'] = df_final_d['Net_Profit']
             df_final_d['ROAS'] = np.where(df_final_d['Ads_Amount']>0, df_final_d['รายละเอียดยอดที่ชำระแล้ว']/df_final_d['Ads_Amount'], 0)
             sls = df_final_d['รายละเอียดยอดที่ชำระแล้ว']
             df_final_d['% ทุนสินค้า'] = np.where(sls>0, (df_final_d['CAL_COST']/sls)*100, 0)
-            oth = df_final_d['BOX_COST']+df_final_d['DELIV_COST']+df_final_d['CAL_COD_COST']
-            com = df_final_d['CAL_COM_ADMIN']+df_final_d['CAL_COM_TELESALE']
+            oth = df_final_d['BOX_COST']+df_final_d['DELIV_COST']+df_final_d['CAL_COD_COST']+df_final_d['CAL_COM_ADMIN']+df_final_d['CAL_COM_TELESALE']
             df_final_d['% ทุนอื่น'] = np.where(sls>0, (oth/sls)*100, 0)
-            df_final_d['% คอม'] = np.where(sls>0, (com/sls)*100, 0) # NEW
             df_final_d['% Ads'] = np.where(sls>0, (df_final_d['Ads_Amount']/sls)*100, 0)
             df_final_d['% กำไร'] = np.where(sls>0, (df_final_d['Net_Profit']/sls)*100, 0)
             df_final_d = df_final_d.sort_values('กำไร/ขาดทุน', ascending=False)
@@ -1227,12 +1223,7 @@ try:
                 return '' 
 
             st.markdown("##### 📋 รายละเอียดสินค้า")
-            cols_cfg = [('SKU', 'SKU_Main', ''), ('ชื่อสินค้า', 'ชื่อสินค้า', ''), ('จำนวน', 'จำนวน', ''), ('ยอดขาย', 'รายละเอียดยอดที่ชำระแล้ว', ''), 
-                        ('ต้นทุน', 'CAL_COST', ''), ('ค่ากล่อง', 'BOX_COST', ''), ('ค่าส่ง', 'DELIV_COST', ''), ('COD', 'CAL_COD_COST', ''), 
-                        ('Admin', 'CAL_COM_ADMIN', ''), ('Tele', 'CAL_COM_TELESALE', ''), ('ค่า Ads', 'Ads_Amount', ''), ('กำไร', 'Net_Profit', ''), 
-                        ('ROAS', 'ROAS', 'col-small'), ('%ทุน', '% ทุนสินค้า', 'col-small'), ('%อื่น', '% ทุนอื่น', 'col-small'), 
-                        ('%คอม', '% คอม', 'col-small'), # NEW
-                        ('%Ads', '% Ads', 'col-small'), ('%กำไร', '% กำไร', 'col-small')]
+            cols_cfg = [('SKU', 'SKU_Main', ''), ('ชื่อสินค้า', 'ชื่อสินค้า', ''), ('จำนวน', 'จำนวน', ''), ('ยอดขาย', 'รายละเอียดยอดที่ชำระแล้ว', ''), ('ต้นทุน', 'CAL_COST', ''), ('ค่ากล่อง', 'BOX_COST', ''), ('ค่าส่ง', 'DELIV_COST', ''), ('COD', 'CAL_COD_COST', ''), ('Admin', 'CAL_COM_ADMIN', ''), ('Tele', 'CAL_COM_TELESALE', ''), ('ค่า Ads', 'Ads_Amount', ''), ('กำไร', 'Net_Profit', ''), ('ROAS', 'ROAS', 'col-small'), ('%ทุน', '% ทุนสินค้า', 'col-small'), ('%อื่น', '% ทุนอื่น', 'col-small'), ('%Ads', '% Ads', 'col-small'), ('%กำไร', '% กำไร', 'col-small')]
 
             html = '<div class="table-wrapper"><table class="custom-table daily-table"><thead><tr>'
             for title, _, cls in cols_cfg: html += f'<th class="{cls}">{title}</th>'
@@ -1258,7 +1249,6 @@ try:
                 html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["ROAS"])}</td>'
                 html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["% ทุนสินค้า"],True)}</td>'
                 html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["% ทุนอื่น"],True)}</td>'
-                html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["% คอม"],True)}</td>' # NEW
                 html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["% Ads"],True)}</td>'
                 html += f'<td class="col-small"{get_cell_style(r["% กำไร"])}>{fmt(r["% กำไร"],True)}</td>'
                 html += '</tr>'
@@ -1266,8 +1256,7 @@ try:
             html += '<tr class="footer-row"><td>TOTAL</td><td></td>'
             ts = df_final_d['รายละเอียดยอดที่ชำระแล้ว'].sum(); tp = df_final_d['Net_Profit'].sum()
             ta = df_final_d['Ads_Amount'].sum(); tc = df_final_d['CAL_COST'].sum()
-            t_op = df_final_d['BOX_COST'].sum() + df_final_d['DELIV_COST'].sum() + df_final_d['CAL_COD_COST'].sum()
-            t_com = df_final_d['CAL_COM_ADMIN'].sum() + df_final_d['CAL_COM_TELESALE'].sum()
+            t_oth = df_final_d['BOX_COST'].sum() + df_final_d['DELIV_COST'].sum() + df_final_d['CAL_COD_COST'].sum() + df_final_d['CAL_COM_ADMIN'].sum() + df_final_d['CAL_COM_TELESALE'].sum()
 
             html += f'<td{get_cell_style(df_final_d["จำนวน"].sum())}>{fmt(df_final_d["จำนวน"].sum())}</td>'
             html += f'<td{get_cell_style(ts)}>{fmt(ts)}</td>'
@@ -1281,17 +1270,16 @@ try:
             html += f'<td{get_cell_style(tp)}>{fmt(tp)}</td>'
 
             f_roas = ts/ta if ta>0 else 0
+            f_pp = (tp/ts*100) if ts>0 else 0
             
             val_pct_cost = (tc/ts*100) if ts>0 else 0
-            val_pct_oth = (t_op/ts*100) if ts>0 else 0
-            val_pct_com = (t_com/ts*100) if ts>0 else 0 # NEW
+            val_pct_oth = (t_oth/ts*100) if ts>0 else 0
             val_pct_ads = (ta/ts*100) if ts>0 else 0
-            val_pct_profit = (tp/ts*100) if ts>0 else 0
+            val_pct_profit = f_pp
             
             html += f'<td class="col-small"{get_cell_style(f_roas)}>{fmt(f_roas)}</td>'
             html += f'<td class="col-small"{get_cell_style(val_pct_cost)}>{fmt(val_pct_cost,True)}</td>'
             html += f'<td class="col-small"{get_cell_style(val_pct_oth)}>{fmt(val_pct_oth,True)}</td>'
-            html += f'<td class="col-small"{get_cell_style(val_pct_com)}>{fmt(val_pct_com,True)}</td>' # NEW
             html += f'<td class="col-small"{get_cell_style(val_pct_ads)}>{fmt(val_pct_ads,True)}</td>'
             html += f'<td class="col-small"{get_cell_style(val_pct_profit)}>{fmt(val_pct_profit,True)}</td></tr></tbody></table></div>'
             st.markdown(html, unsafe_allow_html=True)
@@ -1350,19 +1338,16 @@ try:
             if df_graph.empty:
                 st.warning("⚠️ ไม่พบข้อมูลการขายของสินค้าที่เลือกในช่วงเวลานี้")
             else:
-                # --- CALCULATE 6 METRICS (MODIFIED) ---
+                # คำนวณค่าใหม่สำหรับกล่อง 6 กล่อง
                 g_sales = df_graph['รายละเอียดยอดที่ชำระแล้ว'].sum()
                 g_ads = df_graph['Ads_Amount'].sum()
+                g_cost_prod = df_graph['CAL_COST'].sum()
+                g_ops = df_graph['BOX_COST'].sum() + df_graph['DELIV_COST'].sum() + df_graph['CAL_COD_COST'].sum()
+                g_com = df_graph['CAL_COM_ADMIN'].sum() + df_graph['CAL_COM_TELESALE'].sum()
                 g_net_profit = df_graph['Net_Profit'].sum()
-
-                g_prod_cost = df_graph['CAL_COST'].sum() # 4. ทุนสินค้า
-                g_op_cost = df_graph['BOX_COST'].sum() + df_graph['DELIV_COST'].sum() + df_graph['CAL_COD_COST'].sum() # 2. ค่าดำเนินการ
-                g_com_cost = df_graph['CAL_COM_ADMIN'].sum() + df_graph['CAL_COM_TELESALE'].sum() # 3. ค่าคอม
-                # --------------------------------------
                 
-                # --- RENDER 6 METRICS (MODIFIED) ---
-                render_metric_row_v2(g_sales, g_op_cost, g_com_cost, g_prod_cost, g_ads, g_net_profit)
-                # -----------------------------------
+                # แสดงกล่องสรุป 6 กล่อง
+                render_metric_row(g_sales, g_ops, g_com, g_cost_prod, g_ads, g_net_profit)
                 
                 df_chart = df_graph.groupby(['Date', 'SKU_Main']).agg({
                     'รายละเอียดยอดที่ชำระแล้ว': 'sum',
@@ -1452,19 +1437,19 @@ try:
             df_merged['Total_Exp'] = df_merged['COGS_Total'] + df_merged['Selling_Exp'] + df_merged['Fix_Cost']
             df_merged['Net_Profit_Final'] = df_merged['รายละเอียดยอดที่ชำระแล้ว'] - df_merged['Total_Exp']
 
-            # --- CALCULATE 6 METRICS (MODIFIED) ---
             total_sales = df_merged['รายละเอียดยอดที่ชำระแล้ว'].sum()
             total_ads = df_merged['Ads_Amount'].sum()
+            total_cost_prod = df_merged['CAL_COST'].sum()
+            total_ops = df_merged['BOX_COST'].sum() + df_merged['DELIV_COST'].sum() + df_merged['CAL_COD_COST'].sum()
+            total_com = df_merged['CAL_COM_ADMIN'].sum() + df_merged['CAL_COM_TELESALE'].sum()
             total_profit = df_merged['Net_Profit_Final'].sum()
+            
+            # แสดงกล่องสรุป 6 กล่อง
+            render_metric_row(total_sales, total_ops, total_com, total_cost_prod, total_ads, total_profit)
 
-            t_prod_cost = df_merged['CAL_COST'].sum() # 4. ทุนสินค้า
-            t_op_cost = df_merged['BOX_COST'].sum() + df_merged['DELIV_COST'].sum() + df_merged['CAL_COD_COST'].sum() # 2. ค่าดำเนินการ
-            t_com_cost = df_merged['CAL_COM_ADMIN'].sum() + df_merged['CAL_COM_TELESALE'].sum() # 3. ค่าคอม
-            # --------------------------------------
-
-            # --- RENDER 6 METRICS (MODIFIED) ---
-            render_metric_row_v2(total_sales, t_op_cost, t_com_cost, t_prod_cost, total_ads, total_profit)
-            # -----------------------------------
+            pct_net_income = (total_sales / total_sales * 100) if total_sales else 0
+            pct_exp = ((total_ops + total_com + total_cost_prod + total_ads) / total_sales * 100) if total_sales else 0
+            net_margin = (total_profit / total_sales * 100) if total_sales else 0
 
             def fmt(v): return f"{v:,.0f}"
             def fmt_p(v): return f"{v:,.2f}%"
@@ -1511,18 +1496,17 @@ try:
 
             st.markdown('<div class="chart-box"><div class="chart-header">งบกำไรขาดทุน (Profit & Loss Statement)</div>', unsafe_allow_html=True)
 
-            # Reusing calculated components (t_...) from 6 metrics calculation
-            t_sales = total_sales
-            t_prod_cost = t_prod_cost
+            t_sales = df_merged['รายละเอียดยอดที่ชำระแล้ว'].sum()
+            t_prod_cost = df_merged['CAL_COST'].sum()
             t_box_cost = df_merged['BOX_COST'].sum()
             t_gross = t_sales - t_prod_cost - t_box_cost
             t_ship = df_merged['DELIV_COST'].sum()
             t_cod = df_merged['CAL_COD_COST'].sum()
             t_admin = df_merged['CAL_COM_ADMIN'].sum()
             t_tele = df_merged['CAL_COM_TELESALE'].sum()
-            t_ads = total_ads
+            t_ads = df_merged['Ads_Amount'].sum()
             t_fix = df_merged['Fix_Cost'].sum()
-            t_net = total_profit # Net_Profit_Final
+            t_net = t_gross - t_ship - t_cod - t_admin - t_tele - t_ads - t_fix
 
             def row_html(label, val, is_head=False, is_neg=False, is_sub=False):
                 cls = "pnl-row-head" if is_head else ("sub-item" if is_sub else "")
@@ -1569,8 +1553,7 @@ try:
 
         df_m_data = df_daily[(df_daily['Year'] == sel_y_m) & (df_daily['Month_Thai'] == sel_m_m)].copy()
 
-        month_idx_m = thai_months.index(sel_m_m) + 1
-        days_in_m = calendar.monthrange(sel_y_m, month_idx_m)[1]
+        days_in_m = calendar.monthrange(sel_y_m, thai_months.index(sel_m_m)+1)[1]
         df_full_days = pd.DataFrame({'Day': range(1, days_in_m + 1)})
 
         fix_cost_month = 0
@@ -1596,25 +1579,19 @@ try:
 
         df_d_agg['Daily_Net_Profit'] = df_d_agg['รายละเอียดยอดที่ชำระแล้ว'] - df_d_agg['Daily_Total_Exp']
 
-        # --- CALCULATE 6 METRICS (MODIFIED) ---
+        # คำนวณค่าใหม่สำหรับกล่อง 6 กล่อง
         m_sales = df_d_agg['รายละเอียดยอดที่ชำระแล้ว'].sum()
-        m_net_profit = df_d_agg['Daily_Net_Profit'].sum()
         m_ads = df_d_agg['Ads_Amount'].sum()
+        m_cost_prod = df_d_agg['CAL_COST'].sum()
+        m_ops = df_d_agg['BOX_COST'].sum() + df_d_agg['DELIV_COST'].sum() + df_d_agg['CAL_COD_COST'].sum()
+        m_com = df_d_agg['CAL_COM_ADMIN'].sum() + df_d_agg['CAL_COM_TELESALE'].sum()
+        m_net_profit = df_d_agg['Daily_Net_Profit'].sum()
+        
+        # แสดงกล่องสรุป 6 กล่อง
+        render_metric_row(m_sales, m_ops, m_com, m_cost_prod, m_ads, m_net_profit)
 
-        m_prod_cost = df_d_agg['CAL_COST'].sum() # 4. ทุนสินค้า
-        m_box = df_d_agg['BOX_COST'].sum()
-        m_ship = df_d_agg['DELIV_COST'].sum()
-        m_cod = df_d_agg['CAL_COD_COST'].sum()
-        m_admin = df_d_agg['CAL_COM_ADMIN'].sum()
-        m_tele = df_d_agg['CAL_COM_TELESALE'].sum()
-
-        m_op_cost = m_box + m_ship + m_cod # 2. ค่าดำเนินการ (ไม่รวม Fix Cost รายเดือน)
-        m_com_cost = m_admin + m_tele # 3. ค่าคอม
-        # --------------------------------------
-
-        # --- RENDER 6 METRICS (MODIFIED) ---
-        render_metric_row_v2(m_sales, m_op_cost, m_com_cost, m_prod_cost, m_ads, m_net_profit)
-        # -----------------------------------
+        pct_net = (m_net_profit / m_sales * 100) if m_sales else 0
+        pct_exp_ratio = ((m_ops + m_com + m_cost_prod + m_ads) / m_sales * 100) if m_sales else 0
 
         def fmt(v): return f"{v:,.0f}"
         def fmt_p(v): return f"{v:,.2f}%"
@@ -1630,10 +1607,16 @@ try:
 
         with c2:
             st.markdown('<div class="chart-box"><div class="chart-header"><span class="pill" style="background:#f87171"></span> สัดส่วนค่าใช้จ่าย (เดือนนี้)</div>', unsafe_allow_html=True)
-            # Reusing calculated components (m_...)
-            
+            m_prod = df_d_agg['CAL_COST'].sum()
+            m_box = df_d_agg['BOX_COST'].sum()
+            m_ship = df_d_agg['DELIV_COST'].sum()
+            m_cod = df_d_agg['CAL_COD_COST'].sum()
+            m_admin = df_d_agg['CAL_COM_ADMIN'].sum()
+            m_tele = df_d_agg['CAL_COM_TELESALE'].sum()
+            m_ads = df_d_agg['Ads_Amount'].sum()
+
             pie_data = pd.DataFrame([
-                {'Type': 'ต้นทุนสินค้า', 'Value': m_prod_cost},
+                {'Type': 'ต้นทุนสินค้า', 'Value': m_prod},
                 {'Type': 'ค่ากล่อง', 'Value': m_box},
                 {'Type': 'ค่าส่ง', 'Value': m_ship},
                 {'Type': 'ค่า COD', 'Value': m_cod},
@@ -1684,17 +1667,16 @@ try:
 
         st.markdown('<div class="chart-box"><div class="chart-header">งบกำไรขาดทุน (Monthly Statement)</div>', unsafe_allow_html=True)
 
-        # Reusing calculated components (m_...)
-        m_sales = m_sales
-        m_prod_cost = m_prod_cost
-        m_box_cost = m_box
+        m_sales = df_d_agg['รายละเอียดยอดที่ชำระแล้ว'].sum()
+        m_prod_cost = df_d_agg['CAL_COST'].sum()
+        m_box_cost = df_d_agg['BOX_COST'].sum()
         m_gross = m_sales - m_prod_cost - m_box_cost
-        m_ship = m_ship
-        m_cod = m_cod
-        m_admin = m_admin
-        m_tele = m_tele
-        m_ads = m_ads
-        m_net = m_net_profit - (fix_cost_month)
+        m_ship = df_d_agg['DELIV_COST'].sum()
+        m_cod = df_d_agg['CAL_COD_COST'].sum()
+        m_admin = df_d_agg['CAL_COM_ADMIN'].sum()
+        m_tele = df_d_agg['CAL_COM_TELESALE'].sum()
+        m_ads = df_d_agg['Ads_Amount'].sum()
+        m_net = m_gross - m_ship - m_cod - m_admin - m_tele - m_ads - fix_cost_month
 
         def row_html(label, val, is_head=False, is_neg=False, is_sub=False):
             cls = "pnl-row-head" if is_head else ("sub-item" if is_sub else "")
@@ -1734,8 +1716,8 @@ try:
 
         df_comm = df_daily[(df_daily['Year'] == sel_year_c) & (df_daily['Month_Thai'] == sel_month_c)].copy()
 
-        month_idx_c = thai_months.index(sel_month_c) + 1
-        days_in_m = calendar.monthrange(sel_year_c, month_idx_c)[1]
+        month_idx = thai_months.index(sel_month_c) + 1
+        days_in_m = calendar.monthrange(sel_year_c, month_idx)[1]
         df_full_days = pd.DataFrame({'Day': range(1, days_in_m + 1)})
 
         if df_comm.empty:
@@ -1751,12 +1733,17 @@ try:
             total_tele = df_comm['CAL_COM_TELESALE'].sum()
             total_all = total_admin + total_tele
 
-            st.markdown(f"""
-            <div class="metric-container" style="grid-template-columns: repeat(3, 1fr) !important;">
-                <div class="custom-card border-blue"><div class="card-label">ค่าคอมรวมทั้งหมด</div><div class="val-sales">{total_all:,.0f}</div><div class="sub-sales">บาท</div></div>
-                <div class="custom-card border-purple"><div class="card-label">Admin Commission</div><div class="val-cost">{total_admin:,.0f}</div><div class="sub-cost">{(total_admin/total_all*100) if total_all else 0:.1f}% ของทั้งหมด</div></div>
-                <div class="custom-card border-orange"><div class="card-label">Telesale Commission</div><div class="val-ads">{total_tele:,.0f}</div><div class="sub-ads">{(total_tele/total_all*100) if total_all else 0:.1f}% ของทั้งหมด</div></div>
-            </div>""", unsafe_allow_html=True)
+            # คำนวณค่าเพิ่มเติมสำหรับกล่อง 6 กล่อง
+            total_sales = df_comm['รายละเอียดยอดที่ชำระแล้ว'].sum()
+            total_ads = df_comm['Ads_Amount'].sum()
+            total_cost_prod = df_comm['CAL_COST'].sum()
+            total_ops = df_comm['BOX_COST'].sum() + df_comm['DELIV_COST'].sum() + df_comm['CAL_COD_COST'].sum()
+            total_com = total_admin + total_tele
+            total_cost_all = total_cost_prod + total_ops + total_com + total_ads
+            net_profit = total_sales - total_cost_all
+            
+            # แสดงกล่องสรุป 6 กล่อง
+            render_metric_row(total_sales, total_ops, total_com, total_cost_prod, total_ads, net_profit)
 
             c_chart, c_table = st.columns([2, 1])
 
