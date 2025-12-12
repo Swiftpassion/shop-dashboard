@@ -1187,7 +1187,7 @@ try:
             for i, (_, r) in enumerate(df_final_d.iterrows()):
                 html += '<tr>'
                 html += f'<td style="font-weight:bold;color:#1e3c72 !important;">{r["SKU_Main"]}</td>'
-                html += f'<td style="text-align:left;font-size:11px;color:#1e3c72 !important;">{r["ชื่อสินค้า"]}</td>'
+                html += f'<td style="text-align:left;font-size:11px;color:#1e3c72 !important; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{r["ชื่อสินค้า"]}">{r["ชื่อสินค้า"]}</td>'
 
                 html += f'<td{get_cell_style(r["จำนวน"])}>{fmt(r["จำนวน"])}</td>'
                 html += f'<td{get_cell_style(r["รายละเอียดยอดที่ชำระแล้ว"])}>{fmt(r["รายละเอียดยอดที่ชำระแล้ว"])}</td>'
