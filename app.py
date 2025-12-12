@@ -375,7 +375,7 @@ def normalize_courier_name(courier):
     return mapping.get(courier, courier)
 
 # ------------------------------
-# GLOBAL METRIC CARD COMPONENT (อัปเดตเป็น 6 กล่อง)
+# GLOBAL METRIC CARD COMPONENT
 # ------------------------------
 def render_metric_row(total_sales, total_ops, total_com, total_cost_prod, total_ads, total_profit):
     pct_sales = 100
@@ -559,9 +559,11 @@ def process_data():
     # Cost per line (คิดต้นทุนสินค้าทุกบรรทัดตามปกติ เพื่อหาต้นทุนรวมที่ถูกต้อง)
     df_merged['CAL_COST'] = df_merged['จำนวน'] * df_merged['ต้นทุน']
     
+    # กำหนดค่ากล่อง/ค่าส่งต่อบรรทัด (เพื่อเตรียม Max)
     df_merged['BOX_COST_PER_LINE'] = df_merged['ราคากล่อง'].fillna(0)
     df_merged['DELIV_COST_PER_LINE'] = df_merged['ค่าส่งเฉลี่ย'].fillna(0)
 
+    # Shipping Percent Dynamic
     def get_shipping_percent(row):
         courier = str(row.get('บริษัทขนส่ง', '')).strip()
         normalized_courier = normalize_courier_name(courier)
@@ -571,6 +573,7 @@ def process_data():
 
     df_merged['SHIP_PERCENT'] = df_merged.apply(get_shipping_percent, axis=1)
 
+    # COD Calculation
     def calculate_cod_cost(row):
         payment = str(row.get('วิธีการชำระเงิน', '')).lower()
         is_cod = any(cod_term in payment for cod_term in ['cod', 'ปลายทาง'])
@@ -580,6 +583,7 @@ def process_data():
 
     df_merged['CAL_COD_COST'] = df_merged.apply(calculate_cod_cost, axis=1)
 
+    # Role & Commission
     def calculate_role(row):
         work_type = str(row.get('ประเภทการทำงาน', '')).lower()
         creator = str(row.get('ผู้สร้างคำสั่งซื้อ', '')).lower()
@@ -599,7 +603,6 @@ def process_data():
 
     # --- [FIX GOAL 2] นับจำนวนสินค้าเฉพาะ SKU แรกของออเดอร์ ---
     # 1. หา SKU แรกของแต่ละออเดอร์
-    # เรียงตามลำดับเดิมของไฟล์หรือวันที่เพื่อให้มั่นใจว่า "แถวแรก" คือแถวแรกจริงๆ
     first_sku_df = df_merged.groupby('หมายเลขคำสั่งซื้อออนไลน์')['SKU_Main'].first().reset_index()
     first_sku_df.rename(columns={'SKU_Main': 'Target_SKU_For_Order'}, inplace=True)
     
@@ -614,15 +617,16 @@ def process_data():
     )
 
     # --- 5. AGGREGATE TO ORDER LEVEL ---
+    # รวมข้อมูลระดับออเดอร์ เพื่อจัดการค่ากล่องและค่าส่งไม่ให้เบิ้ล
     order_agg = {
         'Date': 'first',
         'SKU_Main': 'first', # ยึดตาม SKU แรกของออเดอร์
         'ชื่อสินค้า': 'first',
         'Qty_Filtered': 'sum', # [FIX] ใช้จำนวนที่กรองแล้วมา Sum รวมกัน
         'รายละเอียดยอดที่ชำระแล้ว': 'sum',
-        'CAL_COST': 'sum', # ต้นทุนยังคงรวมทุกรายการในออเดอร์ (ตามหลักบัญชีควรหักต้นทุนทั้งหมด)
-        'BOX_COST_PER_LINE': 'max',
-        'DELIV_COST_PER_LINE': 'max',
+        'CAL_COST': 'sum', # ต้นทุนสินค้ายังคงรวมทุกรายการในออเดอร์ (ถูกต้องแล้ว)
+        'BOX_COST_PER_LINE': 'max', # [FIX] ใช้ Max สำหรับค่ากล่องต่อออเดอร์
+        'DELIV_COST_PER_LINE': 'max', # [FIX] ใช้ Max สำหรับค่าส่งต่อออเดอร์
         'CAL_COD_COST': 'sum',
         'CAL_COM_ADMIN': 'sum',
         'CAL_COM_TELESALE': 'sum',
@@ -659,8 +663,8 @@ def process_data():
         'จำนวน': 'sum', # นี่คือ "จำนวนสินค้า (Filtered)"
         'รายละเอียดยอดที่ชำระแล้ว': 'sum',
         'CAL_COST': 'sum',
-        'BOX_COST': 'sum',
-        'DELIV_COST': 'sum',
+        'BOX_COST': 'sum', # รวมค่ากล่องของทุกออเดอร์
+        'DELIV_COST': 'sum', # รวมค่าส่งของทุกออเดอร์
         'CAL_COD_COST': 'sum',
         'CAL_COM_ADMIN': 'sum',
         'CAL_COM_TELESALE': 'sum',
@@ -682,6 +686,7 @@ def process_data():
     df_daily['Total_Cost'] = df_daily['CAL_COST'] + df_daily['Other_Costs'] + df_daily['Ads_Amount']
     df_daily['Net_Profit'] = df_daily['รายละเอียดยอดที่ชำระแล้ว'] - df_daily['Total_Cost']
 
+    # Date Components
     df_daily['Date'] = pd.to_datetime(df_daily['Date'])
     df_daily['Year'] = df_daily['Date'].dt.year
     df_daily['Month_Num'] = df_daily['Date'].dt.month
@@ -691,6 +696,7 @@ def process_data():
 
     if not df_fix_cost.empty and 'เดือน' in df_fix_cost.columns: df_fix_cost['Key'] = df_fix_cost['เดือน'].astype(str).str.strip() + "-" + df_fix_cost['ปี'].astype(str)
 
+    # --- MAPPING ---
     sku_map = df_daily.groupby('SKU_Main')['ชื่อสินค้า'].last().to_dict()
     master_skus_set = set()
     if not df_master.empty and 'SKU' in df_master.columns:
