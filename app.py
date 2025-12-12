@@ -876,9 +876,6 @@ try:
             # เรียกใช้ฟังก์ชันแสดงกล่อง 6 กล่อง
             render_metric_row(total_sales, total_ops, total_com, total_cost_prod, total_ads, net_profit)
 
-            # ... (ส่วนบนของ REPORT_MONTH คงเดิม) ...
-            
-            # --- แก้ไขการสร้างตาราง Matrix ---
             date_list = pd.date_range(start_date_m, end_date_m)
             matrix_data = []
         
@@ -887,7 +884,7 @@ try:
                 day_data = df_view[df_view['Date'] == d_date]
                 
                 d_sales = day_data['รายละเอียดยอดที่ชำระแล้ว'].sum()
-                d_orders = day_data['จำนวนออเดอร์'].sum()  # [FIX] เปลี่ยนเป็น จำนวนออเดอร์
+                d_orders = day_data['จำนวนออเดอร์'].sum() # [FIX] ใช้จำนวนออเดอร์แทนจำนวนชิ้น
                 d_profit = day_data['Net_Profit'].sum()
                 d_ads = day_data['Ads_Amount'].sum()
                 
@@ -898,7 +895,7 @@ try:
 
                 row = {
                     'วันที่': day_str, 
-                    'จำนวนออเดอร์': d_orders, # [FIX] เปลี่ยน Key
+                    'จำนวนออเดอร์': d_orders, # [FIX] เปลี่ยน key
                     'ยอดขาย': d_sales, 
                     'กำไร': d_profit,
                     '%กำไร': d_pct_profit,
@@ -914,8 +911,17 @@ try:
 
             df_matrix = pd.DataFrame(matrix_data)
             
-            footer_sums = df_view.groupby('SKU_Main').agg({'รายละเอียดยอดที่ชำระแล้ว': 'sum', 'จำนวนออเดอร์': 'sum', 'CAL_COST': 'sum', 'Other_Costs': 'sum', 'Ads_Amount': 'sum', 'Net_Profit': 'sum',
-                                                            'CAL_COM_ADMIN': 'sum', 'CAL_COM_TELESALE': 'sum'})
+            # [FIX] เพิ่มการรวม 'จำนวนออเดอร์' ใน footer_sums
+            footer_sums = df_view.groupby('SKU_Main').agg({
+                'รายละเอียดยอดที่ชำระแล้ว': 'sum', 
+                'จำนวนออเดอร์': 'sum', 
+                'CAL_COST': 'sum', 
+                'Other_Costs': 'sum', 
+                'Ads_Amount': 'sum', 
+                'Net_Profit': 'sum',
+                'CAL_COM_ADMIN': 'sum', 
+                'CAL_COM_TELESALE': 'sum'
+            })
             footer_sums = footer_sums.reindex(final_skus, fill_value=0)
 
             def fmt_n(v): return f"{v:,.0f}" if v!=0 else "-"
@@ -925,7 +931,8 @@ try:
             
             html += '<th class="fix-m-1" style="background-color:#2c3e50;color:white;">วันที่</th>'
             html += '<th class="fix-m-2" style="background-color:#2c3e50;color:white;">ยอดขาย</th>'
-            html += '<th class="fix-m-3" style="background-color:#2c3e50;color:white;">จำนวนออเดอร์</th>' # [FIX] เปลี่ยนชื่อหัวตาราง
+            # [FIX] เปลี่ยนหัวตารางเป็น จำนวนออเดอร์
+            html += '<th class="fix-m-3" style="background-color:#2c3e50;color:white;">จำนวนออเดอร์</th>'
             html += '<th class="fix-m-4" style="background-color:#27ae60;color:white;">กำไร</th>'
             html += '<th class="fix-m-5" style="background-color:#27ae60;color:white;">%</th>'
             html += '<th class="fix-m-6" style="background-color:#e67e22;color:white;">ค่าแอด</th>'
@@ -943,7 +950,8 @@ try:
                 html += f'<tr>'
                 html += f'<td class="fix-m-1">{r["วันที่"]}</td>'
                 html += f'<td class="fix-m-2" style="font-weight:bold;">{fmt_n(r["ยอดขาย"])}</td>'
-                html += f'<td class="fix-m-3" style="font-weight:bold;color:#ddd;">{fmt_n(r["จำนวนออเดอร์"])}</td>' # [FIX] ใช้จำนวนออเดอร์
+                # [FIX] แสดงจำนวนออเดอร์
+                html += f'<td class="fix-m-3" style="font-weight:bold;color:#ddd;">{fmt_n(r["จำนวนออเดอร์"])}</td>'
                 html += f'<td class="fix-m-4" style="font-weight:bold; color:{color_profit};">{fmt_n(r["กำไร"])}</td>'
                 html += f'<td class="fix-m-5" style="color:{color_pct_profit};">{fmt_p(r["%กำไร"])}</td>'
                 html += f'<td class="fix-m-6" style="color:#e67e22;">{fmt_n(r["ค่าแอด"])}</td>'
@@ -961,7 +969,8 @@ try:
 
             # 1. แถว Grand Total (รวม)
             g_sales = total_sales; g_ads = total_ads; g_cost = total_cost_prod + total_ops + total_com; g_profit = net_profit
-            g_orders = df_view['จำนวนออเดอร์'].sum() # [FIX] Sum จำนวนออเดอร์
+            # [FIX] รวมจำนวนออเดอร์ทั้งหมด
+            g_orders = df_view['จำนวนออเดอร์'].sum()
             g_pct_profit = (g_profit / g_sales * 100) if g_sales else 0
             g_pct_ads = (g_ads / g_sales * 100) if g_sales else 0
             bg_total = "#010538"; c_total = "#ffffff"
@@ -969,7 +978,9 @@ try:
             html += f'<tr style="background-color: {bg_total}; font-weight: bold;">'
             html += f'<td class="fix-m-1" style="background-color: {bg_total}; color: {c_total};">รวม</td>'
             html += f'<td class="fix-m-2" style="background-color: {bg_total}; color: {c_total};">{fmt_n(g_sales)}</td>'
-            html += f'<td class="fix-m-3" style="background-color: {bg_total}; color: {c_total};">{fmt_n(g_orders)}</td>' # [FIX]
+            # [FIX] แสดงรวมจำนวนออเดอร์
+            html += f'<td class="fix-m-3" style="background-color: {bg_total}; color: {c_total};">{fmt_n(g_orders)}</td>'
+            
             c_prof_sum = "#7CFC00" if g_profit >= 0 else "#FF0000"
             html += f'<td class="fix-m-4" style="background-color: {bg_total}; color: {c_prof_sum};">{fmt_n(g_profit)}</td>'
             html += f'<td class="fix-m-5" style="background-color: {bg_total}; color: {c_prof_sum};">{fmt_p(g_pct_profit)}</td>'
@@ -982,10 +993,9 @@ try:
                 html += f'<td style="background-color: {bg_total}; color: {c_sku};">{fmt_n(val)}</td>'
             html += '</tr>'
             
-            # ... (ส่วน create_footer_row_new คงเดิม แต่แก้ label "รวมจำนวน" ให้ map เป็นจำนวนออเดอร์) ...
-            
+            # 2. ฟังก์ชันสร้างแถวสรุปเพิ่มเติม
             def create_footer_row_new(row_cls, label, data_dict, val_type='num', dark_bg=False):
-                # ... (code สีเดิม) ...
+                # กำหนดสีพื้นหลัง
                 if "row-sales" in row_cls: bg_color = "#f9a825"       
                 elif "row-cost" in row_cls: bg_color = "#3366FF"      
                 elif "row-ads" in row_cls: bg_color = "#b802b8"       
@@ -1006,10 +1016,11 @@ try:
 
                 lbl_color = "#ffffff" if dark_bg else "#000000"
                 
+                # คำนวณค่า Grand Total ของแถวนั้นๆ
                 grand_val = 0
                 if label == "รวมทุนสินค้า": grand_val = g_cost
                 elif label == "รวมยอดขาย": grand_val = g_sales
-                elif label == "รวมจำนวนออเดอร์": grand_val = g_orders # [FIX] เปลี่ยน Label check
+                elif label == "รวมจำนวนออเดอร์": grand_val = g_orders # [FIX] เพิ่ม Case
                 elif label == "รวมค่าแอด": grand_val = g_ads
                 elif label == "รวมค่าดำเนินการ": grand_val = total_ops
                 elif label == "รวมค่าคอมมิชชั่น": grand_val = total_com
@@ -1018,7 +1029,6 @@ try:
                 elif label == "ค่าดำเนินการ/ยอดขาย": grand_val = (total_ops/g_sales*100) if g_sales else 0
                 elif label == "ค่าคอมมิชชั่น/ยอดขาย": grand_val = (total_com/g_sales*100) if g_sales else 0
 
-                # ... (ส่วนแสดงผลคงเดิม) ...
                 txt_val = fmt_p(grand_val) if val_type=='pct' else fmt_n(grand_val)
                 grand_text_col = "#333333"
                 if grand_val < 0: grand_text_col = "#FF0000"
@@ -1048,7 +1058,7 @@ try:
                         val = data_dict.loc[sku, 'รายละเอียดยอดที่ชำระแล้ว']
                     elif label == "รวมค่าแอด": 
                         val = data_dict.loc[sku, 'Ads_Amount']
-                    elif label == "รวมจำนวนออเดอร์": # [FIX] เพิ่ม Case นี้
+                    elif label == "รวมจำนวนออเดอร์": # [FIX] ดึงค่าจำนวนออเดอร์ราย SKU
                         val = data_dict.loc[sku, 'จำนวนออเดอร์']
                     elif label == "รวมค่าดำเนินการ":
                         val = (data_dict.loc[sku, 'Other_Costs'] - 
@@ -1087,14 +1097,13 @@ try:
 
             # 3. เรียกใช้งานฟังก์ชัน
             html += create_footer_row_new("row-sales", "รวมยอดขาย", footer_sums, 'num')
-            html += create_footer_row_new("row-sales", "รวมจำนวนออเดอร์", footer_sums, 'num') # [FIX] เปลี่ยนป้าย
+            # [FIX] เพิ่มแถวรวมจำนวนออเดอร์ใน Footer
+            html += create_footer_row_new("row-sales", "รวมจำนวนออเดอร์", footer_sums, 'num')
             html += create_footer_row_new("row-cost", "รวมทุนสินค้า", footer_sums, 'num')
-            # ... (ที่เหลือเหมือนเดิม) ...
             html += create_footer_row_new("row-ads", "รวมค่าแอด", footer_sums, 'num')
             html += create_footer_row_new("row-ops", "รวมค่าดำเนินการ", footer_sums, 'num')
             html += create_footer_row_new("row-com", "รวมค่าคอมมิชชั่น", footer_sums, 'num')
             
-            # 4 แถวนี้จะเป็นตัวหนา (เพราะใส่ logic <b> เข้าไปแล้ว)
             html += create_footer_row_new("row-pct-ads", "ค่าแอด / ยอดขาย", footer_sums, 'pct')
             html += create_footer_row_new("row-pct-cost", "ทุน/ยอดขาย", footer_sums, 'pct')
             html += create_footer_row_new("row-pct-ops", "ค่าดำเนินการ/ยอดขาย", footer_sums, 'pct')
@@ -1321,7 +1330,7 @@ try:
                 end_d = st.date_input("วันที่สิ้นสุด", key="d_d_end")
 
             # ---------------------------------------------------------
-            # 4. ส่วนตัวกรองสินค้า (ย้าย Filter Mode มาที่นี่เพื่อให้สวยงาม)
+            # 4. ส่วนตัวกรองสินค้า
             # ---------------------------------------------------------
             c_type, c_cat, c_sku, c_clear, c_run = st.columns([1.5, 1.5, 2.5, 0.5, 1])
             
@@ -1343,15 +1352,26 @@ try:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
                 st.button("🚀 ประมวลผล", type="primary", use_container_width=True, key="btn_run_d")
 
-        # --- Logic การดึงข้อมูล (เหมือนเดิม แต่ใช้ start_d, end_d ที่ได้จากระบบใหม่) ---
+        # --- Logic การดึงข้อมูล ---
         mask = (df_daily['Date'] >= start_d) & (df_daily['Date'] <= end_d)
         df_range = df_daily[mask]
 
+        # Group ข้อมูล (Sum ยอดต่างๆ)
         df_grouped = df_range.groupby(['SKU_Main']).agg({
-            'ชื่อสินค้า': 'last', 'จำนวนออเดอร์': 'sum', 'จำนวน': 'sum', 'รายละเอียดยอดที่ชำระแล้ว': 'sum',
-            'CAL_COST': 'sum', 'BOX_COST': 'sum', 'DELIV_COST': 'sum', 'CAL_COD_COST': 'sum',
-            'CAL_COM_ADMIN': 'sum', 'CAL_COM_TELESALE': 'sum', 'Ads_Amount': 'sum', 'Net_Profit': 'sum'
+            'ชื่อสินค้า': 'last', 
+            'จำนวนออเดอร์': 'sum', 
+            'จำนวน': 'sum', 
+            'รายละเอียดยอดที่ชำระแล้ว': 'sum',
+            'CAL_COST': 'sum', 
+            'BOX_COST': 'sum', 
+            'DELIV_COST': 'sum', 
+            'CAL_COD_COST': 'sum',
+            'CAL_COM_ADMIN': 'sum', 
+            'CAL_COM_TELESALE': 'sum', 
+            'Ads_Amount': 'sum', 
+            'Net_Profit': 'sum'
         }).reset_index()
+        
         df_grouped['ชื่อสินค้า'] = df_grouped['SKU_Main'].map(sku_name_lookup).fillna("ไม่ระบุชื่อ")
 
         auto_skus_d = []
@@ -1377,7 +1397,6 @@ try:
             sum_cost_prod = df_final_d['CAL_COST'].sum()
             sum_ops = df_final_d['BOX_COST'].sum() + df_final_d['DELIV_COST'].sum() + df_final_d['CAL_COD_COST'].sum()
             sum_com = df_final_d['CAL_COM_ADMIN'].sum() + df_final_d['CAL_COM_TELESALE'].sum()
-            sum_total_cost_ops = sum_cost_prod + sum_ops + sum_com + sum_ads
             sum_profit = df_final_d['Net_Profit'].sum()
             
             # แสดงกล่องสรุป 6 กล่อง
@@ -1388,18 +1407,13 @@ try:
             sls = df_final_d['รายละเอียดยอดที่ชำระแล้ว']
 
             # --- [UPDATED] การคำนวณเปอร์เซ็นต์แบบใหม่ ---
-            # 1. % ค่าดำเนินการ = (ค่ากล่อง + ค่าส่ง + COD) / ยอดขาย
             val_ops_item = df_final_d['BOX_COST'] + df_final_d['DELIV_COST'] + df_final_d['CAL_COD_COST']
             df_final_d['% ค่าดำเนินการ'] = np.where(sls>0, (val_ops_item/sls)*100, 0)
 
-            # 2. % ค่าคอมมิชชัน = (Admin + Tele) / ยอดขาย
             val_com_item = df_final_d['CAL_COM_ADMIN'] + df_final_d['CAL_COM_TELESALE']
             df_final_d['% ค่าคอมมิชชัน'] = np.where(sls>0, (val_com_item/sls)*100, 0)
 
-            # 3. % ทุน = ทุนสินค้า / ยอดขาย
             df_final_d['% ทุนสินค้า'] = np.where(sls>0, (df_final_d['CAL_COST']/sls)*100, 0)
-
-            # อื่นๆ
             df_final_d['% Ads'] = np.where(sls>0, (df_final_d['Ads_Amount']/sls)*100, 0)
             df_final_d['% กำไร'] = np.where(sls>0, (df_final_d['Net_Profit']/sls)*100, 0)
             
@@ -1417,12 +1431,11 @@ try:
 
             st.markdown("##### 📋 รายละเอียดสินค้า")
             
-            # --- [UPDATED] Config Column ใหม่ ---
-            # [FIX] เปลี่ยนรายการที่ 3 จาก 'จำนวน' เป็น 'จำนวนออเดอร์'
+            # --- [UPDATED] Config Column ใหม่ (แสดงจำนวนออเดอร์) ---
             cols_cfg = [
                 ('SKU', 'SKU_Main', ''), 
                 ('ชื่อสินค้า', 'ชื่อสินค้า', ''), 
-                ('จำนวนออเดอร์', 'จำนวนออเดอร์', ''), # [FIX] เปลี่ยนเป็นจำนวนออเดอร์
+                ('จำนวนออเดอร์', 'จำนวนออเดอร์', ''), # [FIX] เปลี่ยนจาก 'จำนวน' เป็น 'จำนวนออเดอร์'
                 ('ยอดขาย', 'รายละเอียดยอดที่ชำระแล้ว', ''), 
                 ('ต้นทุน', 'CAL_COST', ''), 
                 ('ค่ากล่อง', 'BOX_COST', ''), 
@@ -1449,7 +1462,7 @@ try:
                 html += f'<td style="font-weight:bold;color:#1e3c72 !important;">{r["SKU_Main"]}</td>'
                 html += f'<td style="text-align:left;font-size:11px;color:#1e3c72 !important; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{r["ชื่อสินค้า"]}">{r["ชื่อสินค้า"]}</td>'
 
-                # [FIX] ใช้ จำนวนออเดอร์ แทน จำนวน
+                # [FIX] ใช้ จำนวนออเดอร์ แทน จำนวนสินค้า
                 html += f'<td{get_cell_style(r["จำนวนออเดอร์"])}>{fmt(r["จำนวนออเดอร์"])}</td>'
                 
                 html += f'<td{get_cell_style(r["รายละเอียดยอดที่ชำระแล้ว"])}>{fmt(r["รายละเอียดยอดที่ชำระแล้ว"])}</td>'
@@ -1471,20 +1484,24 @@ try:
                 html += f'<td class="col-small"{get_cell_style(r["% กำไร"])}>{fmt(r["% กำไร"],True)}</td>'
                 html += '</tr>'
 
+            # --- FOOTER ---
             html += '<tr class="footer-row"><td>TOTAL</td><td></td>'
-            ts = df_final_d['รายละเอียดยอดที่ชำระแล้ว'].sum(); tp = df_final_d['Net_Profit'].sum()
-            ta = df_final_d['Ads_Amount'].sum(); tc = df_final_d['CAL_COST'].sum()
+            ts = df_final_d['รายละเอียดยอดที่ชำระแล้ว'].sum()
+            tp = df_final_d['Net_Profit'].sum()
+            ta = df_final_d['Ads_Amount'].sum()
+            tc = df_final_d['CAL_COST'].sum()
             
+            # Sums for columns
             t_box = df_final_d['BOX_COST'].sum()
             t_ship = df_final_d['DELIV_COST'].sum()
             t_cod = df_final_d['CAL_COD_COST'].sum()
             t_adm = df_final_d['CAL_COM_ADMIN'].sum()
             t_tel = df_final_d['CAL_COM_TELESALE'].sum()
-            t_orders = df_final_d['จำนวนออเดอร์'].sum() # [FIX] Sum ออเดอร์
-
-            # [FIX] แสดงผลรวมจำนวนออเดอร์
-            html += f'<td{get_cell_style(t_orders)}>{fmt(t_orders)}</td>'
             
+            # [FIX] รวมยอดจำนวนออเดอร์
+            t_orders = df_final_d['จำนวนออเดอร์'].sum()
+
+            html += f'<td{get_cell_style(t_orders)}>{fmt(t_orders)}</td>'
             html += f'<td{get_cell_style(ts)}>{fmt(ts)}</td>'
             html += f'<td{get_cell_style(tc)}>{fmt(tc)}</td>'
             html += f'<td{get_cell_style(t_box)}>{fmt(t_box)}</td>'
@@ -1496,6 +1513,8 @@ try:
             html += f'<td{get_cell_style(tp)}>{fmt(tp)}</td>'
 
             f_roas = ts/ta if ta>0 else 0
+            
+            # Footer Percentages
             val_pct_ops = ((t_box + t_ship + t_cod)/ts*100) if ts>0 else 0
             val_pct_comm = ((t_adm + t_tel)/ts*100) if ts>0 else 0
             val_pct_cost = (tc/ts*100) if ts>0 else 0
