@@ -308,6 +308,8 @@ st.markdown("""
     .th-sku { background-color: #1e3c72 !important; color: white !important; min-width: 80px; }
     .sku-header { font-size: 10px; color: #d6eaf8 !important; font-weight: normal; display: block; overflow: hidden; text-overflow: ellipsis; max-width: 100px; margin: 0 auto; text-align: center; }
     .col-small { width: 70px; min-width: 70px; max-width: 70px; font-size: 11px; color: #333333 !important; }
+       .col-medium { width: 90px !important; min-width: 90px !important; max-width: 90px !important; font-size: 11px; color: #333333 !important; }
+       .col-wide { width: 100px !important; min-width: 100px !important; max-width: 100px !important; font-size: 11px; color: #333333 !important; }
 
     .pnl-container { font-family: 'Prompt', sans-serif; color: #ffffff; }
     .header-gradient-pnl { background-image: linear-gradient(135deg, #0f172a 0%, #334155 100%); padding: 20px 25px; border-radius: 12px; color: white; margin-bottom: 25px; }
@@ -1280,8 +1282,8 @@ try:
                 ('ค่า Ads', 'Ads_Amount', ''), 
                 ('กำไร', 'Net_Profit', ''), 
                 ('ROAS', 'ROAS', 'col-small'), 
-                ('%ค่าดำเนินการ', '% ค่าดำเนินการ', 'col-small'), # New
-                ('%ค่าคอม', '% ค่าคอมมิชชัน', 'col-small'),       # New
+                ('%ค่าดำเนินการ', '% ค่าดำเนินการ', 'col-medium'), # New
+                ('%ค่าคอม', '% ค่าคอมมิชชัน', 'col-medium'),       # New
                 ('%ทุน', '% ทุนสินค้า', 'col-small'), 
                 ('%Ads', '% Ads', 'col-small'), 
                 ('%กำไร', '% กำไร', 'col-small')
@@ -1351,8 +1353,8 @@ try:
             val_pct_profit = (tp/ts*100) if ts>0 else 0
             
             html += f'<td class="col-small"{get_cell_style(f_roas)}>{fmt(f_roas)}</td>'
-            html += f'<td class="col-small"{get_cell_style(val_pct_ops)}>{fmt(val_pct_ops,True)}</td>'
-            html += f'<td class="col-small"{get_cell_style(val_pct_comm)}>{fmt(val_pct_comm,True)}</td>'
+            html += f'<td class="col-medium"{get_cell_style(val_pct_ops)}>{fmt(val_pct_ops,True)}</td>'
+            html += f'<td class="col-medium"{get_cell_style(val_pct_comm)}>{fmt(val_pct_comm,True)}</td>'
             html += f'<td class="col-small"{get_cell_style(val_pct_cost)}>{fmt(val_pct_cost,True)}</td>'
             html += f'<td class="col-small"{get_cell_style(val_pct_ads)}>{fmt(val_pct_ads,True)}</td>'
             html += f'<td class="col-small"{get_cell_style(val_pct_profit)}>{fmt(val_pct_profit,True)}</td></tr></tbody></table></div>'
