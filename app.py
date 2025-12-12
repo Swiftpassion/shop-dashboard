@@ -461,20 +461,17 @@ def process_data():
     
     # --- FIX 3: คำนวณ COD COST แบบถูกต้อง ---
     def calculate_cod_cost(row):
-    payment = str(row.get('วิธีการชำระเงิน', '')).lower()
-    is_cod = any(cod_term in payment for cod_term in ['cod', 'ปลายทาง'])
-    
-    if is_cod and row['SHIP_PERCENT'] > 0:
-        # ค่า COD = ยอดขาย * %ค่าส่ง * 1.07 (ภาษี)
-        return row['รายละเอียดยอดที่ชำระแล้ว'] * row['SHIP_PERCENT'] * 1.07
-    return 0
+        payment = str(row.get('วิธีการชำระเงิน', '')).lower()
+        is_cod = any(cod_term in payment for cod_term in ['cod', 'ปลายทาง'])
+        
+        if is_cod and row['SHIP_PERCENT'] > 0:
+            # ค่า COD = ยอดขาย * %ค่าส่ง * 1.07 (ภาษี)
+            return row['รายละเอียดยอดที่ชำระแล้ว'] * row['SHIP_PERCENT'] * 1.07
+        return 0
     
     df_merged['CAL_COD_COST'] = df_merged.apply(calculate_cod_cost, axis=1)
     
     # --- FIX 4: คำนวณค่าคอมมิชชั่นแบบถูกต้อง ---
-    # ตรวจสอบว่า merge ข้อมูลพนักงานเข้ามาแล้วหรือยัง
-    # ในโค้ดนี้เราจะใช้ประเภทการทำงานจากคอลัมน์ที่มีอยู่
-    
     def calculate_role(row):
         # ถ้ามีคอลัมน์ประเภทการทำงานจากข้อมูลดิบ
         work_type = str(row.get('ประเภทการทำงาน', '')).lower()
@@ -496,14 +493,12 @@ def process_data():
     )
     
     df_merged['CAL_COM_TELESALE'] = np.where(
-        df_merged['Calculated_Ruled'] == 'Telesale',
+        df_merged['Calculated_Role'] == 'Telesale',
         df_merged['รายละเอียดยอดที่ชำระแล้ว'] * df_merged['ค่าคอมมิชชั่น Telesale'].fillna(0),
         0
     )
     
     # --- STEP 1: รวมระดับออเดอร์ก่อน (ORDER LEVEL) ---
-    # นี่คือการแก้ปัญหาที่สำคัญที่สุด!
-    
     order_agg = {
         'Date': 'first',
         'SKU_Main': lambda x: list(x),  # เก็บ SKU ทั้งหมดในออเดอร์
@@ -519,14 +514,7 @@ def process_data():
         'Type': 'first'  # เก็บ Type
     }
     
-    # STEP 1: รวมระดับออเดอร์ก่อน
-df_order = df_merged.groupby('หมายเลขคำสั่งซื้อออนไลน์').agg(order_agg).reset_index()
-
-# STEP 2: รวม ADS ข้อมูล
-df_order = pd.merge(df_order, df_ads_agg, ...)
-
-# STEP 3: รวมระดับวันที่และ SKU
-df_daily = df_order.groupby(['Date', 'SKU_Main']).agg(daily_agg).reset_index()
+    df_order = df_merged.groupby('หมายเลขคำสั่งซื้อออนไลน์').agg(order_agg).reset_index()
     
     # ตั้งชื่อคอลัมน์ใหม่ให้ชัดเจน
     df_order.rename(columns={
@@ -561,7 +549,6 @@ df_daily = df_order.groupby(['Date', 'SKU_Main']).agg(daily_agg).reset_index()
     df_order = df_order.fillna(0)
     
     # --- STEP 3: รวมระดับวันที่และ SKU (DAILY LEVEL) ---
-    # ตอนนี้เรามีข้อมูลระดับออเดอร์ที่ถูกต้องแล้ว
     daily_agg = {
         'ชื่อสินค้า': 'first',
         'หมายเลขคำสั่งซื้อออนไลน์': 'count',  # นับจำนวนออเดอร์
