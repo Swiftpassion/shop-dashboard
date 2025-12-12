@@ -503,6 +503,36 @@ def process_data():
 
     if df_data.empty: return pd.DataFrame(), pd.DataFrame(), {}, [], {}
 
+    # ============================================================================================
+    # [FIX CRITICAL ERROR] : จัดการชื่อคอลัมน์ให้ตรงกัน (Auto-Map Column Names)
+    # ============================================================================================
+    
+    # 1. ลบช่องว่างหน้า-หลังชื่อคอลัมน์ทั้งหมด
+    df_data.columns = df_data.columns.astype(str).str.strip()
+    
+    # 2. รายชื่อคอลัมน์ที่เป็นไปได้ (Synonyms) -> เปลี่ยนให้เป็น 'หมายเลขคำสั่งซื้อออนไลน์'
+    col_mapping = {
+        'Order SN': 'หมายเลขคำสั่งซื้อออนไลน์',
+        'Order ID': 'หมายเลขคำสั่งซื้อออนไลน์',
+        'Order No.': 'หมายเลขคำสั่งซื้อออนไลน์',
+        'หมายเลขคำสั่งซื้อ': 'หมายเลขคำสั่งซื้อออนไลน์',
+        'เลขที่คำสั่งซื้อ': 'หมายเลขคำสั่งซื้อออนไลน์'
+    }
+    df_data.rename(columns=col_mapping, inplace=True)
+
+    # 3. ตรวจสอบว่ามีคอลัมน์หลักหรือไม่ ถ้าไม่มีให้แจ้งเตือน
+    if 'หมายเลขคำสั่งซื้อออนไลน์' not in df_data.columns:
+        # พยายามหาคอลัมน์ที่มีคำว่า "Order" หรือ "คำสั่งซื้อ"
+        possible_cols = [c for c in df_data.columns if 'Order' in c or 'คำสั่งซื้อ' in c]
+        if possible_cols:
+             st.toast(f"⚠️ ไม่พบ 'หมายเลขคำสั่งซื้อออนไลน์' แต่พบ '{possible_cols[0]}' ระบบจะใช้แทน")
+             df_data.rename(columns={possible_cols[0]: 'หมายเลขคำสั่งซื้อออนไลน์'}, inplace=True)
+        else:
+             st.error(f"❌ เกิดข้อผิดพลาด: ไม่พบคอลัมน์ 'หมายเลขคำสั่งซื้อออนไลน์' ในไฟล์ข้อมูล")
+             st.write("คอลัมน์ที่พบในไฟล์:", df_data.columns.tolist())
+             return pd.DataFrame(), pd.DataFrame(), {}, [], {}
+    # ============================================================================================
+
     # --- 1. PREPARE MASTER ITEM ---
     if not df_master.empty:
         df_master.columns = df_master.columns.astype(str).str.strip()
@@ -518,17 +548,21 @@ def process_data():
         df_master['Type'] = df_master['Type'].fillna('กลุ่ม ปกติ').astype(str).str.strip()
 
     # --- 2. PREPARE DATA ---
-    cols = [c for c in ['หมายเลขคำสั่งซื้อออนไลน์', 'สถานะคำสั่งซื้อ', 
+    # ตอนนี้มั่นใจแล้วว่ามี 'หมายเลขคำสั่งซื้อออนไลน์' แน่นอน
+    target_cols = ['หมายเลขคำสั่งซื้อออนไลน์', 'สถานะคำสั่งซื้อ', 
             'บริษัทขนส่ง', 'เวลาสั่งซื้อ', 'รูปแบบสินค้า', 'จำนวน', 
             'รายละเอียดยอดที่ชำระแล้ว', 'ผู้สร้างคำสั่งซื้อ', 
-            'วิธีการชำระเงิน', 'ชื่อสินค้า', 'ประเภทการทำงาน'] 
-            if c in df_data.columns]
+            'วิธีการชำระเงิน', 'ชื่อสินค้า', 'ประเภทการทำงาน']
+            
+    # เลือกเฉพาะคอลัมน์ที่มีจริงในไฟล์
+    cols = [c for c in target_cols if c in df_data.columns]
     
     df = df_data[cols].copy()
 
     if 'สถานะคำสั่งซื้อ' in df.columns:
         df = df[~df['สถานะคำสั่งซื้อ'].isin(['ยกเลิก'])]
 
+    # Clean Date
     df['Date'] = df['เวลาสั่งซื้อ'].apply(safe_date)
     df = df.dropna(subset=['Date'])
     
@@ -556,14 +590,13 @@ def process_data():
         if col in df_merged.columns:
             df_merged[col] = df_merged[col].apply(safe_float)
     
-    # Cost per line (คิดต้นทุนสินค้าทุกบรรทัดตามปกติ เพื่อหาต้นทุนรวมที่ถูกต้อง)
+    # Cost per line
     df_merged['CAL_COST'] = df_merged['จำนวน'] * df_merged['ต้นทุน']
     
-    # กำหนดค่ากล่อง/ค่าส่งต่อบรรทัด (เพื่อเตรียม Max)
+    # Box & Delivery per line (เตรียมไว้สำหรับ Group By Order)
     df_merged['BOX_COST_PER_LINE'] = df_merged['ราคากล่อง'].fillna(0)
     df_merged['DELIV_COST_PER_LINE'] = df_merged['ค่าส่งเฉลี่ย'].fillna(0)
 
-    # Shipping Percent Dynamic
     def get_shipping_percent(row):
         courier = str(row.get('บริษัทขนส่ง', '')).strip()
         normalized_courier = normalize_courier_name(courier)
@@ -573,7 +606,6 @@ def process_data():
 
     df_merged['SHIP_PERCENT'] = df_merged.apply(get_shipping_percent, axis=1)
 
-    # COD Calculation
     def calculate_cod_cost(row):
         payment = str(row.get('วิธีการชำระเงิน', '')).lower()
         is_cod = any(cod_term in payment for cod_term in ['cod', 'ปลายทาง'])
@@ -583,7 +615,6 @@ def process_data():
 
     df_merged['CAL_COD_COST'] = df_merged.apply(calculate_cod_cost, axis=1)
 
-    # Role & Commission
     def calculate_role(row):
         work_type = str(row.get('ประเภทการทำงาน', '')).lower()
         creator = str(row.get('ผู้สร้างคำสั่งซื้อ', '')).lower()
