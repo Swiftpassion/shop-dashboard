@@ -899,20 +899,26 @@ try:
             html += '</tr>'
             
             def create_footer_row_new(row_cls, label, data_dict, val_type='num', dark_bg=False):
-                if "row-sales" in row_cls: bg_color = "#f9a825"       
-                elif "row-cost" in row_cls: bg_color = "#3366FF"      
-                elif "row-ads" in row_cls: bg_color = "#b802b8"       
-                elif "row-ops" in row_cls: bg_color = "#039be5"       # ใหม่: สีค่าดำเนินการ
-                elif "row-com" in row_cls: bg_color = "#259b24"       # ใหม่: สีค่าคอมมิชชั่น
-                elif "row-pct-ads" in row_cls: bg_color = "#b802b8"    
-                elif "row-pct-cost" in row_cls: bg_color = "#A020F0"   
-                elif "row-pct-ops" in row_cls: bg_color = "#1E90FF"   # ใหม่: สีเปอร์เซ็นต์ค่าดำเนินการ
-                elif "row-pct-com" in row_cls: bg_color = "#5e35b1"    # ใหม่: สีเปอร์เซ็นต์ค่าคอมมิชชั่น
-                else: bg_color = "#ffffff"
+    		if "row-sales" in row_cls: bg_color = "#f9a825"       
+    		elif "row-cost" in row_cls: bg_color = "#3366FF"      
+    		elif "row-ads" in row_cls: bg_color = "#b802b8"       
+    		elif "row-ops" in row_cls: bg_color = "#039be5"       
+    		elif "row-com" in row_cls: bg_color = "#259b24"       
+    		elif "row-pct-ads" in row_cls: bg_color = "#b802b8"    
+    		elif "row-pct-cost" in row_cls: bg_color = "#A020F0"   
+    		elif "row-pct-ops" in row_cls: bg_color = "#1E90FF"   
+    		elif "row-pct-com" in row_cls: bg_color = "#5e35b1"   
+   	 	else: bg_color = "#ffffff"
 
-                if bg_color != "#ffffff": dark_bg = True
-                style_bg = f"background-color:{bg_color};"
-                lbl_color = "#ffffff" if dark_bg else "#000000"
+    		if bg_color != "#ffffff": dark_bg = True
+    
+    		# เพิ่ม font-weight: bold สำหรับแถวเปอร์เซ็นต์ที่ระบุ
+    		if row_cls in ["row-pct-ads", "row-pct-cost", "row-pct-ops", "row-pct-com"]:
+        	style_bg = f"background-color:{bg_color}; font-weight: bold;"
+    		else:
+        	style_bg = f"background-color:{bg_color};"
+    
+    		lbl_color = "#ffffff" if dark_bg else "#000000"
                 
                 grand_val = 0
                 if label == "รวมทุนสินค้า": grand_val = g_cost
