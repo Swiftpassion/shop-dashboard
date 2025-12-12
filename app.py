@@ -899,138 +899,118 @@ try:
             html += '</tr>'
             
             def create_footer_row_new(row_cls, label, data_dict, val_type='num', dark_bg=False):
-    if "row-sales" in row_cls: 
-        bg_color = "#f9a825"       
-    elif "row-cost" in row_cls: 
-        bg_color = "#3366FF"      
-    elif "row-ads" in row_cls: 
-        bg_color = "#b802b8"       
-    elif "row-ops" in row_cls: 
-        bg_color = "#039be5"       
-    elif "row-com" in row_cls: 
-        bg_color = "#259b24"       
-    elif "row-pct-ads" in row_cls: 
-        bg_color = "#b802b8"    
-    elif "row-pct-cost" in row_cls: 
-        bg_color = "#A020F0"   
-    elif "row-pct-ops" in row_cls: 
-        bg_color = "#1E90FF"   
-    elif "row-pct-com" in row_cls: 
-        bg_color = "#5e35b1"   
-    else: 
-        bg_color = "#ffffff"
+                # 1. กำหนดสีพื้นหลังตาม Class
+                if "row-sales" in row_cls: bg_color = "#f9a825"       
+                elif "row-cost" in row_cls: bg_color = "#3366FF"      
+                elif "row-ads" in row_cls: bg_color = "#b802b8"       
+                elif "row-ops" in row_cls: bg_color = "#039be5"       
+                elif "row-com" in row_cls: bg_color = "#259b24"       
+                elif "row-pct-ads" in row_cls: bg_color = "#b802b8"    
+                elif "row-pct-cost" in row_cls: bg_color = "#A020F0"   
+                elif "row-pct-ops" in row_cls: bg_color = "#1E90FF"   
+                elif "row-pct-com" in row_cls: bg_color = "#5e35b1"    
+                else: bg_color = "#ffffff"
 
-    if bg_color != "#ffffff": 
-        dark_bg = True
-    
-    # เพิ่ม font-weight: bold สำหรับแถวเปอร์เซ็นต์ที่ระบุ
-    if row_cls in ["row-pct-ads", "row-pct-cost", "row-pct-ops", "row-pct-com"]:
-        style_bg = f"background-color:{bg_color}; font-weight: bold;"
-    else:
-        style_bg = f"background-color:{bg_color};"
-    
-    lbl_color = "#ffffff" if dark_bg else "#000000"
-    
-    grand_val = 0
-    if label == "รวมทุนสินค้า": 
-        grand_val = g_cost
-    elif label == "รวมยอดขาย": 
-        grand_val = g_sales
-    elif label == "รวมจำนวน": 
-        grand_val = g_qty
-    elif label == "รวมค่าแอด": 
-        grand_val = g_ads
-    elif label == "รวมค่าดำเนินการ": 
-        grand_val = total_ops  # ใหม่
-    elif label == "รวมค่าคอมมิชชั่น": 
-        grand_val = total_com  # ใหม่
-    elif label == "ค่าแอด / ยอดขาย": 
-        grand_val = (g_ads/g_sales*100) if g_sales else 0
-    elif label == "ทุน/ยอดขาย": 
-        grand_val = (g_cost/g_sales*100) if g_sales else 0
-    elif label == "ค่าดำเนินการ/ยอดขาย": 
-        grand_val = (total_ops/g_sales*100) if g_sales else 0  # ใหม่
-    elif label == "ค่าคอมมิชชั่น/ยอดขาย": 
-        grand_val = (total_com/g_sales*100) if g_sales else 0  # ใหม่
+                if bg_color != "#ffffff": dark_bg = True
+                
+                # --- [EDIT START] เพิ่ม Logic ทำตัวหนาสำหรับแถว % ที่ต้องการ ---
+                # เช็คว่าถ้าเป็นแถวเปอร์เซ็นต์เหล่านี้ ให้เพิ่ม style ตัวหนา
+                font_weight_style = ""
+                if row_cls in ["row-pct-ads", "row-pct-cost", "row-pct-ops", "row-pct-com"]:
+                    font_weight_style = " font-weight: bold !important;"
+                
+                style_bg = f"background-color:{bg_color};{font_weight_style}"
+                # --- [EDIT END] ---
 
-    txt_val = fmt_p(grand_val) if val_type=='pct' else fmt_n(grand_val)
-    grand_text_col = "#333333"
-    if grand_val < 0: 
-        grand_text_col = "#FF0000"
-    elif dark_bg: 
-        grand_text_col = "#ffffff"
+                lbl_color = "#ffffff" if dark_bg else "#000000"
+                
+                grand_val = 0
+                if label == "รวมทุนสินค้า": grand_val = g_cost
+                elif label == "รวมยอดขาย": grand_val = g_sales
+                elif label == "รวมจำนวน": grand_val = g_qty
+                elif label == "รวมค่าแอด": grand_val = g_ads
+                elif label == "รวมค่าดำเนินการ": grand_val = total_ops
+                elif label == "รวมค่าคอมมิชชั่น": grand_val = total_com
+                elif label == "ค่าแอด / ยอดขาย": grand_val = (g_ads/g_sales*100) if g_sales else 0
+                elif label == "ทุน/ยอดขาย": grand_val = (g_cost/g_sales*100) if g_sales else 0
+                elif label == "ค่าดำเนินการ/ยอดขาย": grand_val = (total_ops/g_sales*100) if g_sales else 0
+                elif label == "ค่าคอมมิชชั่น/ยอดขาย": grand_val = (total_com/g_sales*100) if g_sales else 0
 
-    row_html = f'<tr class="{row_cls}">'
-    row_html += f'<td class="fix-m-1" style="{style_bg} color: {lbl_color} !important;">{label}</td>'
-    
-    val_qty = "" # Always empty in footer sub-rows except Grand Total
-    
-    row_html += f'<td class="fix-m-2" style="{style_bg} color:{grand_text_col};">{txt_val}</td>'
-    row_html += f'<td class="fix-m-3" style="{style_bg} color:{grand_text_col};">{val_qty}</td>'
-    row_html += f'<td class="fix-m-4" style="{style_bg}"></td>'
-    row_html += f'<td class="fix-m-5" style="{style_bg}"></td>'
-    row_html += f'<td class="fix-m-6" style="{style_bg}"></td>'
-    row_html += f'<td class="fix-m-7" style="{style_bg}"></td>'
+                txt_val = fmt_p(grand_val) if val_type=='pct' else fmt_n(grand_val)
+                grand_text_col = "#333333"
+                if grand_val < 0: grand_text_col = "#FF0000"
+                elif dark_bg: grand_text_col = "#ffffff"
 
-    for sku in final_skus:
-        val = 0
-        if label == "รวมทุนสินค้า": 
-            val = data_dict.loc[sku, 'CAL_COST'] + data_dict.loc[sku, 'Other_Costs']
-        elif label == "รวมยอดขาย": 
-            val = data_dict.loc[sku, 'รายละเอียดยอดที่ชำระแล้ว']
-        elif label == "รวมค่าแอด": 
-            val = data_dict.loc[sku, 'Ads_Amount']
-        elif label == "รวมค่าดำเนินการ":  # ใหม่
-            # ค่าดำเนินการ = BOX_COST + DELIV_COST + CAL_COD_COST
-            val = (data_dict.loc[sku, 'Other_Costs'] - 
-                   data_dict.loc[sku, 'CAL_COM_ADMIN'] - 
-                   data_dict.loc[sku, 'CAL_COM_TELESALE'])
-        elif label == "รวมค่าคอมมิชชั่น":  # ใหม่
-            # ค่าคอมมิชชั่น = CAL_COM_ADMIN + CAL_COM_TELESALE
-            val = data_dict.loc[sku, 'CAL_COM_ADMIN'] + data_dict.loc[sku, 'CAL_COM_TELESALE']
-        elif label == "ค่าแอด / ยอดขาย":
-            s = data_dict.loc[sku, 'รายละเอียดยอดที่ชำระแล้ว']
-            val = (data_dict.loc[sku, 'Ads_Amount']/s*100) if s else 0
-        elif label == "ทุน/ยอดขาย":
-            s = data_dict.loc[sku, 'รายละเอียดยอดที่ชำระแล้ว']
-            cost = data_dict.loc[sku, 'CAL_COST'] + data_dict.loc[sku, 'Other_Costs']
-            val = (cost/s*100) if s else 0
-        elif label == "ค่าดำเนินการ/ยอดขาย":  # ใหม่
-            s = data_dict.loc[sku, 'รายละเอียดยอดที่ชำระแล้ว']
-            ops = (data_dict.loc[sku, 'Other_Costs'] - 
-                   data_dict.loc[sku, 'CAL_COM_ADMIN'] - 
-                   data_dict.loc[sku, 'CAL_COM_TELESALE'])
-            val = (ops/s*100) if s else 0
-        elif label == "ค่าคอมมิชชั่น/ยอดขาย":  # ใหม่
-            s = data_dict.loc[sku, 'รายละเอียดยอดที่ชำระแล้ว']
-            com = data_dict.loc[sku, 'CAL_COM_ADMIN'] + data_dict.loc[sku, 'CAL_COM_TELESALE']
-            val = (com/s*100) if s else 0
+                row_html = f'<tr class="{row_cls}">'
+                # ใส่ style_bg ซึ่งรวมตัวหนาไว้แล้ว ลงไปในทุกช่อง
+                row_html += f'<td class="fix-m-1" style="{style_bg} color: {lbl_color} !important;">{label}</td>'
+                
+                val_qty = "" 
+                
+                row_html += f'<td class="fix-m-2" style="{style_bg} color:{grand_text_col};">{txt_val}</td>'
+                row_html += f'<td class="fix-m-3" style="{style_bg} color:{grand_text_col};">{val_qty}</td>'
+                row_html += f'<td class="fix-m-4" style="{style_bg}"></td>'
+                row_html += f'<td class="fix-m-5" style="{style_bg}"></td>'
+                row_html += f'<td class="fix-m-6" style="{style_bg}"></td>'
+                row_html += f'<td class="fix-m-7" style="{style_bg}"></td>'
 
-        txt = fmt_p(val) if val_type=='pct' else fmt_n(val)
-        cell_text_col = "#333333"
-        if val < 0: 
-            cell_text_col = "#FF0000"
-        elif dark_bg: 
-            cell_text_col = "#ffffff"
+                for sku in final_skus:
+                    val = 0
+                    if label == "รวมทุนสินค้า": 
+                        val = data_dict.loc[sku, 'CAL_COST'] + data_dict.loc[sku, 'Other_Costs']
+                    elif label == "รวมยอดขาย": 
+                        val = data_dict.loc[sku, 'รายละเอียดยอดที่ชำระแล้ว']
+                    elif label == "รวมค่าแอด": 
+                        val = data_dict.loc[sku, 'Ads_Amount']
+                    elif label == "รวมค่าดำเนินการ":
+                        val = (data_dict.loc[sku, 'Other_Costs'] - 
+                               data_dict.loc[sku, 'CAL_COM_ADMIN'] - 
+                               data_dict.loc[sku, 'CAL_COM_TELESALE'])
+                    elif label == "รวมค่าคอมมิชชั่น":
+                        val = data_dict.loc[sku, 'CAL_COM_ADMIN'] + data_dict.loc[sku, 'CAL_COM_TELESALE']
+                    elif label == "ค่าแอด / ยอดขาย":
+                        s = data_dict.loc[sku, 'รายละเอียดยอดที่ชำระแล้ว']
+                        val = (data_dict.loc[sku, 'Ads_Amount']/s*100) if s else 0
+                    elif label == "ทุน/ยอดขาย":
+                        s = data_dict.loc[sku, 'รายละเอียดยอดที่ชำระแล้ว']
+                        cost = data_dict.loc[sku, 'CAL_COST'] + data_dict.loc[sku, 'Other_Costs']
+                        val = (cost/s*100) if s else 0
+                    elif label == "ค่าดำเนินการ/ยอดขาย":
+                        s = data_dict.loc[sku, 'รายละเอียดยอดที่ชำระแล้ว']
+                        ops = (data_dict.loc[sku, 'Other_Costs'] - 
+                               data_dict.loc[sku, 'CAL_COM_ADMIN'] - 
+                               data_dict.loc[sku, 'CAL_COM_TELESALE'])
+                        val = (ops/s*100) if s else 0
+                    elif label == "ค่าคอมมิชชั่น/ยอดขาย":
+                        s = data_dict.loc[sku, 'รายละเอียดยอดที่ชำระแล้ว']
+                        com = data_dict.loc[sku, 'CAL_COM_ADMIN'] + data_dict.loc[sku, 'CAL_COM_TELESALE']
+                        val = (com/s*100) if s else 0
 
-        row_html += f'<td style="{style_bg} color:{cell_text_col};">{txt}</td>'
-    row_html += '</tr>'
-    return row_html
+                    txt = fmt_p(val) if val_type=='pct' else fmt_n(val)
+                    cell_text_col = "#333333"
+                    if val < 0: cell_text_col = "#FF0000"
+                    elif dark_bg: cell_text_col = "#ffffff"
 
-            # --- เปลี่ยนลำดับและเพิ่มแถวสรุปใหม่ ---
+                    row_html += f'<td style="{style_bg} color:{cell_text_col};">{txt}</td>'
+                row_html += '</tr>'
+                return row_html
+
+            # --- เรียกใช้งานฟังก์ชัน (ลำดับการแสดงผล) ---
             html += create_footer_row_new("row-sales", "รวมยอดขาย", footer_sums, 'num')
             html += create_footer_row_new("row-cost", "รวมทุนสินค้า", footer_sums, 'num')
             html += create_footer_row_new("row-ads", "รวมค่าแอด", footer_sums, 'num')
-            # เพิ่มแถวใหม่สำหรับค่าดำเนินการและค่าคอมมิชชั่น
             html += create_footer_row_new("row-ops", "รวมค่าดำเนินการ", footer_sums, 'num')
             html += create_footer_row_new("row-com", "รวมค่าคอมมิชชั่น", footer_sums, 'num')
+            
+            # 4 แถวนี้จะเป็นตัวหนาตามที่แก้ไข
             html += create_footer_row_new("row-pct-ads", "ค่าแอด / ยอดขาย", footer_sums, 'pct')
             html += create_footer_row_new("row-pct-cost", "ทุน/ยอดขาย", footer_sums, 'pct')
-            # เพิ่มแถวเปอร์เซ็นต์ใหม่
             html += create_footer_row_new("row-pct-ops", "ค่าดำเนินการ/ยอดขาย", footer_sums, 'pct')
             html += create_footer_row_new("row-pct-com", "ค่าคอมมิชชั่น/ยอดขาย", footer_sums, 'pct')
+            
             html += '</tfoot></table></div>'
             st.markdown(html, unsafe_allow_html=True)
+
             
     # --- [NEW] PAGE: REPORT_ADS ---
     elif selected_page == "📢 REPORT_ADS":
