@@ -461,13 +461,13 @@ def process_data():
     
     # --- FIX 3: คำนวณ COD COST แบบถูกต้อง ---
     def calculate_cod_cost(row):
-        payment = str(row.get('วิธีการชำระเงิน', '')).lower()
-        is_cod = any(cod_term in payment for cod_term in ['cod', 'ปลายทาง'])
-        
-        if is_cod and row['SHIP_PERCENT'] > 0:
-            # ค่า COD = ยอดขาย * %ค่าส่ง * 1.07 (ภาษี)
-            return row['รายละเอียดยอดที่ชำระแล้ว'] * row['SHIP_PERCENT'] * 1.07
-        return 0
+    payment = str(row.get('วิธีการชำระเงิน', '')).lower()
+    is_cod = any(cod_term in payment for cod_term in ['cod', 'ปลายทาง'])
+    
+    if is_cod and row['SHIP_PERCENT'] > 0:
+        # ค่า COD = ยอดขาย * %ค่าส่ง * 1.07 (ภาษี)
+        return row['รายละเอียดยอดที่ชำระแล้ว'] * row['SHIP_PERCENT'] * 1.07
+    return 0
     
     df_merged['CAL_COD_COST'] = df_merged.apply(calculate_cod_cost, axis=1)
     
@@ -519,7 +519,14 @@ def process_data():
         'Type': 'first'  # เก็บ Type
     }
     
-    df_order = df_merged.groupby('หมายเลขคำสั่งซื้อออนไลน์').agg(order_agg).reset_index()
+    # STEP 1: รวมระดับออเดอร์ก่อน
+df_order = df_merged.groupby('หมายเลขคำสั่งซื้อออนไลน์').agg(order_agg).reset_index()
+
+# STEP 2: รวม ADS ข้อมูล
+df_order = pd.merge(df_order, df_ads_agg, ...)
+
+# STEP 3: รวมระดับวันที่และ SKU
+df_daily = df_order.groupby(['Date', 'SKU_Main']).agg(daily_agg).reset_index()
     
     # ตั้งชื่อคอลัมน์ใหม่ให้ชัดเจน
     df_order.rename(columns={
