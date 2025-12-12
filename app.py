@@ -1184,28 +1184,78 @@ try:
     # --- PAGE 2: REPORT_DAILY ---
     elif selected_page == "📅 REPORT_DAILY":
         st.markdown('<div class="header-bar"><div class="header-title"><i class="fas fa-calendar-day"></i> สรุปการขายรายวัน (ตามช่วงเวลา)</div></div>', unsafe_allow_html=True)
+        
+        all_years = sorted(df_daily['Year'].unique(), reverse=True)
+        today = datetime.now().date()
+
+        # ---------------------------------------------------------
+        # 1. ฟังก์ชัน Callback สำหรับหน้า Daily (ตั้งชื่อเฉพาะ d_)
+        # ---------------------------------------------------------
+        def update_d_dates():
+            # ดึงค่าจาก Key ของหน้า Daily
+            y = st.session_state.d_y
+            m_str = st.session_state.d_m
+            try:
+                m_idx = thai_months.index(m_str) + 1
+                days_in_m = calendar.monthrange(y, m_idx)[1]
+                
+                # อัปเดตวันที่ลง Key ของหน้า Daily
+                st.session_state.d_d_start = date(y, m_idx, 1)
+                st.session_state.d_d_end = date(y, m_idx, days_in_m)
+            except:
+                pass
 
         with st.container():
-            c1, c2, c3, c4 = st.columns([1, 1, 1, 2])
-            with c1: sel_year_d = st.selectbox("เลือกปี", sorted(df_daily['Year'].unique(), reverse=True), key="d_y")
-            with c2: start_d = st.date_input("เริ่มวันที่", datetime.now().replace(day=1), key="d_s")
-            with c3: end_d = st.date_input("ถึงวันที่", datetime.now(), key="d_e")
-            with c4: filter_mode_d = st.selectbox("เงื่อนไขสินค้า (Fast Filter)", ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 แสดงสินค้ากำไร", "💸 แสดงสินค้าขาดทุน", "📋 แสดงรายการทั้งหมด"], key="d_m")
+            # ---------------------------------------------------------
+            # 2. ตั้งค่า Default ครั้งแรก
+            # ---------------------------------------------------------
+            if "d_d_start" not in st.session_state:
+                st.session_state.d_d_start = today.replace(day=1)
+                st.session_state.d_d_end = today
 
-            # --- MODIFIED LAYOUT FOR CATEGORY ---
-            c_cat, c_sku, c_clear, c_run = st.columns([1.5, 3, 0.5, 1])
+            # ---------------------------------------------------------
+            # 3. ส่วนเลือกวันที่ (Layout แบบ Report Month)
+            # ---------------------------------------------------------
+            c_y, c_m, c_s, c_e = st.columns([1, 1, 1, 1])
+            
+            with c_y: 
+                # on_change เรียก update_d_dates ทันทีที่เปลี่ยนปี
+                sel_year_d = st.selectbox("เลือกปี (ตั้งค่าเริ่มต้น)", all_years, key="d_y", on_change=update_d_dates)
+            with c_m: 
+                # on_change เรียก update_d_dates ทันทีที่เปลี่ยนเดือน
+                sel_month_d = st.selectbox("เลือกเดือน (ตั้งค่าเริ่มต้น)", thai_months, index=today.month-1, key="d_m", on_change=update_d_dates)
+            with c_s: 
+                # รับค่าจาก key d_d_start โดยตรง
+                start_d = st.date_input("วันที่เริ่มต้น", key="d_d_start")
+            with c_e: 
+                # รับค่าจาก key d_d_end โดยตรง
+                end_d = st.date_input("วันที่สิ้นสุด", key="d_d_end")
+
+            # ---------------------------------------------------------
+            # 4. ส่วนตัวกรองสินค้า (ย้าย Filter Mode มาที่นี่เพื่อให้สวยงาม)
+            # ---------------------------------------------------------
+            c_type, c_cat, c_sku, c_clear, c_run = st.columns([1.5, 1.5, 2.5, 0.5, 1])
+            
+            with c_type:
+                filter_mode_d = st.selectbox("เงื่อนไขสินค้า (Fast Filter)", 
+                    ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 แสดงสินค้ากำไร", "💸 แสดงสินค้าขาดทุน", "📋 แสดงรายการทั้งหมด"], key="d_m_filter")
+
             with c_cat:
                 sel_category_d = st.selectbox("หมวดหมู่สินค้า", CATEGORY_OPTIONS, key="d_cat")
 
-            with c_sku: st.multiselect("รายการที่เลือก (Choose options):", sku_options_list_global, key="selected_skus_d")
+            with c_sku: 
+                st.multiselect("รายการที่เลือก (Choose options):", sku_options_list_global, key="selected_skus_d")
+            
             with c_clear:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
                 st.button("🧹", type="secondary", use_container_width=True, key="btn_clear_d", on_click=cb_clear_d)
+            
             with c_run:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
                 st.button("🚀 ประมวลผล", type="primary", use_container_width=True, key="btn_run_d")
 
-        mask = (df_daily['Date'] >= pd.to_datetime(start_d).date()) & (df_daily['Date'] <= pd.to_datetime(end_d).date())
+        # --- Logic การดึงข้อมูล (เหมือนเดิม แต่ใช้ start_d, end_d ที่ได้จากระบบใหม่) ---
+        mask = (df_daily['Date'] >= start_d) & (df_daily['Date'] <= end_d)
         df_range = df_daily[mask]
 
         df_grouped = df_range.groupby(['SKU_Main']).agg({
@@ -1232,9 +1282,6 @@ try:
 
         if df_final_d.empty: st.warning(f"⚠️ ไม่พบข้อมูลตามเงื่อนไข ({sel_category_d}) ในช่วงเวลานี้")
         else:
-            # คำนวณค่าใหม่สำหรับกล่อง 6 กล่อง
-            # ... (ส่วนก่อนหน้านี้ใน REPORT DAILY คงเดิม) ...
-            
             # คำนวณค่าใหม่สำหรับกล่อง 6 กล่อง
             sum_sales = df_final_d['รายละเอียดยอดที่ชำระแล้ว'].sum()
             sum_ads = df_final_d['Ads_Amount'].sum()
