@@ -872,12 +872,12 @@ try:
                 html += '</tr>'
             
             html += '</tbody>'
+            # --- เริ่มต้นส่วน Footer (วางทับส่วนเดิม) ---
             html += '<tfoot>'
 
+            # 1. แถว Grand Total (รวม) - คงเดิมไว้เพราะส่วนนี้ปกติ
             g_sales = total_sales; g_ads = total_ads; g_cost = total_cost_prod + total_ops + total_com; g_profit = net_profit
             g_qty = df_view['จำนวน'].sum()
-
-            # --- GRAND TOTAL ROW ---
             g_pct_profit = (g_profit / g_sales * 100) if g_sales else 0
             g_pct_ads = (g_ads / g_sales * 100) if g_sales else 0
             bg_total = "#010538"; c_total = "#ffffff"
@@ -898,8 +898,9 @@ try:
                 html += f'<td style="background-color: {bg_total}; color: {c_sku};">{fmt_n(val)}</td>'
             html += '</tr>'
             
+            # 2. ฟังก์ชันสร้างแถวสรุปเพิ่มเติม (แก้ไขใหม่: บังคับตัวหนา 700 !important)
             def create_footer_row_new(row_cls, label, data_dict, val_type='num', dark_bg=False):
-                # 1. กำหนดสีพื้นหลังตาม Class
+                # กำหนดสีพื้นหลัง
                 if "row-sales" in row_cls: bg_color = "#f9a825"       
                 elif "row-cost" in row_cls: bg_color = "#3366FF"      
                 elif "row-ads" in row_cls: bg_color = "#b802b8"       
@@ -913,17 +914,21 @@ try:
 
                 if bg_color != "#ffffff": dark_bg = True
                 
-                # --- [EDIT START] เพิ่ม Logic ทำตัวหนาสำหรับแถว % ที่ต้องการ ---
-                # เช็คว่าถ้าเป็นแถวเปอร์เซ็นต์เหล่านี้ ให้เพิ่ม style ตัวหนา
+                # --- [จุดแก้ไขสำคัญ] บังคับตัวหนาสำหรับแถว % ---
                 font_weight_style = ""
-                if row_cls in ["row-pct-ads", "row-pct-cost", "row-pct-ops", "row-pct-com"]:
-                    font_weight_style = " font-weight: bold !important;"
+                # รายชื่อ Class ที่ต้องการให้เป็นตัวหนา
+                target_bold_rows = ["row-pct-ads", "row-pct-cost", "row-pct-ops", "row-pct-com"]
                 
-                style_bg = f"background-color:{bg_color};{font_weight_style}"
-                # --- [EDIT END] ---
+                if row_cls in target_bold_rows:
+                    font_weight_style = "font-weight: 700 !important;" # ใช้ 700 แทน bold เพื่อความชัวร์
+                
+                # รวม Style ทั้งหมดเข้าด้วยกัน
+                style_bg = f"background-color:{bg_color}; {font_weight_style}"
+                # ---------------------------------------------
 
                 lbl_color = "#ffffff" if dark_bg else "#000000"
                 
+                # คำนวณค่า Grand Total ของแถวนั้นๆ
                 grand_val = 0
                 if label == "รวมทุนสินค้า": grand_val = g_cost
                 elif label == "รวมยอดขาย": grand_val = g_sales
@@ -941,14 +946,12 @@ try:
                 if grand_val < 0: grand_text_col = "#FF0000"
                 elif dark_bg: grand_text_col = "#ffffff"
 
+                # สร้าง HTML
                 row_html = f'<tr class="{row_cls}">'
-                # ใส่ style_bg ซึ่งรวมตัวหนาไว้แล้ว ลงไปในทุกช่อง
+                # ใส่ style_bg ลงไปในทุกช่อง เพื่อให้แน่ใจว่าตัวหนาติดทุกช่อง
                 row_html += f'<td class="fix-m-1" style="{style_bg} color: {lbl_color} !important;">{label}</td>'
-                
-                val_qty = "" 
-                
                 row_html += f'<td class="fix-m-2" style="{style_bg} color:{grand_text_col};">{txt_val}</td>'
-                row_html += f'<td class="fix-m-3" style="{style_bg} color:{grand_text_col};">{val_qty}</td>'
+                row_html += f'<td class="fix-m-3" style="{style_bg} color:{grand_text_col};"></td>'
                 row_html += f'<td class="fix-m-4" style="{style_bg}"></td>'
                 row_html += f'<td class="fix-m-5" style="{style_bg}"></td>'
                 row_html += f'<td class="fix-m-6" style="{style_bg}"></td>'
@@ -995,14 +998,14 @@ try:
                 row_html += '</tr>'
                 return row_html
 
-            # --- เรียกใช้งานฟังก์ชัน (ลำดับการแสดงผล) ---
+            # 3. เรียกใช้งานฟังก์ชัน (ต้องมั่นใจว่าใช้ฟังก์ชันใหม่ตัวนี้ในการสร้าง)
             html += create_footer_row_new("row-sales", "รวมยอดขาย", footer_sums, 'num')
             html += create_footer_row_new("row-cost", "รวมทุนสินค้า", footer_sums, 'num')
             html += create_footer_row_new("row-ads", "รวมค่าแอด", footer_sums, 'num')
             html += create_footer_row_new("row-ops", "รวมค่าดำเนินการ", footer_sums, 'num')
             html += create_footer_row_new("row-com", "รวมค่าคอมมิชชั่น", footer_sums, 'num')
             
-            # 4 แถวนี้จะเป็นตัวหนาตามที่แก้ไข
+            # 4 แถวนี้จะเป็นตัวหนา (Bold)
             html += create_footer_row_new("row-pct-ads", "ค่าแอด / ยอดขาย", footer_sums, 'pct')
             html += create_footer_row_new("row-pct-cost", "ทุน/ยอดขาย", footer_sums, 'pct')
             html += create_footer_row_new("row-pct-ops", "ค่าดำเนินการ/ยอดขาย", footer_sums, 'pct')
