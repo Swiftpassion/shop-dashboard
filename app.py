@@ -334,7 +334,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. SETTINGS & HELPERS (เพิ่มเติม)
+# 2. SETTINGS & HELPERS (เพิ่มเติม/แก้ไข)
 # ==========================================
 
 # เพิ่มฟังก์ชันแปลงชื่อขนส่งให้ตรงกับคอลัมน์ใน Master Item
@@ -434,11 +434,8 @@ def process_data():
     # คำนวณต้นทุนต่อบรรทัด
     df_merged['CAL_COST'] = df_merged['จำนวน'] * df_merged['ต้นทุน']
     
-    # คำนวณค่ากล่องต่อบรรทัด (ถ้ามีหลายสินค้าในออเดอร์เดียวกัน ต้องแบ่งสัดส่วน)
-    # สำหรับตอนนี้ให้ใช้ราคากล่องเต็มต่อบรรทัดก่อน
+    # กำหนดค่ากล่องและค่าส่งต่อบรรทัด (เตรียมไว้สำหรับ Group By Order)
     df_merged['BOX_COST_PER_LINE'] = df_merged['ราคากล่อง'].fillna(0)
-    
-    # คำนวณค่าส่งต่อบรรทัด
     df_merged['DELIV_COST_PER_LINE'] = df_merged['ค่าส่งเฉลี่ย'].fillna(0)
     
     # --- FIX 2: การคำนวณ % ค่าส่งแบบ Dynamic ---
@@ -473,7 +470,6 @@ def process_data():
     
     # --- FIX 4: คำนวณค่าคอมมิชชั่นแบบถูกต้อง ---
     def calculate_role(row):
-        # ถ้ามีคอลัมน์ประเภทการทำงานจากข้อมูลดิบ
         work_type = str(row.get('ประเภทการทำงาน', '')).lower()
         creator = str(row.get('ผู้สร้างคำสั่งซื้อ', '')).lower()
         
@@ -506,8 +502,8 @@ def process_data():
         'จำนวน': 'sum',  # รวมจำนวนสินค้าทั้งออเดอร์
         'รายละเอียดยอดที่ชำระแล้ว': 'sum',  # รวมยอดขายทั้งออเดอร์
         'CAL_COST': 'sum',  # รวมต้นทุนสินค้าทั้งออเดอร์
-        'BOX_COST_PER_LINE': 'max',  # ค่ากล่องต่อออเดอร์ (ใช้ max เพราะแต่ละบรรทัดมีค่าเดียวกัน)
-        'DELIV_COST_PER_LINE': 'max',  # ค่าส่งต่อออเดอร์
+        'BOX_COST_PER_LINE': 'max',  # ค่ากล่องต่อออเดอร์ (ใช้ max เพราะถือว่าเป็นค่าใช้จ่ายต่อกล่อง/ออเดอร์)
+        'DELIV_COST_PER_LINE': 'max',  # ค่าส่งต่อออเดอร์ (ใช้ max)
         'CAL_COD_COST': 'sum',  # รวม COD cost
         'CAL_COM_ADMIN': 'sum',  # รวมค่าคอม Admin
         'CAL_COM_TELESALE': 'sum',  # รวมค่าคอม Telesale
@@ -522,14 +518,14 @@ def process_data():
         'DELIV_COST_PER_LINE': 'DELIV_COST'
     }, inplace=True)
     
-    # แปลง SKU_Main จาก list เป็น string (ใช้ SKU ตัวแรก)
+    # แปลง SKU_Main จาก list เป็น string (ใช้ SKU ตัวแรกตามเงื่อนไข "ชื่อสินค้าไหนขึ้นก่อนก็เป็นของออเดอร์นั้น")
     df_order['SKU_Main'] = df_order['SKU_Main'].apply(lambda x: x[0] if isinstance(x, list) and len(x) > 0 else '')
     
-    # --- STEP 2: รวม ADS DATA ---
+    # --- STEP 2: เตรียม ADS DATA ---
     df_ads_agg = pd.DataFrame(columns=['Date', 'SKU_Main', 'Ads_Amount'])
     if not df_ads_raw.empty:
         col_cost = next((c for c in ['จำนวนเงินที่ใช้จ่ายไป (THB)', 'Cost', 'Amount'] 
-                        if c in df_ads_raw.columns), None)
+                         if c in df_ads_raw.columns), None)
         col_date = next((c for c in ['วัน', 'Date'] if c in df_ads_raw.columns), None)
         col_camp = next((c for c in ['ชื่อแคมเปญ', 'Campaign'] if c in df_ads_raw.columns), None)
         
@@ -540,14 +536,6 @@ def process_data():
             df_ads_raw['SKU_Main'] = df_ads_raw[col_camp].astype(str).str.extract(r'\[(.*?)\]')
             df_ads_agg = df_ads_raw.groupby(['Date', 'SKU_Main'])[col_cost].sum().reset_index(name='Ads_Amount')
     
-    # รวม ADS ข้อมูล
-    if not df_ads_agg.empty:
-        df_order = pd.merge(df_order, df_ads_agg, on=['Date', 'SKU_Main'], how='outer')
-    else:
-        df_order['Ads_Amount'] = 0
-    
-    df_order = df_order.fillna(0)
-    
     # --- STEP 3: รวมระดับวันที่และ SKU (DAILY LEVEL) ---
     daily_agg = {
         'ชื่อสินค้า': 'first',
@@ -555,17 +543,25 @@ def process_data():
         'จำนวน': 'sum',
         'รายละเอียดยอดที่ชำระแล้ว': 'sum',
         'CAL_COST': 'sum',
-        'BOX_COST': 'sum',  # ใช้ sum ไม่ใช่ max! (เพราะแต่ละออเดอร์มีค่ากล่องของตัวเอง)
-        'DELIV_COST': 'sum',  # ใช้ sum ไม่ใช่ max!
+        'BOX_COST': 'sum',  # ใช้ sum ที่ระดับวัน (เพราะระดับออเดอร์คิดมาแล้ว)
+        'DELIV_COST': 'sum',  # ใช้ sum ที่ระดับวัน
         'CAL_COD_COST': 'sum',
         'CAL_COM_ADMIN': 'sum',
         'CAL_COM_TELESALE': 'sum',
-        'Ads_Amount': 'sum',
         'Type': 'first'
     }
     
     df_daily = df_order.groupby(['Date', 'SKU_Main']).agg(daily_agg).reset_index()
     df_daily.rename(columns={'หมายเลขคำสั่งซื้อออนไลน์': 'จำนวนออเดอร์'}, inplace=True)
+    
+    # --- STEP 4: รวม ADS ข้อมูลที่ระดับ DAILY ---
+    # *สำคัญ* ต้องรวมที่ขั้นตอนนี้เพื่อให้แน่ใจว่าค่าแอดไม่ถูกเบิ้ลตามจำนวนออเดอร์
+    if not df_ads_agg.empty:
+        df_daily = pd.merge(df_daily, df_ads_agg, on=['Date', 'SKU_Main'], how='outer')
+    else:
+        df_daily['Ads_Amount'] = 0
+        
+    df_daily = df_daily.fillna(0)
     
     # คำนวณค่าใช้จ่ายอื่นๆ และกำไร
     df_daily['Other_Costs'] = df_daily['BOX_COST'] + df_daily['DELIV_COST'] + df_daily['CAL_COD_COST'] + df_daily['CAL_COM_ADMIN'] + df_daily['CAL_COM_TELESALE']
@@ -578,7 +574,7 @@ def process_data():
     df_daily['Month_Num'] = df_daily['Date'].dt.month
     df_daily['Month_Thai'] = df_daily['Month_Num'].apply(lambda x: thai_months[x-1] if 1<=x<=12 else "")
     df_daily['Day'] = df_daily['Date'].dt.day
-    df_daily['Date'] = df_daily['Date'].dt.date
+    df_daily['Date'] = df_daily['Date'].dt.date 
     
     # --- PREPARE SKU MAPPING ---
     sku_map = df_daily.groupby('SKU_Main')['ชื่อสินค้า'].last().to_dict()
