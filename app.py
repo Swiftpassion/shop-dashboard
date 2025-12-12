@@ -111,7 +111,6 @@ if not st.session_state.logged_in:
     """, unsafe_allow_html=True)
 
     # --- LAYOUT จัดหน้า (ปรับขนาดให้แคบลง) ---
-    # ใช้สัดส่วน [2, 1.2, 2] หมายถึง ตรงกลางกว้างแค่ 1.2 ส่วน (แคบกว่าเดิมมาก)
     col1, col2, col3 = st.columns([2, 1.2, 2])
 
     with col2:
@@ -715,7 +714,6 @@ def process_data():
                 sku_type_map[k] = v
 
     return df_daily, df_fix_cost, sku_map, sku_list, sku_type_map
-
 # ==========================================
 # 5. FRONTEND: UI
 # ==========================================
@@ -765,6 +763,15 @@ try:
     def cb_clear_g(): st.session_state.selected_skus_g = []
     def cb_clear_a(): st.session_state.selected_skus_a = []
 
+    # --- [ส่วนที่เพิ่ม] ปุ่ม REFRESH (SIDEBAR) ---
+    with st.sidebar:
+        st.header("⚙️ จัดการข้อมูล")
+        st.write("กดปุ่มด้านล่างเพื่อดึงข้อมูลใหม่จาก Google Drive")
+        if st.button("🔄 อัปเดตข้อมูลล่าสุด (Clear Cache)", type="primary", use_container_width=True):
+            st.cache_data.clear()
+            st.rerun()
+    # --------------------------------------------
+
     page_options = ["📊 REPORT_MONTH", "📢 REPORT_ADS", "📅 REPORT_DAILY", "📈 PRODUCT GRAPH", "📈 YEARLY P&L", "📅 MONTHLY P&L", "💰 COMMISSION"]
     selected_page = st.radio("เลือกหน้าจอที่ต้องการแสดงผล:", page_options, horizontal=True, label_visibility="collapsed")
 
@@ -775,62 +782,35 @@ try:
         
         today = datetime.now().date()
         
-        # ---------------------------------------------------------
-        # 1. สร้างฟังก์ชัน Callback (ตัวสั่งการเมื่อเปลี่ยนเดือน)
-        # ---------------------------------------------------------
         def update_m_dates():
-            # ดึงค่าปีและเดือนที่ผู้ใช้เลือก
             y = st.session_state.m_y
             m_str = st.session_state.m_m
             try:
-                # แปลงชื่อเดือนเป็นตัวเลข และหาวันสุดท้ายของเดือน
                 m_idx = thai_months.index(m_str) + 1
                 days_in_m = calendar.monthrange(y, m_idx)[1]
-                
-                # สั่งอัปเดตวันที่ใน Session State (ตัวแปรระบบ)
                 st.session_state.m_d_start = date(y, m_idx, 1)
                 st.session_state.m_d_end = date(y, m_idx, days_in_m)
-            except:
-                pass # ถ้า error ให้ข้ามไป ไม่ทำให้เว็บพัง
+            except: pass
 
         with st.container():
             c_y, c_m, c_s, c_e = st.columns([1, 1, 1, 1])
-            
-            # ---------------------------------------------------------
-            # 2. ตั้งค่า Default ครั้งแรก (กัน Error ตอนเปิดหน้า)
-            # ---------------------------------------------------------
             if "m_d_start" not in st.session_state:
-                # ตั้งค่าเริ่มต้นเป็นเดือนปัจจุบัน
                 st.session_state.m_d_start = today.replace(day=1)
                 st.session_state.m_d_end = today
 
-            # ---------------------------------------------------------
-            # 3. สร้างปุ่มเลือก (ใส่ on_change=update_m_dates)
-            # ---------------------------------------------------------
-            with c_y: 
-                sel_year = st.selectbox("เลือกปี (ตั้งค่าเริ่มต้น)", all_years, key="m_y", on_change=update_m_dates)
-            with c_m: 
-                sel_month = st.selectbox("เลือกเดือน (ตั้งค่าเริ่มต้น)", thai_months, index=today.month-1, key="m_m", on_change=update_m_dates)
-            
-            # ดึงค่าวันที่ปัจจุบันจากระบบมาใช้ (ไม่ต้องใส่ value=... เพราะระบบจัดการเองผ่าน key)
-            with c_s: 
-                start_date_m = st.date_input("วันที่เริ่มต้น", key="m_d_start")
-            with c_e: 
-                end_date_m = st.date_input("วันที่สิ้นสุด", key="m_d_end")
+            with c_y: sel_year = st.selectbox("เลือกปี (ตั้งค่าเริ่มต้น)", all_years, key="m_y", on_change=update_m_dates)
+            with c_m: sel_month = st.selectbox("เลือกเดือน (ตั้งค่าเริ่มต้น)", thai_months, index=today.month-1, key="m_m", on_change=update_m_dates)
+            with c_s: start_date_m = st.date_input("วันที่เริ่มต้น", key="m_d_start")
+            with c_e: end_date_m = st.date_input("วันที่สิ้นสุด", key="m_d_end")
 
-            # --- ส่วน Filter อื่นๆ คงเดิม ---
             c_type, c_cat, c_sku, c_clear, c_run = st.columns([1.5, 1.5, 2.5, 0.5, 1])
-            
             with c_type:
                 filter_mode = st.selectbox("เงื่อนไขสินค้า (Fast Filter)",
                     ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 แสดงสินค้ากำไร", "💸 แสดงสินค้าขาดทุน", "📋 แสดงรายการทั้งหมด"])
-            
             with c_cat:
                 sel_category = st.selectbox("หมวดหมู่สินค้า", CATEGORY_OPTIONS, key="m_cat")
-            
             with c_sku: 
                 st.multiselect("รายการที่เลือก (Choose options):", sku_options_list_global, key="selected_skus")
-            
             with c_clear:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
                 st.button("🧹", type="secondary", use_container_width=True, key="btn_clear_m", on_click=cb_clear_m)
@@ -851,7 +831,6 @@ try:
         selected_labels = st.session_state.selected_skus
         selected_skus_real = [sku_map_reverse_global[l] for l in selected_labels]
         
-        # --- APPLY CATEGORY FILTER ---
         pre_final_skus = sorted(selected_skus_real) if selected_skus_real else sorted(auto_skus)
         final_skus = filter_skus_by_category(pre_final_skus, sel_category, sku_type_map)
 
@@ -859,7 +838,6 @@ try:
         else:
             df_view = df_base[df_base['SKU_Main'].isin(final_skus)]
         
-            # คำนวณค่าใหม่สำหรับกล่อง 6 กล่อง
             total_sales = df_view['รายละเอียดยอดที่ชำระแล้ว'].sum()
             total_ads = df_view['Ads_Amount'].sum()
             total_cost_prod = df_view['CAL_COST'].sum()
@@ -868,7 +846,6 @@ try:
             total_cost_all = total_cost_prod + total_ops + total_com + total_ads
             net_profit = total_sales - total_cost_all
 
-            # เรียกใช้ฟังก์ชันแสดงกล่อง 6 กล่อง
             render_metric_row(total_sales, total_ops, total_com, total_cost_prod, total_ads, net_profit)
 
             date_list = pd.date_range(start_date_m, end_date_m)
@@ -879,8 +856,7 @@ try:
                 day_data = df_view[df_view['Date'] == d_date]
                 
                 d_sales = day_data['รายละเอียดยอดที่ชำระแล้ว'].sum()
-                # [FIX REQUEST 2] Change from Quantity to Orders
-                d_orders = day_data['จำนวนออเดอร์'].sum() 
+                d_orders = day_data['จำนวนออเดอร์'].sum() # ใช้จำนวนออเดอร์แทนจำนวนชิ้น
                 d_profit = day_data['Net_Profit'].sum()
                 d_ads = day_data['Ads_Amount'].sum()
                 
@@ -907,7 +883,6 @@ try:
 
             df_matrix = pd.DataFrame(matrix_data)
             
-            # [FIX REQUEST 2] Footer Sums needs order count
             footer_sums = df_view.groupby('SKU_Main').agg({'รายละเอียดยอดที่ชำระแล้ว': 'sum', 'จำนวนออเดอร์': 'sum', 'CAL_COST': 'sum', 'Other_Costs': 'sum', 'Ads_Amount': 'sum', 'Net_Profit': 'sum',
                                                             'CAL_COM_ADMIN': 'sum', 'CAL_COM_TELESALE': 'sum'})
             footer_sums = footer_sums.reindex(final_skus, fill_value=0)
@@ -916,11 +891,9 @@ try:
             def fmt_p(v): return f"{v:,.1f}%" if v!=0 else "-"
 
             html = '<div class="table-wrapper"><table class="custom-table month-table"><thead><tr>'
-            
             html += '<th class="fix-m-1" style="background-color:#2c3e50;color:white;">วันที่</th>'
             html += '<th class="fix-m-2" style="background-color:#2c3e50;color:white;">ยอดขาย</th>'
-            # [FIX REQUEST 2] Header Changed
-            html += '<th class="fix-m-3" style="background-color:#2c3e50;color:white;">ออเดอร์</th>'
+            html += '<th class="fix-m-3" style="background-color:#2c3e50;color:white;">ออเดอร์</th>' # เปลี่ยนหัวข้อ
             html += '<th class="fix-m-4" style="background-color:#27ae60;color:white;">กำไร</th>'
             html += '<th class="fix-m-5" style="background-color:#27ae60;color:white;">%</th>'
             html += '<th class="fix-m-6" style="background-color:#e67e22;color:white;">ค่าแอด</th>'
@@ -934,12 +907,10 @@ try:
             for _, r in df_matrix.iterrows():
                 color_profit = "#FF0000" if r["กำไร"] < 0 else "#27ae60"
                 color_pct_profit = "#FF0000" if r["%กำไร"] < 0 else "#27ae60"
-                
                 html += f'<tr>'
                 html += f'<td class="fix-m-1">{r["วันที่"]}</td>'
                 html += f'<td class="fix-m-2" style="font-weight:bold;">{fmt_n(r["ยอดขาย"])}</td>'
-                # [FIX REQUEST 2] Display Orders
-                html += f'<td class="fix-m-3" style="font-weight:bold;color:#ddd;">{fmt_n(r["จำนวนออเดอร์"])}</td>'
+                html += f'<td class="fix-m-3" style="font-weight:bold;color:#ddd;">{fmt_n(r["จำนวนออเดอร์"])}</td>' # แสดงยอดออเดอร์
                 html += f'<td class="fix-m-4" style="font-weight:bold; color:{color_profit};">{fmt_n(r["กำไร"])}</td>'
                 html += f'<td class="fix-m-5" style="color:{color_pct_profit};">{fmt_p(r["%กำไร"])}</td>'
                 html += f'<td class="fix-m-6" style="color:#e67e22;">{fmt_n(r["ค่าแอด"])}</td>'
@@ -951,14 +922,10 @@ try:
                     html += f'<td style="color:{color};">{fmt_n(val)}</td>'
                 html += '</tr>'
             
-            html += '</tbody>'
-            # --- เริ่มต้นส่วน Footer (วางทับส่วนเดิม) ---
-            html += '<tfoot>'
+            html += '</tbody><tfoot>'
 
-            # 1. แถว Grand Total (รวม)
             g_sales = total_sales; g_ads = total_ads; g_cost = total_cost_prod + total_ops + total_com; g_profit = net_profit
-            # [FIX REQUEST 2] Sum Orders
-            g_orders = df_view['จำนวนออเดอร์'].sum()
+            g_orders = df_view['จำนวนออเดอร์'].sum() # รวมยอดออเดอร์
             g_pct_profit = (g_profit / g_sales * 100) if g_sales else 0
             g_pct_ads = (g_ads / g_sales * 100) if g_sales else 0
             bg_total = "#010538"; c_total = "#ffffff"
@@ -979,9 +946,7 @@ try:
                 html += f'<td style="background-color: {bg_total}; color: {c_sku};">{fmt_n(val)}</td>'
             html += '</tr>'
             
-            # 2. ฟังก์ชันสร้างแถวสรุปเพิ่มเติม (แก้ไขใหม่: ใช้ <b> tag คลุมข้อความโดยตรง)
             def create_footer_row_new(row_cls, label, data_dict, val_type='num', dark_bg=False):
-                # กำหนดสีพื้นหลัง
                 if "row-sales" in row_cls: bg_color = "#f9a825"       
                 elif "row-cost" in row_cls: bg_color = "#3366FF"      
                 elif "row-ads" in row_cls: bg_color = "#b802b8"       
@@ -995,20 +960,16 @@ try:
 
                 if bg_color != "#ffffff": dark_bg = True
                 
-                # --- [จุดแก้ไขสำคัญ] เช็คว่าเป็นแถวที่ต้องการทำตัวหนาหรือไม่ ---
                 target_bold_rows = ["row-pct-ads", "row-pct-cost", "row-pct-ops", "row-pct-com"]
                 is_bold = row_cls in target_bold_rows
                 
                 style_bg = f"background-color:{bg_color};"
-                # ---------------------------------------------
-
                 lbl_color = "#ffffff" if dark_bg else "#000000"
                 
-                # คำนวณค่า Grand Total ของแถวนั้นๆ
                 grand_val = 0
                 if label == "รวมทุนสินค้า": grand_val = g_cost
                 elif label == "รวมยอดขาย": grand_val = g_sales
-                elif label == "รวมจำนวนออเดอร์": grand_val = g_orders # [FIX REQUEST 2]
+                elif label == "รวมออเดอร์": grand_val = g_orders
                 elif label == "รวมค่าแอด": grand_val = g_ads
                 elif label == "รวมค่าดำเนินการ": grand_val = total_ops
                 elif label == "รวมค่าคอมมิชชั่น": grand_val = total_com
@@ -1022,7 +983,6 @@ try:
                 if grand_val < 0: grand_text_col = "#FF0000"
                 elif dark_bg: grand_text_col = "#ffffff"
 
-                # ถ้าต้องเป็นตัวหนา ให้ใส่ <b> คลุมข้อความเลย
                 if is_bold:
                     label_display = f"<b>{label}</b>"
                     txt_val_display = f"<b>{txt_val}</b>"
@@ -1075,22 +1035,17 @@ try:
                     cell_text_col = "#333333"
                     if val < 0: cell_text_col = "#FF0000"
                     elif dark_bg: cell_text_col = "#ffffff"
-                    
-                    # ถ้าต้องเป็นตัวหนา ให้ใส่ <b> คลุมข้อความค่า sku ด้วย
                     txt_display = f"<b>{txt}</b>" if is_bold else txt
-
                     row_html += f'<td style="{style_bg} color:{cell_text_col};">{txt_display}</td>'
                 row_html += '</tr>'
                 return row_html
 
-            # 3. เรียกใช้งานฟังก์ชัน
             html += create_footer_row_new("row-sales", "รวมยอดขาย", footer_sums, 'num')
             html += create_footer_row_new("row-cost", "รวมทุนสินค้า", footer_sums, 'num')
             html += create_footer_row_new("row-ads", "รวมค่าแอด", footer_sums, 'num')
             html += create_footer_row_new("row-ops", "รวมค่าดำเนินการ", footer_sums, 'num')
             html += create_footer_row_new("row-com", "รวมค่าคอมมิชชั่น", footer_sums, 'num')
             
-            # 4 แถวนี้จะเป็นตัวหนา (เพราะใส่ logic <b> เข้าไปแล้ว)
             html += create_footer_row_new("row-pct-ads", "ค่าแอด / ยอดขาย", footer_sums, 'pct')
             html += create_footer_row_new("row-pct-cost", "ทุน/ยอดขาย", footer_sums, 'pct')
             html += create_footer_row_new("row-pct-ops", "ค่าดำเนินการ/ยอดขาย", footer_sums, 'pct')
@@ -1104,53 +1059,29 @@ try:
     elif selected_page == "📢 REPORT_ADS":
         st.markdown('<div class="header-bar"><div class="header-title"><i class="fas fa-bullhorn"></i> สรุปค่าโฆษณา (รายวัน)</div></div>', unsafe_allow_html=True)
         all_years = sorted(df_daily['Year'].unique(), reverse=True)
-        
         today = datetime.now().date()
         
-        # ---------------------------------------------------------
-        # 1. สร้างฟังก์ชัน Callback สำหรับหน้า ADS (ตั้งชื่อไม่ให้ซ้ำกับหน้า Month)
-        # ---------------------------------------------------------
         def update_a_dates():
-            # ดึงค่าจาก Key ของหน้า ADS (a_y, a_m)
             y = st.session_state.a_y
             m_str = st.session_state.a_m
             try:
                 m_idx = thai_months.index(m_str) + 1
                 days_in_m = calendar.monthrange(y, m_idx)[1]
-                
-                # อัปเดตวันที่ลง Key ของหน้า ADS (a_d_start, a_d_end)
                 st.session_state.a_d_start = date(y, m_idx, 1)
                 st.session_state.a_d_end = date(y, m_idx, days_in_m)
-            except:
-                pass
+            except: pass
 
         with st.container():
             c_y, c_m, c_s, c_e = st.columns([1, 1, 1, 1])
-            
-            # ---------------------------------------------------------
-            # 2. ตั้งค่า Default ครั้งแรกสำหรับหน้า ADS
-            # ---------------------------------------------------------
             if "a_d_start" not in st.session_state:
                 st.session_state.a_d_start = today.replace(day=1)
                 st.session_state.a_d_end = today
 
-            # ---------------------------------------------------------
-            # 3. ผูกฟังก์ชัน update_a_dates ไว้ที่ on_change
-            # ---------------------------------------------------------
-            with c_y: 
-                sel_year_a = st.selectbox("เลือกปี (ตั้งค่าเริ่มต้น)", all_years, key="a_y", on_change=update_a_dates)
-            with c_m: 
-                sel_month_a = st.selectbox("เลือกเดือน (ตั้งค่าเริ่มต้น)", thai_months, index=today.month-1, key="a_m", on_change=update_a_dates)
-            
-            # ---------------------------------------------------------
-            # 4. Date Input ดึงค่าจาก Key อัตโนมัติ
-            # ---------------------------------------------------------
-            with c_s: 
-                start_date_a = st.date_input("วันที่เริ่มต้น", key="a_d_start")
-            with c_e: 
-                end_date_a = st.date_input("วันที่สิ้นสุด", key="a_d_end")
+            with c_y: sel_year_a = st.selectbox("เลือกปี (ตั้งค่าเริ่มต้น)", all_years, key="a_y", on_change=update_a_dates)
+            with c_m: sel_month_a = st.selectbox("เลือกเดือน (ตั้งค่าเริ่มต้น)", thai_months, index=today.month-1, key="a_m", on_change=update_a_dates)
+            with c_s: start_date_a = st.date_input("วันที่เริ่มต้น", key="a_d_start")
+            with c_e: end_date_a = st.date_input("วันที่สิ้นสุด", key="a_d_end")
 
-            # --- ส่วน Filter อื่นๆ คงเดิม ---
             c_type, c_cat, c_sku, c_clear, c_run = st.columns([1.5, 1.5, 2.5, 0.5, 1])
             with c_type:
                 filter_mode_a = st.selectbox("เงื่อนไขสินค้า (Fast Filter)",
@@ -1185,7 +1116,6 @@ try:
         else:
             df_view_a = df_base_a[df_base_a['SKU_Main'].isin(final_skus_a)]
             
-            # คำนวณค่าใหม่สำหรับกล่อง 6 กล่อง (เฉพาะในหน้านี้ไม่จำเป็นต้องแสดง แต่คำนวณเพื่อความสมบูรณ์)
             total_sales = df_view_a['รายละเอียดยอดที่ชำระแล้ว'].sum()
             total_ads = df_view_a['Ads_Amount'].sum()
             total_cost_prod = df_view_a['CAL_COST'].sum()
@@ -1194,47 +1124,34 @@ try:
             total_cost_all = total_cost_prod + total_ops + total_com + total_ads
             net_profit = total_sales - total_cost_all
 
-            # แสดงกล่องสรุป 6 กล่อง
             render_metric_row(total_sales, total_ops, total_com, total_cost_prod, total_ads, net_profit)
             
-            # --- PREPARE DATA ---
             date_list_a = pd.date_range(start_date_a, end_date_a)
             matrix_data_a = []
             
             for d in date_list_a:
                 d_date = d.date()
                 day_data = df_view_a[df_view_a['Date'] == d_date]
-                
-                # Total for this day (filtered SKUs)
                 d_total_ads = day_data['Ads_Amount'].sum()
-                
                 day_str = d.strftime("%a. %d/%m/%Y")
                 row = {
                     'วันที่': day_str,
                     'ค่าแอดรวม': d_total_ads
                 }
-                
                 for sku in final_skus_a:
                     val = day_data[day_data['SKU_Main'] == sku]['Ads_Amount'].sum()
                     row[sku] = val
-                
                 matrix_data_a.append(row)
                 
             df_matrix_a = pd.DataFrame(matrix_data_a)
-            
-            # --- FOOTER SUMS ---
             footer_sums_a = df_view_a.groupby('SKU_Main')['Ads_Amount'].sum()
             total_period_ads = footer_sums_a.sum()
             
             def fmt_n(v): return f"{v:,.0f}" if v!=0 else "-"
             
-            # --- GENERATE HTML TABLE ---
-            # Reusing fix-m-1 (Date) and fix-m-2 (Total) from Report Month CSS
             html = '<div class="table-wrapper"><table class="custom-table month-table"><thead><tr>'
-            
             html += '<th class="fix-m-1" style="background-color:#2c3e50;color:white;">วันที่</th>'
             html += '<th class="fix-m-2" style="background-color:#e67e22;color:white;border-right: 2px solid #bbb !important;">ค่าแอดรวม</th>'
-            
             for sku in final_skus_a:
                 name = str(sku_name_lookup.get(sku, ""))
                 html += f'<th class="th-sku">{sku}<span class="sku-header">{name}</span></th>'
@@ -1244,7 +1161,6 @@ try:
                 html += '<tr>'
                 html += f'<td class="fix-m-1">{r["วันที่"]}</td>'
                 html += f'<td class="fix-m-2" style="font-weight:bold; color:#e67e22; border-right: 2px solid #bbb !important;">{fmt_n(r["ค่าแอดรวม"])}</td>'
-                
                 for sku in final_skus_a:
                     val = r.get(sku, 0)
                     color = "#e67e22" if val > 0 else "#ddd"
@@ -1252,17 +1168,13 @@ try:
                 html += '</tr>'
             
             html += '</tbody><tfoot>'
-            
-            # Footer Row
             bg_total = "#010538"; c_total = "#ffffff"
             html += f'<tr style="background-color: {bg_total}; font-weight: bold;">'
             html += f'<td class="fix-m-1" style="background-color: {bg_total}; color: {c_total};">รวม</td>'
             html += f'<td class="fix-m-2" style="background-color: {bg_total}; color: #FF6633; border-right: 2px solid #bbb !important;">{fmt_n(total_period_ads)}</td>'
-            
             for sku in final_skus_a:
                 val = footer_sums_a.get(sku, 0)
                 html += f'<td style="background-color: {bg_total}; color: #FF6633;">{fmt_n(val)}</td>'
-            
             html += '</tr></tfoot></table></div>'
             st.markdown(html, unsafe_allow_html=True)
 
@@ -1273,73 +1185,42 @@ try:
         all_years = sorted(df_daily['Year'].unique(), reverse=True)
         today = datetime.now().date()
 
-        # ---------------------------------------------------------
-        # 1. ฟังก์ชัน Callback สำหรับหน้า Daily (ตั้งชื่อเฉพาะ d_)
-        # ---------------------------------------------------------
         def update_d_dates():
-            # ดึงค่าจาก Key ของหน้า Daily
             y = st.session_state.d_y
             m_str = st.session_state.d_m
             try:
                 m_idx = thai_months.index(m_str) + 1
                 days_in_m = calendar.monthrange(y, m_idx)[1]
-                
-                # อัปเดตวันที่ลง Key ของหน้า Daily
                 st.session_state.d_d_start = date(y, m_idx, 1)
                 st.session_state.d_d_end = date(y, m_idx, days_in_m)
-            except:
-                pass
+            except: pass
 
         with st.container():
-            # ---------------------------------------------------------
-            # 2. ตั้งค่า Default ครั้งแรก
-            # ---------------------------------------------------------
             if "d_d_start" not in st.session_state:
                 st.session_state.d_d_start = today.replace(day=1)
                 st.session_state.d_d_end = today
 
-            # ---------------------------------------------------------
-            # 3. ส่วนเลือกวันที่ (Layout แบบ Report Month)
-            # ---------------------------------------------------------
             c_y, c_m, c_s, c_e = st.columns([1, 1, 1, 1])
-            
-            with c_y: 
-                # on_change เรียก update_d_dates ทันทีที่เปลี่ยนปี
-                sel_year_d = st.selectbox("เลือกปี (ตั้งค่าเริ่มต้น)", all_years, key="d_y", on_change=update_d_dates)
-            with c_m: 
-                # on_change เรียก update_d_dates ทันทีที่เปลี่ยนเดือน
-                sel_month_d = st.selectbox("เลือกเดือน (ตั้งค่าเริ่มต้น)", thai_months, index=today.month-1, key="d_m", on_change=update_d_dates)
-            with c_s: 
-                # รับค่าจาก key d_d_start โดยตรง
-                start_d = st.date_input("วันที่เริ่มต้น", key="d_d_start")
-            with c_e: 
-                # รับค่าจาก key d_d_end โดยตรง
-                end_d = st.date_input("วันที่สิ้นสุด", key="d_d_end")
+            with c_y: sel_year_d = st.selectbox("เลือกปี (ตั้งค่าเริ่มต้น)", all_years, key="d_y", on_change=update_d_dates)
+            with c_m: sel_month_d = st.selectbox("เลือกเดือน (ตั้งค่าเริ่มต้น)", thai_months, index=today.month-1, key="d_m", on_change=update_d_dates)
+            with c_s: start_d = st.date_input("วันที่เริ่มต้น", key="d_d_start")
+            with c_e: end_d = st.date_input("วันที่สิ้นสุด", key="d_d_end")
 
-            # ---------------------------------------------------------
-            # 4. ส่วนตัวกรองสินค้า (ย้าย Filter Mode มาที่นี่เพื่อให้สวยงาม)
-            # ---------------------------------------------------------
             c_type, c_cat, c_sku, c_clear, c_run = st.columns([1.5, 1.5, 2.5, 0.5, 1])
-            
             with c_type:
                 filter_mode_d = st.selectbox("เงื่อนไขสินค้า (Fast Filter)", 
                     ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 แสดงสินค้ากำไร", "💸 แสดงสินค้าขาดทุน", "📋 แสดงรายการทั้งหมด"], key="d_m_filter")
-
             with c_cat:
                 sel_category_d = st.selectbox("หมวดหมู่สินค้า", CATEGORY_OPTIONS, key="d_cat")
-
             with c_sku: 
                 st.multiselect("รายการที่เลือก (Choose options):", sku_options_list_global, key="selected_skus_d")
-            
             with c_clear:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
                 st.button("🧹", type="secondary", use_container_width=True, key="btn_clear_d", on_click=cb_clear_d)
-            
             with c_run:
                 st.markdown("<div style='margin-top: 29px;'></div>", unsafe_allow_html=True)
                 st.button("🚀 ประมวลผล", type="primary", use_container_width=True, key="btn_run_d")
 
-        # --- Logic การดึงข้อมูล (เหมือนเดิม แต่ใช้ start_d, end_d ที่ได้จากระบบใหม่) ---
         mask = (df_daily['Date'] >= start_d) & (df_daily['Date'] <= end_d)
         df_range = df_daily[mask]
 
@@ -1362,7 +1243,6 @@ try:
         selected_labels_d = st.session_state.selected_skus_d
         selected_skus_real_d = [sku_map_reverse_global[l] for l in selected_labels_d]
         
-        # --- APPLY CATEGORY FILTER ---
         pre_final_skus_d = sorted(selected_skus_real_d) if selected_skus_real_d else sorted(auto_skus_d)
         final_skus_d = filter_skus_by_category(pre_final_skus_d, sel_category_d, sku_type_map)
 
@@ -1370,35 +1250,26 @@ try:
 
         if df_final_d.empty: st.warning(f"⚠️ ไม่พบข้อมูลตามเงื่อนไข ({sel_category_d}) ในช่วงเวลานี้")
         else:
-            # คำนวณค่าใหม่สำหรับกล่อง 6 กล่อง
             sum_sales = df_final_d['รายละเอียดยอดที่ชำระแล้ว'].sum()
             sum_ads = df_final_d['Ads_Amount'].sum()
             sum_cost_prod = df_final_d['CAL_COST'].sum()
             sum_ops = df_final_d['BOX_COST'].sum() + df_final_d['DELIV_COST'].sum() + df_final_d['CAL_COD_COST'].sum()
             sum_com = df_final_d['CAL_COM_ADMIN'].sum() + df_final_d['CAL_COM_TELESALE'].sum()
-            sum_total_cost_ops = sum_cost_prod + sum_ops + sum_com + sum_ads
             sum_profit = df_final_d['Net_Profit'].sum()
             
-            # แสดงกล่องสรุป 6 กล่อง
             render_metric_row(sum_sales, sum_ops, sum_com, sum_cost_prod, sum_ads, sum_profit)
 
             df_final_d['กำไร/ขาดทุน'] = df_final_d['Net_Profit']
             df_final_d['ROAS'] = np.where(df_final_d['Ads_Amount']>0, df_final_d['รายละเอียดยอดที่ชำระแล้ว']/df_final_d['Ads_Amount'], 0)
             sls = df_final_d['รายละเอียดยอดที่ชำระแล้ว']
 
-            # --- [UPDATED] การคำนวณเปอร์เซ็นต์แบบใหม่ ---
-            # 1. % ค่าดำเนินการ = (ค่ากล่อง + ค่าส่ง + COD) / ยอดขาย
             val_ops_item = df_final_d['BOX_COST'] + df_final_d['DELIV_COST'] + df_final_d['CAL_COD_COST']
             df_final_d['% ค่าดำเนินการ'] = np.where(sls>0, (val_ops_item/sls)*100, 0)
 
-            # 2. % ค่าคอมมิชชัน = (Admin + Tele) / ยอดขาย
             val_com_item = df_final_d['CAL_COM_ADMIN'] + df_final_d['CAL_COM_TELESALE']
             df_final_d['% ค่าคอมมิชชัน'] = np.where(sls>0, (val_com_item/sls)*100, 0)
 
-            # 3. % ทุน = ทุนสินค้า / ยอดขาย
             df_final_d['% ทุนสินค้า'] = np.where(sls>0, (df_final_d['CAL_COST']/sls)*100, 0)
-
-            # อื่นๆ
             df_final_d['% Ads'] = np.where(sls>0, (df_final_d['Ads_Amount']/sls)*100, 0)
             df_final_d['% กำไร'] = np.where(sls>0, (df_final_d['Net_Profit']/sls)*100, 0)
             
@@ -1416,7 +1287,6 @@ try:
 
             st.markdown("##### 📋 รายละเอียดสินค้า")
             
-            # --- [UPDATED] Config Column ใหม่ (Request 2: Change to Orders) ---
             cols_cfg = [
                 ('SKU', 'SKU_Main', ''), 
                 ('ชื่อสินค้า', 'ชื่อสินค้า', ''), 
@@ -1431,8 +1301,8 @@ try:
                 ('ค่า Ads', 'Ads_Amount', ''), 
                 ('กำไร', 'Net_Profit', ''), 
                 ('ROAS', 'ROAS', 'col-small'), 
-                ('%ค่าดำเนินการ', '% ค่าดำเนินการ', 'col-medium'), # New
-                ('%ค่าคอม', '% ค่าคอมมิชชัน', 'col-medium'),       # New
+                ('%ค่าดำเนินการ', '% ค่าดำเนินการ', 'col-medium'), 
+                ('%ค่าคอม', '% ค่าคอมมิชชัน', 'col-medium'),       
                 ('%ทุน', '% ทุนสินค้า', 'col-small'), 
                 ('%Ads', '% Ads', 'col-small'), 
                 ('%กำไร', '% กำไร', 'col-small')
@@ -1446,9 +1316,7 @@ try:
                 html += '<tr>'
                 html += f'<td style="font-weight:bold;color:#1e3c72 !important;">{r["SKU_Main"]}</td>'
                 html += f'<td style="text-align:left;font-size:11px;color:#1e3c72 !important; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{r["ชื่อสินค้า"]}">{r["ชื่อสินค้า"]}</td>'
-
-                # Display Orders
-                html += f'<td{get_cell_style(r["จำนวนออเดอร์"])}>{fmt(r["จำนวนออเดอร์"])}</td>'
+                html += f'<td{get_cell_style(r["จำนวนออเดอร์"])}>{fmt(r["จำนวนออเดอร์"])}</td>' # Show Orders
                 html += f'<td{get_cell_style(r["รายละเอียดยอดที่ชำระแล้ว"])}>{fmt(r["รายละเอียดยอดที่ชำระแล้ว"])}</td>'
                 html += f'<td{get_cell_style(r["CAL_COST"])}>{fmt(r["CAL_COST"])}</td>'
                 html += f'<td{get_cell_style(r["BOX_COST"])}>{fmt(r["BOX_COST"])}</td>'
@@ -1456,16 +1324,11 @@ try:
                 html += f'<td{get_cell_style(r["CAL_COD_COST"])}>{fmt(r["CAL_COD_COST"])}</td>'
                 html += f'<td{get_cell_style(r["CAL_COM_ADMIN"])}>{fmt(r["CAL_COM_ADMIN"])}</td>'
                 html += f'<td{get_cell_style(r["CAL_COM_TELESALE"])}>{fmt(r["CAL_COM_TELESALE"])}</td>'
-
                 html += f'<td style="color:#e67e22 !important;">{fmt(r["Ads_Amount"])}</td>'
                 html += f'<td{get_cell_style(r["Net_Profit"])}>{fmt(r["Net_Profit"])}</td>'
-
                 html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["ROAS"])}</td>'
-                
-                # --- [UPDATED] แสดงผลคอลัมน์ใหม่ ---
                 html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["% ค่าดำเนินการ"],True)}</td>'
                 html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["% ค่าคอมมิชชัน"],True)}</td>'
-                
                 html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["% ทุนสินค้า"],True)}</td>'
                 html += f'<td class="col-small" style="color:#1e3c72 !important;">{fmt(r["% Ads"],True)}</td>'
                 html += f'<td class="col-small"{get_cell_style(r["% กำไร"])}>{fmt(r["% กำไร"],True)}</td>'
@@ -1474,16 +1337,13 @@ try:
             html += '<tr class="footer-row"><td>TOTAL</td><td></td>'
             ts = df_final_d['รายละเอียดยอดที่ชำระแล้ว'].sum(); tp = df_final_d['Net_Profit'].sum()
             ta = df_final_d['Ads_Amount'].sum(); tc = df_final_d['CAL_COST'].sum()
-            
-            # Sums for columns
             t_box = df_final_d['BOX_COST'].sum()
             t_ship = df_final_d['DELIV_COST'].sum()
             t_cod = df_final_d['CAL_COD_COST'].sum()
             t_adm = df_final_d['CAL_COM_ADMIN'].sum()
             t_tel = df_final_d['CAL_COM_TELESALE'].sum()
 
-            # [FIX REQUEST 2] Sum Orders
-            html += f'<td{get_cell_style(df_final_d["จำนวนออเดอร์"].sum())}>{fmt(df_final_d["จำนวนออเดอร์"].sum())}</td>'
+            html += f'<td{get_cell_style(df_final_d["จำนวนออเดอร์"].sum())}>{fmt(df_final_d["จำนวนออเดอร์"].sum())}</td>' # Sum Orders
             html += f'<td{get_cell_style(ts)}>{fmt(ts)}</td>'
             html += f'<td{get_cell_style(tc)}>{fmt(tc)}</td>'
             html += f'<td{get_cell_style(t_box)}>{fmt(t_box)}</td>'
@@ -1495,8 +1355,6 @@ try:
             html += f'<td{get_cell_style(tp)}>{fmt(tp)}</td>'
 
             f_roas = ts/ta if ta>0 else 0
-            
-            # --- [UPDATED] Footer Percentages Calculation ---
             val_pct_ops = ((t_box + t_ship + t_cod)/ts*100) if ts>0 else 0
             val_pct_comm = ((t_adm + t_tel)/ts*100) if ts>0 else 0
             val_pct_cost = (tc/ts*100) if ts>0 else 0
@@ -1522,7 +1380,6 @@ try:
             with c_g3: filter_mode_g = st.selectbox("เงื่อนไขสินค้า (Fast Filter)",
                 ["📦 แสดงรายการที่มีการเคลื่อนไหว", "💰 แสดงสินค้ากำไร", "💸 แสดงสินค้าขาดทุน", "📋 แสดงรายการทั้งหมด"], key="g_m")
 
-            # --- MODIFIED LAYOUT FOR CATEGORY ---
             c_cat, c_sku, c_clear, c_run = st.columns([1.5, 3, 0.5, 1])
             with c_cat:
                 sel_category_g = st.selectbox("หมวดหมู่สินค้า", CATEGORY_OPTIONS, key="g_cat")
@@ -1553,7 +1410,6 @@ try:
         selected_labels_g = st.session_state.selected_skus_g
         real_selected_g = [sku_map_reverse_global[l] for l in selected_labels_g]
 
-        # --- APPLY CATEGORY FILTER ---
         pre_final_skus_g = sorted(real_selected_g) if real_selected_g else sorted(auto_skus_g)
         final_skus_g = filter_skus_by_category(pre_final_skus_g, sel_category_g, sku_type_map)
 
@@ -1565,7 +1421,6 @@ try:
             if df_graph.empty:
                 st.warning("⚠️ ไม่พบข้อมูลการขายของสินค้าที่เลือกในช่วงเวลานี้")
             else:
-                # คำนวณค่าใหม่สำหรับกล่อง 6 กล่อง
                 g_sales = df_graph['รายละเอียดยอดที่ชำระแล้ว'].sum()
                 g_ads = df_graph['Ads_Amount'].sum()
                 g_cost_prod = df_graph['CAL_COST'].sum()
@@ -1573,7 +1428,6 @@ try:
                 g_com = df_graph['CAL_COM_ADMIN'].sum() + df_graph['CAL_COM_TELESALE'].sum()
                 g_net_profit = df_graph['Net_Profit'].sum()
                 
-                # แสดงกล่องสรุป 6 กล่อง
                 render_metric_row(g_sales, g_ops, g_com, g_cost_prod, g_ads, g_net_profit)
                 
                 df_chart = df_graph.groupby(['Date', 'SKU_Main']).agg({
@@ -1658,7 +1512,6 @@ try:
             df_merged['Month_Thai'] = df_merged['Month_Num'].apply(lambda x: thai_months[x-1])
             df_merged['Fix_Cost'] = monthly_fix
 
-            # Calculate Aggregates
             df_merged['COGS_Total'] = df_merged['CAL_COST'] + df_merged['BOX_COST']
             df_merged['Selling_Exp'] = df_merged['DELIV_COST'] + df_merged['CAL_COD_COST'] + df_merged['CAL_COM_ADMIN'] + df_merged['CAL_COM_TELESALE'] + df_merged['Ads_Amount']
             df_merged['Total_Exp'] = df_merged['COGS_Total'] + df_merged['Selling_Exp'] + df_merged['Fix_Cost']
@@ -1671,7 +1524,6 @@ try:
             total_com = df_merged['CAL_COM_ADMIN'].sum() + df_merged['CAL_COM_TELESALE'].sum()
             total_profit = df_merged['Net_Profit_Final'].sum()
             
-            # แสดงกล่องสรุป 6 กล่อง
             render_metric_row(total_sales, total_ops, total_com, total_cost_prod, total_ads, total_profit)
 
             pct_net_income = (total_sales / total_sales * 100) if total_sales else 0
@@ -1806,7 +1658,6 @@ try:
 
         df_d_agg['Daily_Net_Profit'] = df_d_agg['รายละเอียดยอดที่ชำระแล้ว'] - df_d_agg['Daily_Total_Exp']
 
-        # คำนวณค่าใหม่สำหรับกล่อง 6 กล่อง
         m_sales = df_d_agg['รายละเอียดยอดที่ชำระแล้ว'].sum()
         m_ads = df_d_agg['Ads_Amount'].sum()
         m_cost_prod = df_d_agg['CAL_COST'].sum()
@@ -1814,7 +1665,6 @@ try:
         m_com = df_d_agg['CAL_COM_ADMIN'].sum() + df_d_agg['CAL_COM_TELESALE'].sum()
         m_net_profit = df_d_agg['Daily_Net_Profit'].sum()
         
-        # แสดงกล่องสรุป 6 กล่อง
         render_metric_row(m_sales, m_ops, m_com, m_cost_prod, m_ads, m_net_profit)
 
         pct_net = (m_net_profit / m_sales * 100) if m_sales else 0
@@ -1960,7 +1810,6 @@ try:
             total_tele = df_comm['CAL_COM_TELESALE'].sum()
             total_all = total_admin + total_tele
 
-            # คำนวณค่าเพิ่มเติมสำหรับกล่อง 6 กล่อง
             total_sales = df_comm['รายละเอียดยอดที่ชำระแล้ว'].sum()
             total_ads = df_comm['Ads_Amount'].sum()
             total_cost_prod = df_comm['CAL_COST'].sum()
@@ -1969,7 +1818,6 @@ try:
             total_cost_all = total_cost_prod + total_ops + total_com + total_ads
             net_profit = total_sales - total_cost_all
             
-            # แสดงกล่องสรุป 6 กล่อง
             render_metric_row(total_sales, total_ops, total_com, total_cost_prod, total_ads, net_profit)
 
             c_chart, c_table = st.columns([2, 1])
