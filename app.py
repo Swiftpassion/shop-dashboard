@@ -163,8 +163,8 @@ st.markdown("""
     /* --- 2. การจัดวาง (LAYOUT FIX) --- */
     .metric-container { 
         display: grid !important; 
-        grid-template-columns: repeat(4, 1fr) !important; 
-        gap: 15px !important; 
+        grid-template-columns: repeat(6, 1fr) !important;
+        gap: 10px !important;
         margin-bottom: 20px; 
         width: 100%;
     }
@@ -347,47 +347,70 @@ def get_val_color(val, default_hex):
     return default_hex
 
 # ------------------------------
-# GLOBAL METRIC CARD COMPONENT
+# GLOBAL METRIC CARD COMPONENT (UPDATED 6 BOXES)
 # ------------------------------
-def render_metric_row(total_sales, total_cost, total_ads, total_profit):
-    pct_sales = 100
-    pct_cost = (total_cost / total_sales * 100) if total_sales > 0 else 0
-    pct_ads = (total_ads / total_sales * 100) if total_sales > 0 else 0
-    pct_profit = (total_profit / total_sales * 100) if total_sales > 0 else 0
+def render_metric_row(sales, ops, comm, cogs, ads, profit):
+    # คำนวณ % เทียบยอดขาย
+    if sales > 0:
+        pct_ops = (ops / sales) * 100
+        pct_comm = (comm / sales) * 100
+        pct_cogs = (cogs / sales) * 100
+        pct_ads = (ads / sales) * 100
+        pct_profit = (profit / sales) * 100
+    else:
+        pct_ops = pct_comm = pct_cogs = pct_ads = pct_profit = 0
 
-    cls_sales_v = "val-neg" if total_sales < 0 else "val-sales"
-    cls_sales_s = "sub-neg" if total_sales < 0 else "sub-sales"
-    cls_cost_v = "val-neg" if total_cost < 0 else "val-cost"
-    cls_cost_s = "sub-neg" if total_cost < 0 else "sub-cost"
-    cls_ads_v = "val-neg" if total_ads < 0 else "val-ads"
-    cls_ads_s = "sub-neg" if total_ads < 0 else "sub-ads"
-    cls_prof_v = "val-neg" if total_profit < 0 else "val-profit"
-    cls_prof_s = "sub-neg" if total_profit < 0 else "sub-profit"
+    # ฟังก์ชันช่วยกำหนดสี (เขียว/แดง ตามค่าบวกลบ)
+    def cls_val(v): return "val-neg" if v < 0 else "val-sales" # ใช้ class val-sales เป็นค่า default สีฟ้า/ขาว
+    def cls_sub(v): return "sub-neg" if v < 0 else "sub-sales"
+
+    # HTML Card Generator
+    # 1. ยอดขายรวม (Blue)
+    # 2. ค่าดำเนินการ (Cyan) - กล่อง/ส่ง/COD
+    # 3. ค่าคอม (Pink) - Admin/Tele
+    # 4. ทุนสินค้า (Purple)
+    # 5. ค่าโฆษณา (Orange)
+    # 6. กำไรสุทธิ (Green)
 
     html = f"""
-<div class="metric-container">
-<div class="custom-card border-blue">
-<div class="card-label">ยอดขายรวม</div>
-<div class="{cls_sales_v}">{total_sales:,.0f}</div>
-<div class="{cls_sales_s}">{pct_sales:.0f}%</div>
-</div>
-<div class="custom-card border-purple">
-<div class="card-label">ทุนสินค้า + ค่าใช้จ่าย</div>
-<div class="{cls_cost_v}">{total_cost:,.0f}</div>
-<div class="{cls_cost_s}">{pct_cost:.1f}%</div>
-</div>
-<div class="custom-card border-orange">
-<div class="card-label">ค่าโฆษณา</div>
-<div class="{cls_ads_v}">{total_ads:,.0f}</div>
-<div class="{cls_ads_s}">{pct_ads:.1f}%</div>
-</div>
-<div class="custom-card border-green">
-<div class="card-label">กำไรสุทธิ</div>
-<div class="{cls_prof_v}">{total_profit:,.0f}</div>
-<div class="{cls_prof_s}">{pct_profit:.1f}%</div>
-</div>
-</div>
-"""
+    <div class="metric-container">
+        <div class="custom-card border-blue">
+            <div class="card-label">ยอดขายรวม</div>
+            <div class="{cls_val(sales)}" style="color:#33FFFF !important;">{sales:,.0f}</div>
+            <div class="{cls_sub(sales)}" style="color:#33FFFF !important;">100%</div>
+        </div>
+
+        <div class="custom-card" style="border-left-color: #00E5FF;">
+            <div class="card-label">ค่าดำเนินการ</div>
+            <div class="{cls_val(ops)}" style="color:#00E5FF !important;">{ops:,.0f}</div>
+            <div class="{cls_sub(ops)}" style="color:#00E5FF !important;">{pct_ops:.1f}%</div>
+        </div>
+
+        <div class="custom-card" style="border-left-color: #FF4081;">
+            <div class="card-label">ค่าคอมมิชชั่น</div>
+            <div class="{cls_val(comm)}" style="color:#FF4081 !important;">{comm:,.0f}</div>
+            <div class="{cls_sub(comm)}" style="color:#FF4081 !important;">{pct_comm:.1f}%</div>
+        </div>
+
+        <div class="custom-card border-purple">
+            <div class="card-label">ทุนสินค้า</div>
+            <div class="{cls_val(cogs)}" style="color:#9400D3 !important;">{cogs:,.0f}</div>
+            <div class="{cls_sub(cogs)}" style="color:#9400D3 !important;">{pct_cogs:.1f}%</div>
+        </div>
+
+        <div class="custom-card border-orange">
+            <div class="card-label">ค่าโฆษณา</div>
+            <div class="{cls_val(ads)}" style="color:#FF6633 !important;">{ads:,.0f}</div>
+            <div class="{cls_sub(ads)}" style="color:#FF6633 !important;">{pct_ads:.1f}%</div>
+        </div>
+
+        <div class="custom-card border-green">
+            <div class="card-label">กำไรสุทธิ</div>
+            <div class="{cls_val(profit)}" style="color:#7CFC00 !important;">{profit:,.0f}</div>
+            <div class="{cls_sub(profit)}" style="color:#7CFC00 !important;">{pct_profit:.1f}%</div>
+        </div>
+    </div>
+    """
     st.markdown(html, unsafe_allow_html=True)
 
 @st.cache_resource
@@ -758,10 +781,14 @@ try:
         
             total_sales = df_view['รายละเอียดยอดที่ชำระแล้ว'].sum()
             total_ads = df_view['Ads_Amount'].sum()
-            total_cost_ops = df_view['Total_Cost'].sum() - total_ads
-            net_profit = total_sales - df_view['Total_Cost'].sum()
+            
+            # --- คำนวณแยกตามกลุ่มใหม่ ---
+            val_ops = df_view['BOX_COST'].sum() + df_view['DELIV_COST'].sum() + df_view['CAL_COD_COST'].sum()
+            val_comm = df_view['CAL_COM_ADMIN'].sum() + df_view['CAL_COM_TELESALE'].sum()
+            val_cogs = df_view['CAL_COST'].sum()
+            val_profit = total_sales - (val_cogs + val_ops + val_comm + total_ads) # หรือใช้ df_view['Net_Profit'].sum()
 
-            render_metric_row(total_sales, total_cost_ops, total_ads, net_profit)
+            render_metric_row(total_sales, val_ops, val_comm, val_cogs, total_ads, val_profit)
 
             date_list = pd.date_range(start_date_m, end_date_m)
             matrix_data = []
@@ -1150,12 +1177,14 @@ try:
         else:
             sum_sales = df_final_d['รายละเอียดยอดที่ชำระแล้ว'].sum()
             sum_ads = df_final_d['Ads_Amount'].sum()
-            sum_ops = df_final_d['BOX_COST'].sum() + df_final_d['DELIV_COST'].sum() + df_final_d['CAL_COD_COST'].sum() + df_final_d['CAL_COM_ADMIN'].sum() + df_final_d['CAL_COM_TELESALE'].sum()
-            sum_cost_prod = df_final_d['CAL_COST'].sum()
-            sum_total_cost_ops = sum_cost_prod + sum_ops
             sum_profit = df_final_d['Net_Profit'].sum()
-            
-            render_metric_row(sum_sales, sum_total_cost_ops, sum_ads, sum_profit)
+
+            # --- คำนวณแยกตามกลุ่มใหม่ ---
+            sum_ops = df_final_d['BOX_COST'].sum() + df_final_d['DELIV_COST'].sum() + df_final_d['CAL_COD_COST'].sum()
+            sum_comm = df_final_d['CAL_COM_ADMIN'].sum() + df_final_d['CAL_COM_TELESALE'].sum()
+            sum_cogs = df_final_d['CAL_COST'].sum()
+
+            render_metric_row(sum_sales, sum_ops, sum_comm, sum_cogs, sum_ads, sum_profit)
 
             df_final_d['กำไร/ขาดทุน'] = df_final_d['Net_Profit']
             df_final_d['ROAS'] = np.where(df_final_d['Ads_Amount']>0, df_final_d['รายละเอียดยอดที่ชำระแล้ว']/df_final_d['Ads_Amount'], 0)
@@ -1296,9 +1325,13 @@ try:
                 g_sales = df_graph['รายละเอียดยอดที่ชำระแล้ว'].sum()
                 g_ads = df_graph['Ads_Amount'].sum()
                 g_net_profit = df_graph['Net_Profit'].sum()
-                g_cost_ops = df_graph['Total_Cost'].sum() - g_ads
                 
-                render_metric_row(g_sales, g_cost_ops, g_ads, g_net_profit)
+                # --- คำนวณแยกตามกลุ่มใหม่ ---
+                g_ops = df_graph['BOX_COST'].sum() + df_graph['DELIV_COST'].sum() + df_graph['CAL_COD_COST'].sum()
+                g_comm = df_graph['CAL_COM_ADMIN'].sum() + df_graph['CAL_COM_TELESALE'].sum()
+                g_cogs = df_graph['CAL_COST'].sum()
+                
+                render_metric_row(g_sales, g_ops, g_comm, g_cogs, g_ads, g_net_profit)
                 
                 df_chart = df_graph.groupby(['Date', 'SKU_Main']).agg({
                     'รายละเอียดยอดที่ชำระแล้ว': 'sum',
@@ -1389,13 +1422,15 @@ try:
             df_merged['Net_Profit_Final'] = df_merged['รายละเอียดยอดที่ชำระแล้ว'] - df_merged['Total_Exp']
 
             total_sales = df_merged['รายละเอียดยอดที่ชำระแล้ว'].sum()
-            total_exp = df_merged['Total_Exp'].sum()
-            total_profit = df_merged['Net_Profit_Final'].sum()
-            
             total_ads = df_merged['Ads_Amount'].sum()
-            total_cost_ops = total_exp - total_ads
+            total_profit = df_merged['Net_Profit_Final'].sum()
 
-            render_metric_row(total_sales, total_cost_ops, total_ads, total_profit)
+            # --- คำนวณแยกตามกลุ่มใหม่ ---
+            y_ops = df_merged['BOX_COST'].sum() + df_merged['DELIV_COST'].sum() + df_merged['CAL_COD_COST'].sum()
+            y_comm = df_merged['CAL_COM_ADMIN'].sum() + df_merged['CAL_COM_TELESALE'].sum()
+            y_cogs = df_merged['CAL_COST'].sum()
+
+            render_metric_row(total_sales, y_ops, y_comm, y_cogs, total_ads, total_profit)
 
             pct_net_income = (total_sales / total_sales * 100) if total_sales else 0
             pct_exp = (total_exp / total_sales * 100) if total_sales else 0
@@ -1530,13 +1565,15 @@ try:
         df_d_agg['Daily_Net_Profit'] = df_d_agg['รายละเอียดยอดที่ชำระแล้ว'] - df_d_agg['Daily_Total_Exp']
 
         m_sales = df_d_agg['รายละเอียดยอดที่ชำระแล้ว'].sum()
-        m_total_exp = df_d_agg['Daily_Total_Exp'].sum()
         m_net_profit = df_d_agg['Daily_Net_Profit'].sum()
-        
         m_ads = df_d_agg['Ads_Amount'].sum()
-        m_cost_ops = m_total_exp - m_ads
+        
+        # --- คำนวณแยกตามกลุ่มใหม่ ---
+        m_ops = df_d_agg['BOX_COST'].sum() + df_d_agg['DELIV_COST'].sum() + df_d_agg['CAL_COD_COST'].sum()
+        m_comm = df_d_agg['CAL_COM_ADMIN'].sum() + df_d_agg['CAL_COM_TELESALE'].sum()
+        m_cogs = df_d_agg['CAL_COST'].sum()
 
-        render_metric_row(m_sales, m_cost_ops, m_ads, m_net_profit)
+        render_metric_row(m_sales, m_ops, m_comm, m_cogs, m_ads, m_net_profit)
 
         pct_net = (m_net_profit / m_sales * 100) if m_sales else 0
         pct_exp_ratio = (m_total_exp / m_sales * 100) if m_sales else 0
