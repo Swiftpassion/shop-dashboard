@@ -486,8 +486,10 @@ def process_data():
 
     if df_data.empty: return pd.DataFrame(), pd.DataFrame(), {}, [], {}
 
+    # --- 1. PREPARE MASTER DATA ---
     if not df_master.empty:
         df_master.columns = df_master.columns.astype(str).str.strip()
+        # Rename Column for join
         if 'ชื่อสินค้า' not in df_master.columns:
             if len(df_master.columns) >= 2:
                 col_b = df_master.columns[1]
@@ -495,24 +497,26 @@ def process_data():
             else:
                 df_master['ชื่อสินค้า'] = df_master['SKU'] if 'SKU' in df_master.columns else "Unknown"
         
-        # --- NEW: TYPE COLUMN HANDLING ---
         if 'Type' not in df_master.columns:
             df_master['Type'] = 'กลุ่ม ปกติ'
         df_master['Type'] = df_master['Type'].fillna('กลุ่ม ปกติ').astype(str).str.strip()
-        # ---------------------------------
 
+        # Clean SKU Master
+        if 'SKU' in df_master.columns:
+            df_master['SKU'] = df_master['SKU'].astype(str).str.split('-').str[0].str.strip()
+            df_master = df_master.drop_duplicates(subset=['SKU'])
+
+    # Columns to convert to float
     cols_money = ['ต้นทุน', 'ราคากล่อง', 'ค่าส่งเฉลี่ย']
     cols_percent = ['ค่าคอมมิชชั่น Admin', 'ค่าคอมมิชชั่น Telesale', 
                     'J&T Express', 'Flash Express', 'ThailandPost', 'DHL_1', 'LEX TH', 'SPX Express',
                     'Express Delivery - ส่งด่วน', 'Standard Delivery - ส่งธรรมดาในประเทศ']
 
-    for col in cols_money:
-        if col in df_master.columns: df_master[col] = df_master[col].apply(safe_float)
-    for col in cols_percent:
-        if col in df_master.columns: df_master[col] = df_master[col].apply(safe_float)
+    for col in cols_money + cols_percent:
+        if col in df_master.columns: 
+            df_master[col] = df_master[col].apply(safe_float)
 
-    if 'SKU' in df_master.columns: df_master['SKU'] = df_master['SKU'].astype(str).str.strip()
-
+    # --- 2. PREPARE ADS DATA ---
     df_ads_agg = pd.DataFrame(columns=['Date', 'SKU_Main', 'Ads_Amount'])
     if not df_ads_raw.empty:
         col_cost = next((c for c in ['จำนวนเงินที่ใช้จ่ายไป (THB)', 'Cost', 'Amount'] if c in df_ads_raw.columns), None)
@@ -523,9 +527,19 @@ def process_data():
             df_ads_raw['Date'] = df_ads_raw[col_date].apply(safe_date)
             df_ads_raw = df_ads_raw.dropna(subset=['Date'])
             df_ads_raw[col_cost] = df_ads_raw[col_cost].apply(safe_float)
-            df_ads_raw['SKU_Main'] = df_ads_raw[col_camp].astype(str).str.extract(r'\[(.*?)\]')
+            
+            # Extract SKU from Campaign Name [SKU]...
+            def extract_sku_ads(val):
+                if pd.isna(val): return None
+                parts = str(val).split(']')
+                if len(parts) > 0:
+                    return parts[0].replace('[', '').strip()
+                return None
+                
+            df_ads_raw['SKU_Main'] = df_ads_raw[col_camp].apply(extract_sku_ads)
             df_ads_agg = df_ads_raw.groupby(['Date', 'SKU_Main'])[col_cost].sum().reset_index(name='Ads_Amount')
 
+    # --- 3. PREPARE SALES DATA ---
     cols = [c for c in ['หมายเลขคำสั่งซื้อออนไลน์', 'สถานะคำสั่งซื้อ', 
         'บริษัทขนส่ง', 'เวลาสั่งซื้อ', 'รูปแบบสินค้า', 'จำนวน', 'รายละเอียดยอดที่ชำระแล้ว', 'ผู้สร้างคำสั่งซื้อ', 'วิธีการชำระเงิน', 'ชื่อสินค้า', 'ประเภทการทำงาน'] if c in df_data.columns]
     df = df_data[cols].copy()
@@ -536,67 +550,120 @@ def process_data():
     df['Date'] = df['เวลาสั่งซื้อ'].apply(safe_date)
     df = df.dropna(subset=['Date'])
     
+    # Extract SKU from Sales
     df['SKU_Main'] = df['รูปแบบสินค้า'].astype(str).str.split('-').str[0].str.strip()
 
-    # --- UPDATED: Merge with Type ---
+    # --- 4. MERGE DATA (Sales + Master) ---
     master_cols = [c for c in cols_money + cols_percent + ['SKU', 'ชื่อสินค้า', 'Type'] if c in df_master.columns]
-    df_merged = pd.merge(df, df_master[master_cols].drop_duplicates('SKU'), left_on='SKU_Main', right_on='SKU', how='left')
+    # Left Join with Master
+    df_merged = pd.merge(df, df_master[master_cols], left_on='SKU_Main', right_on='SKU', how='left')
 
     if 'ชื่อสินค้า_y' in df_merged.columns: df_merged.rename(columns={'ชื่อสินค้า_y': 'ชื่อสินค้า'}, inplace=True)
     if 'ชื่อสินค้า' not in df_merged.columns: df_merged['ชื่อสินค้า'] = df_merged['SKU_Main']
 
+    # Convert numeric
     df_merged['จำนวน'] = df_merged['จำนวน'].apply(safe_float)
     df_merged['ต้นทุน'] = df_merged['ต้นทุน'].fillna(0).apply(safe_float)
     df_merged['รายละเอียดยอดที่ชำระแล้ว'] = df_merged['รายละเอียดยอดที่ชำระแล้ว'].apply(safe_float)
-
+    
+    # --- 5. CALCULATE COSTS (ROW LEVEL - FIX LOGIC HERE) ---
+    
+    # 5.1 Product Cost
     df_merged['CAL_COST'] = df_merged['จำนวน'] * df_merged['ต้นทุน']
 
-    shipping_map = {"J&T Express": "J&T Express", "J&T": "J&T Express", "Flash Express": "Flash Express", "Flash": "Flash Express", "Kerry Express": "Kerry Express", "Kerry": "Kerry Express", "Thailand Post": "ThailandPost", "ThailandPost": "ThailandPost", "DHL Domestic": "DHL_1", "DHL": "DHL_1", "Shopee Express": "SPX Express", "SPX Express": "SPX Express", "Lazada Express": "LEX TH", "LEX": "LEX TH"}
-    
-    def get_ship_rate(row):
-        c = str(row.get('บริษัทขนส่ง','')).strip()
-        k = shipping_map.get(c, c)
-        val = row.get(k, row.get('Standard Delivery - ส่งธรรมดาในประเทศ', 0))
+    # 5.2 Shipping Fee % (Dynamic Mapping)
+    # Mapping for fallback
+    shipping_map_fallback = {
+        "J&T Express": "J&T Express", "J&T": "J&T Express", 
+        "Flash Express": "Flash Express", "Flash": "Flash Express", 
+        "Kerry Express": "Kerry Express", "Kerry": "Kerry Express", 
+        "Thailand Post": "ThailandPost", "ThailandPost": "ThailandPost", 
+        "DHL Domestic": "DHL_1", "DHL": "DHL_1", 
+        "Shopee Express": "SPX Express", "SPX Express": "SPX Express", 
+        "Lazada Express": "LEX TH", "LEX": "LEX TH"
+    }
+
+    def get_ship_rate_dynamic(row):
+        # 1. Try to find column matching exact courier name
+        courier = str(row.get('บริษัทขนส่ง', '')).strip()
+        if courier in row.index and pd.notnull(row[courier]):
+             return safe_float(row[courier])
+        
+        # 2. Use fallback mapping
+        mapped_name = shipping_map_fallback.get(courier, courier)
+        val = row.get(mapped_name, row.get('Standard Delivery - ส่งธรรมดาในประเทศ', 0))
         return safe_float(val)
 
-    df_merged['SHIP_RATE'] = df_merged.apply(get_ship_rate, axis=1)
+    df_merged['SHIP_RATE'] = df_merged.apply(get_ship_rate_dynamic, axis=1)
+
+    # 5.3 COD Cost
     is_cod = df_merged['วิธีการชำระเงิน'].astype(str).str.contains('COD|ปลายทาง', case=False, na=False)
-    
     df_merged['CAL_COD_COST'] = np.where(is_cod, (df_merged['รายละเอียดยอดที่ชำระแล้ว'] * df_merged['SHIP_RATE']) * 1.07, 0)
 
-    def get_role(row):
-        t = str(row.get('ประเภทการทำงาน','')) + " " + str(row.get('ผู้สร้างคำสั่งซื้อ',''))
-        if 'admin' in t.lower() or 'แอดมิน' in t: return 'Admin'
-        if 'tele' in t.lower() or 'เทเล' in t: return 'Telesale'
+    # 5.4 Role & Commission
+    def get_role_strict(row):
+        # Priority 1: Check 'ประเภทการทำงาน'
+        role_type = str(row.get('ประเภทการทำงาน', ''))
+        if role_type not in ['nan', '', 'None']:
+            return role_type.strip()
+        
+        # Priority 2: Check 'ผู้สร้างคำสั่งซื้อ'
+        creator = str(row.get('ผู้สร้างคำสั่งซื้อ', '')).lower()
+        if 'admin' in creator or 'แอดมิน' in creator:
+            return 'Admin'
+        elif 'tele' in creator or 'เทเล' in creator:
+            return 'Telesale'
         return 'Unknown'
     
-    df_merged['Calculated_Role'] = df_merged.apply(get_role, axis=1)
+    df_merged['Calculated_Role'] = df_merged.apply(get_role_strict, axis=1)
     
-    com_admin = df_merged.get('ค่าคอมมิชชั่น Admin', 0).fillna(0).apply(safe_float)
-    com_tele = df_merged.get('ค่าคอมมิชชั่น Telesale', 0).fillna(0).apply(safe_float)
+    com_admin_rate = df_merged.get('ค่าคอมมิชชั่น Admin', 0).fillna(0).apply(safe_float)
+    com_tele_rate = df_merged.get('ค่าคอมมิชชั่น Telesale', 0).fillna(0).apply(safe_float)
 
-    df_merged['CAL_COM_ADMIN'] = np.where((df_merged['Calculated_Role'] == 'Admin'), df_merged['รายละเอียดยอดที่ชำระแล้ว'] * com_admin, 0)
-    df_merged['CAL_COM_TELESALE'] = np.where((df_merged['Calculated_Role'] == 'Telesale'), df_merged['รายละเอียดยอดที่ชำระแล้ว'] * com_tele, 0)
+    df_merged['CAL_COM_ADMIN'] = np.where((df_merged['Calculated_Role'] == 'Admin'), df_merged['รายละเอียดยอดที่ชำระแล้ว'] * com_admin_rate, 0)
+    df_merged['CAL_COM_TELESALE'] = np.where((df_merged['Calculated_Role'] == 'Telesale'), df_merged['รายละเอียดยอดที่ชำระแล้ว'] * com_tele_rate, 0)
 
+    # 5.5 Box & Delivery Cost (CALCULATE PER ROW FIRST)
+    # [FIX] เดิมใช้ max ตอน group ทำให้ค่าเพี้ยน ต้องคำนวณเป็นยอดเงินต่อบรรทัดก่อน แล้วค่อย sum
+    df_merged['CAL_BOX_COST'] = df_merged.get('ราคากล่อง', 0).fillna(0).apply(safe_float)
+    df_merged['CAL_DELIV_COST'] = df_merged.get('ค่าส่งเฉลี่ย', 0).fillna(0).apply(safe_float)
+
+    # --- 6. AGGREGATION (Summing everything up) ---
     agg_dict = {
-        'ชื่อสินค้า': 'first', 'หมายเลขคำสั่งซื้อออนไลน์': 'count', 'จำนวน': 'sum', 'รายละเอียดยอดที่ชำระแล้ว': 'sum',
-        'CAL_COST': 'sum', 'ราคากล่อง': 'max', 'ค่าส่งเฉลี่ย': 'max', 'CAL_COD_COST': 'sum',
-        'CAL_COM_ADMIN': 'sum', 'CAL_COM_TELESALE': 'sum'
+        'ชื่อสินค้า': 'first', 
+        'หมายเลขคำสั่งซื้อออนไลน์': 'count', 
+        'จำนวน': 'sum', 
+        'รายละเอียดยอดที่ชำระแล้ว': 'sum',
+        'CAL_COST': 'sum', 
+        'CAL_BOX_COST': 'sum',    # [FIX] Changed from 'ราคากล่อง': 'max' to Sum
+        'CAL_DELIV_COST': 'sum',  # [FIX] Changed from 'ค่าส่งเฉลี่ย': 'max' to Sum
+        'CAL_COD_COST': 'sum',
+        'CAL_COM_ADMIN': 'sum', 
+        'CAL_COM_TELESALE': 'sum'
     }
-    if 'Type' in df_merged.columns: agg_dict['Type'] = 'first' # เก็บ Type ไว้ด้วย
+    if 'Type' in df_merged.columns: agg_dict['Type'] = 'first'
     
+    # Ensure all columns exist before groupby
     for c in agg_dict.keys():
         if c not in df_merged.columns: df_merged[c] = 0
 
     df_daily = df_merged.groupby(['Date', 'SKU_Main']).agg(agg_dict).reset_index()
-    df_daily.rename(columns={'หมายเลขคำสั่งซื้อออนไลน์': 'จำนวนออเดอร์', 'ราคากล่อง': 'BOX_COST', 'ค่าส่งเฉลี่ย': 'DELIV_COST'}, inplace=True)
+    
+    # Rename back to standard names used in UI
+    df_daily.rename(columns={
+        'หมายเลขคำสั่งซื้อออนไลน์': 'จำนวนออเดอร์', 
+        'CAL_BOX_COST': 'BOX_COST', 
+        'CAL_DELIV_COST': 'DELIV_COST'
+    }, inplace=True)
 
+    # Merge Ads
     if not df_ads_agg.empty:
         df_daily = pd.merge(df_daily, df_ads_agg, on=['Date', 'SKU_Main'], how='outer')
     else: df_daily['Ads_Amount'] = 0
 
     df_daily = df_daily.fillna(0)
     
+    # Final Calculations
     num_cols = ['BOX_COST', 'DELIV_COST', 'CAL_COD_COST', 'CAL_COM_ADMIN', 'CAL_COM_TELESALE', 'CAL_COST', 'Ads_Amount', 'รายละเอียดยอดที่ชำระแล้ว']
     for c in num_cols: df_daily[c] = df_daily[c].apply(safe_float)
 
@@ -604,6 +671,7 @@ def process_data():
     df_daily['Total_Cost'] = df_daily['CAL_COST'] + df_daily['Other_Costs'] + df_daily['Ads_Amount']
     df_daily['Net_Profit'] = df_daily['รายละเอียดยอดที่ชำระแล้ว'] - df_daily['Total_Cost']
 
+    # Date components
     df_daily['Date'] = pd.to_datetime(df_daily['Date'])
     df_daily['Year'] = df_daily['Date'].dt.year
     df_daily['Month_Num'] = df_daily['Date'].dt.month
@@ -611,8 +679,11 @@ def process_data():
     df_daily['Day'] = df_daily['Date'].dt.day
     df_daily['Date'] = df_daily['Date'].dt.date 
 
-    if not df_fix_cost.empty and 'เดือน' in df_fix_cost.columns: df_fix_cost['Key'] = df_fix_cost['เดือน'].astype(str).str.strip() + "-" + df_fix_cost['ปี'].astype(str)
+    # Fix Cost Key
+    if not df_fix_cost.empty and 'เดือน' in df_fix_cost.columns: 
+        df_fix_cost['Key'] = df_fix_cost['เดือน'].astype(str).str.strip() + "-" + df_fix_cost['ปี'].astype(str)
 
+    # Maps
     sku_map = df_daily.groupby('SKU_Main')['ชื่อสินค้า'].last().to_dict()
     master_skus_set = set()
     if not df_master.empty and 'SKU' in df_master.columns:
@@ -623,20 +694,15 @@ def process_data():
     daily_skus_set = set(df_daily['SKU_Main'].unique())
     sku_list = sorted(list(daily_skus_set.union(master_skus_set)))
 
-    # --- NEW: Create SKU -> Type Map ---
     sku_type_map = {}
     if not df_master.empty and 'SKU' in df_master.columns and 'Type' in df_master.columns:
         sku_type_map = df_master.set_index('SKU')['Type'].to_dict()
     
-    # Fallback to Daily if not in master (unlikely but safe)
     if 'Type' in df_daily.columns:
         daily_type_map = df_daily.groupby('SKU_Main')['Type'].first().to_dict()
         for k, v in daily_type_map.items():
             if k not in sku_type_map:
                 sku_type_map[k] = v
-            elif pd.isna(sku_type_map[k]) or sku_type_map[k] == '':
-                sku_type_map[k] = v
-    # -----------------------------------
 
     return df_daily, df_fix_cost, sku_map, sku_list, sku_type_map
 
