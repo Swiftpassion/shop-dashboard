@@ -268,25 +268,32 @@ st.markdown("""
     .fix-m-6 { position: sticky; left: 355px !important; z-index: 20; width: 70px !important;  min-width: 70px !important;  border-right: 1px solid #444; }
     .fix-m-7 { position: sticky; left: 425px !important; z-index: 20; width: 45px !important;  min-width: 45px !important;  border-right: 2px solid #bbb !important; }
 
-    .month-table thead th.fix-m-1, .month-table thead th.fix-m-2, 
-    .month-table thead th.fix-m-3, .month-table thead th.fix-m-4,
-    .month-table thead th.fix-m-5, .month-table thead th.fix-m-6,
-    .month-table thead th.fix-m-7 {
-        z-index: 30 !important;
-    }
+    /* --- 1. ส่วนหัวตาราง (THEAD) แก้ z-index ให้สูงขึ้น --- */
+.month-table thead th.fix-m-1, .month-table thead th.fix-m-2, 
+.month-table thead th.fix-m-3, .month-table thead th.fix-m-4,
+.month-table thead th.fix-m-5, .month-table thead th.fix-m-6,
+.month-table thead th.fix-m-7 {
+    z-index: 200 !important; /* <--- แก้จาก 30 เป็น 200 เพื่อให้อยู่บนสุดครับ */
+    box-shadow: 2px 0 5px rgba(0,0,0,0.3); /* เพิ่มเงาเล็กน้อยให้ดูแยกชั้นชัดเจน */
+}
 
-    .custom-table tbody tr td.fix-m-1, .custom-table tbody tr td.fix-m-2,
-    .custom-table tbody tr td.fix-m-3, .custom-table tbody tr td.fix-m-4,
-    .custom-table tbody tr td.fix-m-5, .custom-table tbody tr td.fix-m-6,
-    .custom-table tbody tr td.fix-m-7 {
-        background-color: #1c1c1c; 
-    }
-    .custom-table tbody tr:nth-child(even) td.fix-m-1, .custom-table tbody tr:nth-child(even) td.fix-m-2,
-    .custom-table tbody tr:nth-child(even) td.fix-m-3, .custom-table tbody tr:nth-child(even) td.fix-m-4,
-    .custom-table tbody tr:nth-child(even) td.fix-m-5, .custom-table tbody tr:nth-child(even) td.fix-m-6,
-    .custom-table tbody tr:nth-child(even) td.fix-m-7 {
-        background-color: #262626; 
-    }
+/* --- 2. ส่วนเนื้อหา (TBODY) เพิ่ม z-index เล็กน้อยกันพลาด --- */
+.custom-table tbody tr td.fix-m-1, .custom-table tbody tr td.fix-m-2,
+.custom-table tbody tr td.fix-m-3, .custom-table tbody tr td.fix-m-4,
+.custom-table tbody tr td.fix-m-5, .custom-table tbody tr td.fix-m-6,
+.custom-table tbody tr td.fix-m-7 {
+    background-color: #1c1c1c; 
+    z-index: 50 !important; /* <--- แนะนำให้เพิ่มบรรทัดนี้ครับ */
+    position: sticky;       /* <--- ย้ำคำสั่งนี้ */
+}
+
+/* --- 3. ส่วนสีพื้นหลังแถวคู่ (เหมือนเดิม) --- */
+.custom-table tbody tr:nth-child(even) td.fix-m-1, .custom-table tbody tr:nth-child(even) td.fix-m-2,
+.custom-table tbody tr:nth-child(even) td.fix-m-3, .custom-table tbody tr:nth-child(even) td.fix-m-4,
+.custom-table tbody tr:nth-child(even) td.fix-m-5, .custom-table tbody tr:nth-child(even) td.fix-m-6,
+.custom-table tbody tr:nth-child(even) td.fix-m-7 {
+    background-color: #262626; 
+}
 
     .month-table tfoot {
         position: sticky;
