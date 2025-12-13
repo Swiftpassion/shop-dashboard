@@ -974,7 +974,7 @@ try:
                 lbl_color = "#ffffff" if dark_bg else "#000000"
                 
                 grand_val = 0
-                if label == "รวมทุนสินค้า": grand_val = g_cost
+                if label == "รวมทุนสินค้า": grand_val = total_cost_prod
                 elif label == "รวมยอดขาย": grand_val = g_sales
                 elif label == "รวมออเดอร์": grand_val = g_orders
                 elif label == "รวมค่าแอด": grand_val = g_ads
@@ -1009,7 +1009,7 @@ try:
                 for sku in final_skus:
                     val = 0
                     if label == "รวมทุนสินค้า": 
-                        val = data_dict.loc[sku, 'CAL_COST'] + data_dict.loc[sku, 'Other_Costs']
+                        val = data_dict.loc[sku, 'CAL_COST'] # <--- แก้ตรงนี้ (ลบ + data_dict.loc[sku, 'Other_Costs'] ออก)
                     elif label == "รวมยอดขาย": 
                         val = data_dict.loc[sku, 'รายละเอียดยอดที่ชำระแล้ว']
                     elif label == "รวมค่าแอด": 
