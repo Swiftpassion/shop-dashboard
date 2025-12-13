@@ -542,7 +542,7 @@ def process_data():
     # Extract SKU
     df['SKU_Main'] = df['รูปแบบสินค้า'].astype(str).str.split('-').str[0].str.strip()
 
-    # --- 3. MERGE WITH MASTER ITEM (STEP 1: หาต้นทุนแบบละเอียด) ---
+# --- 3. MERGE WITH MASTER ITEM (SMART HYBRID: Exact + Fallback) ---
     master_cols = ['SKU', 'ชื่อสินค้า', 'Type', 'ต้นทุน', 'ราคากล่อง', 'ค่าส่งเฉลี่ย',
                    'ค่าคอมมิชชั่น Admin', 'ค่าคอมมิชชั่น Telesale',
                    'J&T Express', 'Flash Express', 'ThailandPost', 
@@ -550,43 +550,60 @@ def process_data():
                    'Express Delivery - ส่งด่วน', 'Standard Delivery - ส่งธรรมดาในประเทศ']
     
     master_cols = [c for c in master_cols if c in df_master.columns]
+    # เตรียม Master สำหรับ Lookup
     df_master_filtered = df_master[master_cols].drop_duplicates('SKU')
 
-    # [NEW] สร้าง Key สำหรับหาต้นทุน (ใช้ชื่อเต็ม เช่น SP051-White-3mm)
-    df['SKU_Exact'] = df['รูปแบบสินค้า'].astype(str).str.strip()
-    
-    # [NEW] Merge เพื่อเอาต้นทุนรายตัวมาคิดก่อน (Exact Match)
+    # 1. เตรียม Key สำหรับค้นหา
+    df['SKU_Exact'] = df['รูปแบบสินค้า'].astype(str).str.strip()  # ชื่อเต็ม (เช่น SP051-6mm)
+    df['SKU_Root'] = df['SKU_Exact'].str.split('-').str[0].str.strip() # ชื่อย่อ (เช่น SP051)
+
+    # 2. Lookup รอบที่ 1: แบบตรงตัวเป๊ะๆ (Prioritize Exact Match)
+    #    (สำหรับสินค้าที่แยกไซส์แล้วราคาไม่เท่ากัน)
     df_merged = pd.merge(df, df_master_filtered, left_on='SKU_Exact', right_on='SKU', how='left')
 
-    # === [FIX: แก้ไขชื่อคอลัมน์ชนกัน] ===
-    # จัดการกรณีเกิด _x, _y หลัง Merge
-    if 'ชื่อสินค้า_y' in df_merged.columns:
-        df_merged.rename(columns={'ชื่อสินค้า_y': 'ชื่อสินค้า_Master'}, inplace=True)
-    if 'ชื่อสินค้า_x' in df_merged.columns:
-        df_merged.rename(columns={'ชื่อสินค้า_x': 'ชื่อสินค้า'}, inplace=True)
-    
-    # กรณีไม่มีชื่อสินค้าเลย ให้สร้างขึ้นมากัน Error
-    if 'ชื่อสินค้า' not in df_merged.columns:
-        if 'ชื่อสินค้า_Master' in df_merged.columns:
-            df_merged['ชื่อสินค้า'] = df_merged['ชื่อสินค้า_Master']
-        else:
-            df_merged['ชื่อสินค้า'] = df_merged['SKU_Exact'] # กันตายด้วย SKU
-            
-    # ถ้าชื่อสินค้าเป็นค่าว่าง ให้ลองดึงจาก Master มาเติม
-    if 'ชื่อสินค้า_Master' in df_merged.columns:
-        df_merged['ชื่อสินค้า'] = df_merged['ชื่อสินค้า'].fillna(df_merged['ชื่อสินค้า_Master'])
-    # ==================================
+    # จัดการชื่อคอลัมน์หลัง Merge รอบแรก
+    if 'ชื่อสินค้า_y' in df_merged.columns: df_merged.rename(columns={'ชื่อสินค้า_y': 'ชื่อสินค้า_Master'}, inplace=True)
+    if 'ชื่อสินค้า_x' in df_merged.columns: df_merged.rename(columns={'ชื่อสินค้า_x': 'ชื่อสินค้า'}, inplace=True)
 
-    # --- 4. CALCULATE LINE LEVEL COSTS (คิดเงินละเอียดรายบรรทัด) ---
+    # 3. Lookup รอบที่ 2: แบบตัวแม่ (Fallback to Root SKU)
+    #    (สำหรับสินค้าที่หาแบบเป๊ะไม่เจอ ให้ไปดึงข้อมูลจากตัวแม่มาแทน)
+    
+    # สร้างตารางสำรองที่ Merge ด้วย SKU_Root
+    df_root_lookup = pd.merge(df[['SKU_Root']], df_master_filtered, left_on='SKU_Root', right_on='SKU', how='left')
+    
+    # รายชื่อคอลัมน์ที่ต้องดึงค่ามาเติม (ถ้า Exact Match เป็นค่าว่าง)
+    cols_to_fill = ['ต้นทุน', 'ราคากล่อง', 'ค่าส่งเฉลี่ย', 
+                    'ค่าคอมมิชชั่น Admin', 'ค่าคอมมิชชั่น Telesale', 'Type', 'ชื่อสินค้า'] # เพิ่มชื่อสินค้าใน Fallback
+
+    # ลูปเติมค่า (Fill NaN)
+    for col in cols_to_fill:
+        # ชื่อคอลัมน์ใน df_root_lookup อาจจะไม่เหมือนกันเป๊ะ ถ้าชื่อซ้ำใน master
+        # แต่เนื่องจากเราเลือกมาเฉพาะ column ใน master_filtered แล้ว ชื่อจึงตรงกัน
+        if col in df_merged.columns and col in df_root_lookup.columns:
+            # ใช้ combine_first: ถ้า df_merged มีค่าใช้อันเดิม, ถ้าเป็น NaN ให้ไปเอาจาก df_root_lookup
+            df_merged[col] = df_merged[col].combine_first(df_root_lookup[col])
+        elif col not in df_merged.columns and col in df_root_lookup.columns:
+             df_merged[col] = df_root_lookup[col]
+             
+    # จัดการชื่อสินค้า (กรณี Fallback ชื่อสินค้าอาจจะอยู่ในชื่อสินค้า_y ของ root lookup ซึ่งเราไม่ได้ rename)
+    # เพื่อความชัวร์ ดึงชื่อสินค้าจาก Master โดยตรงอีกรอบสำหรับตัว Root
+    root_name_map = df_master_filtered.set_index('SKU')['ชื่อสินค้า'].to_dict()
+    df_merged['Name_Root'] = df_merged['SKU_Root'].map(root_name_map)
+    
+    # Logic การเลือกชื่อสินค้าที่จะแสดงผล:
+    # 1. ชื่อจาก Master (Exact) -> 2. ชื่อจาก Master (Root) -> 3. ชื่อจาก File ยอดขาย
+    if 'ชื่อสินค้า_Master' in df_merged.columns:
+        df_merged['ชื่อสินค้า'] = df_merged['ชื่อสินค้า_Master'].combine_first(df_merged['Name_Root']).combine_first(df_merged['ชื่อสินค้า'])
+    else:
+        df_merged['ชื่อสินค้า'] = df_merged['Name_Root'].combine_first(df_merged['ชื่อสินค้า'])
+
+    # --- 4. CALCULATE LINE LEVEL COSTS ---
     numeric_cols = ['จำนวน', 'รายละเอียดยอดที่ชำระแล้ว', 'ต้นทุน', 'ราคากล่อง', 'ค่าส่งเฉลี่ย']
     for col in numeric_cols:
         if col in df_merged.columns:
             df_merged[col] = df_merged[col].apply(safe_float)
     
-    # Cost per line (ต้นทุนถูกต้องตามไซส์เพราะ Merge แบบ Exact มา)
     df_merged['CAL_COST'] = df_merged['จำนวน'] * df_merged['ต้นทุน']
-    
-    # Box & Delivery per line
     df_merged['BOX_COST_PER_LINE'] = df_merged['ราคากล่อง'].fillna(0)
     df_merged['DELIV_COST_PER_LINE'] = df_merged['ค่าส่งเฉลี่ย'].fillna(0)
 
@@ -628,33 +645,22 @@ def process_data():
     df_merged['CAL_COM_TELESALE'] = np.where((df_merged['Calculated_Role'] == 'Telesale'), 
                                              df_merged['รายละเอียดยอดที่ชำระแล้ว'] * com_tele, 0)
 
-    # --- 5. PREPARE FOR GROUPING (STEP 2: เตรียมยุบรวมเป็นตัวแม่) ---
-    # สร้าง SKU_Root (ตัวแม่) จากการตัดคำหน้าขีด
-    df_merged['SKU_Root'] = df_merged['SKU_Exact'].str.split('-').str[0].str.strip()
-    
-    # [สำคัญ] ดึงชื่อสินค้าสำหรับ SKU แม่ มาจาก Master (ถ้ามี)
-    root_name_map = df_master_filtered.set_index('SKU')['ชื่อสินค้า'].to_dict()
-    
-    # สร้างคอลัมน์ SKU_Main ใหม่ ให้เป็นตัวแม่ (SP051) เพื่อใช้ Group
+    # --- 5. PREPARE FOR GROUPING ---
+    # ใช้ SKU_Root (ตัวแม่) ในการรวมกลุ่ม เพื่อให้รายงานดูง่ายเหลือบรรทัดเดียว
     df_merged['SKU_Main'] = df_merged['SKU_Root']
     
-    # อัปเดตชื่อสินค้าให้เป็นชื่อของตัวแม่ โดยใช้ map
-    # ตรงนี้ปลอดภัยแล้วเพราะเราจัดการคอลัมน์ 'ชื่อสินค้า' ไว้ด้านบนแล้ว
-    df_merged['Display_Name'] = df_merged['SKU_Main'].map(root_name_map)
-    df_merged['Display_Name'] = df_merged['Display_Name'].fillna(df_merged['ชื่อสินค้า'])
-    
-    # เอาชื่อที่ได้มาใช้จริง
+    # อัปเดตชื่อสินค้าให้เป็นชื่อของตัวแม่ (ถ้ามี)
+    df_merged['Display_Name'] = df_merged['SKU_Main'].map(root_name_map).fillna(df_merged['ชื่อสินค้า'])
     df_merged['ชื่อสินค้า'] = df_merged['Display_Name'].fillna(df_merged['SKU_Main'])
 
     # --- 6. AGGREGATE TO ORDER LEVEL ---
-    # Group รวมเป็น Order เดียวกัน
     order_agg = {
         'Date': 'first',
-        'SKU_Main': 'first', # ใช้ตัวแม่ที่เราเตรียมไว้แล้ว
+        'SKU_Main': 'first',
         'ชื่อสินค้า': 'first',
-        'จำนวน': 'sum',      # รวมจำนวนชิ้นทุกไซส์
+        'จำนวน': 'sum',
         'รายละเอียดยอดที่ชำระแล้ว': 'sum',
-        'CAL_COST': 'sum',   # รวมต้นทุน (ที่คิดละเอียดมาแล้ว)
+        'CAL_COST': 'sum', 
         'BOX_COST_PER_LINE': 'max', 
         'DELIV_COST_PER_LINE': 'max',
         'CAL_COD_COST': 'sum',
@@ -664,8 +670,6 @@ def process_data():
     }
 
     df_order = df_merged.groupby('หมายเลขคำสั่งซื้อออนไลน์').agg(order_agg).reset_index()
-    
-    # Rename Max columns back
     df_order.rename(columns={'BOX_COST_PER_LINE': 'BOX_COST', 'DELIV_COST_PER_LINE': 'DELIV_COST'}, inplace=True)
 
     # --- 7. PREPARE ADS DATA ---
@@ -679,11 +683,10 @@ def process_data():
             df_ads_raw['Date'] = df_ads_raw[col_date].apply(safe_date)
             df_ads_raw = df_ads_raw.dropna(subset=['Date'])
             df_ads_raw[col_cost] = df_ads_raw[col_cost].apply(safe_float)
-            # ดึง SKU จากชื่อแคมเปญ (ปกติจะเป็นตัวแม่ เช่น [SP051])
             df_ads_raw['SKU_Main'] = df_ads_raw[col_camp].astype(str).str.extract(r'\[(.*?)\]')
             df_ads_agg = df_ads_raw.groupby(['Date', 'SKU_Main'])[col_cost].sum().reset_index(name='Ads_Amount')
 
-    # --- 8. AGGREGATE TO DAILY LEVEL (รวมยอดขายรายวัน ตาม SKU แม่) ---
+    # --- 8. AGGREGATE TO DAILY LEVEL ---
     daily_agg = {
         'ชื่อสินค้า': 'first',
         'จำนวนออเดอร์': 'count',
@@ -698,14 +701,10 @@ def process_data():
         'Type': 'first'
     }
 
-    # เปลี่ยนชื่อคอลัมน์ชั่วคราวเพื่อนับออเดอร์
     df_order_renamed = df_order.rename(columns={'หมายเลขคำสั่งซื้อออนไลน์': 'จำนวนออเดอร์'})
-    
-    # Group By SKU_Main (ซึ่งตอนนี้คือ SP051)
     df_daily = df_order_renamed.groupby(['Date', 'SKU_Main']).agg(daily_agg).reset_index()
 
-    # --- 9. MERGE ADS (LAST STEP) ---
-    # ตอนนี้ df_daily เป็น SP051 และ Ads ก็เป็น SP051 จึงชนกันได้พอดี
+    # --- 9. MERGE ADS ---
     if not df_ads_agg.empty:
         df_daily = pd.merge(df_daily, df_ads_agg, on=['Date', 'SKU_Main'], how='outer')
     else: df_daily['Ads_Amount'] = 0
