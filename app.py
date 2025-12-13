@@ -565,33 +565,61 @@ def process_data():
     if 'ชื่อสินค้า_y' in df_merged.columns: df_merged.rename(columns={'ชื่อสินค้า_y': 'ชื่อสินค้า_Master'}, inplace=True)
     if 'ชื่อสินค้า_x' in df_merged.columns: df_merged.rename(columns={'ชื่อสินค้า_x': 'ชื่อสินค้า'}, inplace=True)
 
-    # 3. Lookup รอบที่ 2: แบบตัวแม่ (Fallback to Root SKU)
-    #    (สำหรับสินค้าที่หาแบบเป๊ะไม่เจอ ให้ไปดึงข้อมูลจากตัวแม่มาแทน)
+# --- 3. MERGE WITH MASTER ITEM (SUPER SMART: Remove All Spaces) ---
+    master_cols = ['SKU', 'ชื่อสินค้า', 'Type', 'ต้นทุน', 'ราคากล่อง', 'ค่าส่งเฉลี่ย',
+                   'ค่าคอมมิชชั่น Admin', 'ค่าคอมมิชชั่น Telesale',
+                   'J&T Express', 'Flash Express', 'ThailandPost', 
+                   'DHL_1', 'LEX TH', 'SPX Express',
+                   'Express Delivery - ส่งด่วน', 'Standard Delivery - ส่งธรรมดาในประเทศ']
     
-    # สร้างตารางสำรองที่ Merge ด้วย SKU_Root
-    df_root_lookup = pd.merge(df[['SKU_Root']], df_master_filtered, left_on='SKU_Root', right_on='SKU', how='left')
-    
-    # รายชื่อคอลัมน์ที่ต้องดึงค่ามาเติม (ถ้า Exact Match เป็นค่าว่าง)
-    cols_to_fill = ['ต้นทุน', 'ราคากล่อง', 'ค่าส่งเฉลี่ย', 
-                    'ค่าคอมมิชชั่น Admin', 'ค่าคอมมิชชั่น Telesale', 'Type', 'ชื่อสินค้า'] # เพิ่มชื่อสินค้าใน Fallback
+    master_cols = [c for c in master_cols if c in df_master.columns]
+    df_master_filtered = df_master[master_cols].drop_duplicates('SKU')
 
-    # ลูปเติมค่า (Fill NaN)
+    # === [CORE LOGIC] สร้าง Key สำหรับเทียบแบบ "ไร้ช่องว่าง" (Normalize Key) ===
+    # 1. ฝั่งไฟล์ขาย (Transaction)
+    df['SKU_Raw'] = df['รูปแบบสินค้า'].astype(str).str.strip()
+    # ตัดช่องว่างทุกตัวออก (เช่น "SP097-สีดำ 1 ขวด" -> "SP097-สีดำ1ขวด")
+    df['SKU_Norm'] = df['SKU_Raw'].str.replace(' ', '', regex=False)
+    # เตรียม Root Key แบบไร้ช่องว่างด้วย (เผื่อใช้ Fallback)
+    df['SKU_Norm_Root'] = df['SKU_Norm'].str.split('-').str[0]
+
+    # 2. ฝั่ง Master Item
+    # สร้างคอลัมน์ SKU_Norm ใน Master เหมือนกัน เพื่อให้คุยภาษาเดียวกัน
+    df_master_filtered['SKU_Norm'] = df_master_filtered['SKU'].astype(str).str.strip().str.replace(' ', '', regex=False)
+
+    # === [STEP 1] เทียบแบบละเอียด (Exact Match - Normalized) ===
+    # ใช้ SKU_Norm ชนกัน (ตัดปัญหาวรรคหน้า วรรคหลัง วรรคกลาง)
+    df_merged = pd.merge(df, df_master_filtered, on='SKU_Norm', how='left')
+
+    # จัดการชื่อคอลัมน์ชนกัน
+    if 'SKU_x' in df_merged.columns: df_merged.rename(columns={'SKU_x': 'SKU_Original'}, inplace=True)
+    if 'SKU_y' in df_merged.columns: df_merged.rename(columns={'SKU_y': 'SKU_Master'}, inplace=True)
+    if 'ชื่อสินค้า_y' in df_merged.columns: df_merged.rename(columns={'ชื่อสินค้า_y': 'ชื่อสินค้า_Master'}, inplace=True)
+    if 'ชื่อสินค้า_x' in df_merged.columns: df_merged.rename(columns={'ชื่อสินค้า_x': 'ชื่อสินค้า'}, inplace=True)
+
+    # === [STEP 2] เทียบแบบตัวแม่ (Root Match - Fallback) ===
+    # กรณี Step 1 หาไม่เจอ (เช่น สินค้าใหม่ หรือตั้งชื่อไม่ตรงกันเลยจริงๆ) ให้ลองเทียบด้วยตัวแม่
+    # เตรียม Master สำหรับ Root Lookup (ใช้ SKU_Norm เป็น Key)
+    df_master_root = df_master_filtered.copy()
+    
+    # Merge เอาข้อมูลตัวแม่มาสำรองไว้
+    df_root_lookup = pd.merge(df[['SKU_Norm_Root']], df_master_root, left_on='SKU_Norm_Root', right_on='SKU_Norm', how='left')
+    
+    cols_to_fill = ['ต้นทุน', 'ราคากล่อง', 'ค่าส่งเฉลี่ย', 
+                    'ค่าคอมมิชชั่น Admin', 'ค่าคอมมิชชั่น Telesale', 'Type']
+
+    # ลูปเติมค่าจากตัวแม่ ถ้าตัวลูกหาไม่เจอ
     for col in cols_to_fill:
-        # ชื่อคอลัมน์ใน df_root_lookup อาจจะไม่เหมือนกันเป๊ะ ถ้าชื่อซ้ำใน master
-        # แต่เนื่องจากเราเลือกมาเฉพาะ column ใน master_filtered แล้ว ชื่อจึงตรงกัน
         if col in df_merged.columns and col in df_root_lookup.columns:
-            # ใช้ combine_first: ถ้า df_merged มีค่าใช้อันเดิม, ถ้าเป็น NaN ให้ไปเอาจาก df_root_lookup
             df_merged[col] = df_merged[col].combine_first(df_root_lookup[col])
         elif col not in df_merged.columns and col in df_root_lookup.columns:
              df_merged[col] = df_root_lookup[col]
-             
-    # จัดการชื่อสินค้า (กรณี Fallback ชื่อสินค้าอาจจะอยู่ในชื่อสินค้า_y ของ root lookup ซึ่งเราไม่ได้ rename)
-    # เพื่อความชัวร์ ดึงชื่อสินค้าจาก Master โดยตรงอีกรอบสำหรับตัว Root
-    root_name_map = df_master_filtered.set_index('SKU')['ชื่อสินค้า'].to_dict()
-    df_merged['Name_Root'] = df_merged['SKU_Root'].map(root_name_map)
+
+    # === [STEP 3] จัดการชื่อสินค้า (Display Name Logic) ===
+    # Logic: ชื่อจาก Master(ลูก) -> ชื่อจาก Master(แม่) -> ชื่อจากไฟล์ขาย
+    root_name_map = df_master_filtered.set_index('SKU_Norm')['ชื่อสินค้า'].to_dict()
+    df_merged['Name_Root'] = df_merged['SKU_Norm_Root'].map(root_name_map)
     
-    # Logic การเลือกชื่อสินค้าที่จะแสดงผล:
-    # 1. ชื่อจาก Master (Exact) -> 2. ชื่อจาก Master (Root) -> 3. ชื่อจาก File ยอดขาย
     if 'ชื่อสินค้า_Master' in df_merged.columns:
         df_merged['ชื่อสินค้า'] = df_merged['ชื่อสินค้า_Master'].combine_first(df_merged['Name_Root']).combine_first(df_merged['ชื่อสินค้า'])
     else:
@@ -646,12 +674,11 @@ def process_data():
                                              df_merged['รายละเอียดยอดที่ชำระแล้ว'] * com_tele, 0)
 
     # --- 5. PREPARE FOR GROUPING ---
-    # ใช้ SKU_Root (ตัวแม่) ในการรวมกลุ่ม เพื่อให้รายงานดูง่ายเหลือบรรทัดเดียว
-    df_merged['SKU_Main'] = df_merged['SKU_Root']
+    # ใช้ SKU_Norm_Root (ตัวแม่) ในการรวมกลุ่มรายงาน
+    df_merged['SKU_Main'] = df_merged['SKU_Norm_Root']
     
-    # อัปเดตชื่อสินค้าให้เป็นชื่อของตัวแม่ (ถ้ามี)
-    df_merged['Display_Name'] = df_merged['SKU_Main'].map(root_name_map).fillna(df_merged['ชื่อสินค้า'])
-    df_merged['ชื่อสินค้า'] = df_merged['Display_Name'].fillna(df_merged['SKU_Main'])
+    # เอาชื่อสินค้าที่ Mapping สมบูรณ์แล้วมาเตรียมแสดงผล
+    df_merged['Display_Name'] = df_merged['ชื่อสินค้า']
 
     # --- 6. AGGREGATE TO ORDER LEVEL ---
     order_agg = {
@@ -683,7 +710,11 @@ def process_data():
             df_ads_raw['Date'] = df_ads_raw[col_date].apply(safe_date)
             df_ads_raw = df_ads_raw.dropna(subset=['Date'])
             df_ads_raw[col_cost] = df_ads_raw[col_cost].apply(safe_float)
-            df_ads_raw['SKU_Main'] = df_ads_raw[col_camp].astype(str).str.extract(r'\[(.*?)\]')
+            # ดึง SKU จากชื่อแคมเปญ และทำ Normalize เหมือนกันเพื่อให้ชนกันเจอ
+            df_ads_raw['SKU_Extracted'] = df_ads_raw[col_camp].astype(str).str.extract(r'\[(.*?)\]')
+            # ตัดช่องว่างในชื่อแคมเปญด้วย เพื่อให้ชนกับ SKU_Main ได้
+            df_ads_raw['SKU_Main'] = df_ads_raw['SKU_Extracted'].str.replace(' ', '', regex=False)
+            
             df_ads_agg = df_ads_raw.groupby(['Date', 'SKU_Main'])[col_cost].sum().reset_index(name='Ads_Amount')
 
     # --- 8. AGGREGATE TO DAILY LEVEL ---
@@ -730,16 +761,22 @@ def process_data():
     sku_map = df_daily.groupby('SKU_Main')['ชื่อสินค้า'].last().to_dict()
     master_skus_set = set()
     if not df_master.empty and 'SKU' in df_master.columns:
-        master_skus_set = set(df_master['SKU'].astype(str).str.strip())
+        master_skus_set = set(df_master['SKU'].astype(str).str.strip().str.replace(' ', '', regex=False))
         if 'ชื่อสินค้า' in df_master.columns:
-            sku_map.update(df_master.set_index('SKU')['ชื่อสินค้า'].to_dict())
+            # สร้าง map โดยใช้ SKU แบบไม่มีช่องว่าง
+            temp_master = df_master.copy()
+            temp_master['SKU_Norm'] = temp_master['SKU'].astype(str).str.strip().str.replace(' ', '', regex=False)
+            sku_map.update(temp_master.set_index('SKU_Norm')['ชื่อสินค้า'].to_dict())
     
     daily_skus_set = set(df_daily['SKU_Main'].unique())
     sku_list = sorted(list(daily_skus_set.union(master_skus_set)))
 
     sku_type_map = {}
     if not df_master.empty and 'SKU' in df_master.columns and 'Type' in df_master.columns:
-        sku_type_map = df_master.set_index('SKU')['Type'].to_dict()
+         # สร้าง map โดยใช้ SKU แบบไม่มีช่องว่าง
+        temp_master = df_master.copy()
+        temp_master['SKU_Norm'] = temp_master['SKU'].astype(str).str.strip().str.replace(' ', '', regex=False)
+        sku_type_map = temp_master.set_index('SKU_Norm')['Type'].to_dict()
     
     if 'Type' in df_daily.columns:
         daily_type_map = df_daily.groupby('SKU_Main')['Type'].first().to_dict()
