@@ -558,6 +558,25 @@ def process_data():
     # [NEW] Merge เพื่อเอาต้นทุนรายตัวมาคิดก่อน (Exact Match)
     df_merged = pd.merge(df, df_master_filtered, left_on='SKU_Exact', right_on='SKU', how='left')
 
+    # === [FIX: แก้ไขชื่อคอลัมน์ชนกัน] ===
+    # จัดการกรณีเกิด _x, _y หลัง Merge
+    if 'ชื่อสินค้า_y' in df_merged.columns:
+        df_merged.rename(columns={'ชื่อสินค้า_y': 'ชื่อสินค้า_Master'}, inplace=True)
+    if 'ชื่อสินค้า_x' in df_merged.columns:
+        df_merged.rename(columns={'ชื่อสินค้า_x': 'ชื่อสินค้า'}, inplace=True)
+    
+    # กรณีไม่มีชื่อสินค้าเลย ให้สร้างขึ้นมากัน Error
+    if 'ชื่อสินค้า' not in df_merged.columns:
+        if 'ชื่อสินค้า_Master' in df_merged.columns:
+            df_merged['ชื่อสินค้า'] = df_merged['ชื่อสินค้า_Master']
+        else:
+            df_merged['ชื่อสินค้า'] = df_merged['SKU_Exact'] # กันตายด้วย SKU
+            
+    # ถ้าชื่อสินค้าเป็นค่าว่าง ให้ลองดึงจาก Master มาเติม
+    if 'ชื่อสินค้า_Master' in df_merged.columns:
+        df_merged['ชื่อสินค้า'] = df_merged['ชื่อสินค้า'].fillna(df_merged['ชื่อสินค้า_Master'])
+    # ==================================
+
     # --- 4. CALCULATE LINE LEVEL COSTS (คิดเงินละเอียดรายบรรทัด) ---
     numeric_cols = ['จำนวน', 'รายละเอียดยอดที่ชำระแล้ว', 'ต้นทุน', 'ราคากล่อง', 'ค่าส่งเฉลี่ย']
     for col in numeric_cols:
@@ -614,17 +633,17 @@ def process_data():
     df_merged['SKU_Root'] = df_merged['SKU_Exact'].str.split('-').str[0].str.strip()
     
     # [สำคัญ] ดึงชื่อสินค้าสำหรับ SKU แม่ มาจาก Master (ถ้ามี)
-    # เพื่อให้รายงานโชว์ชื่อ "เทป EVA แบบสั้น" แทนที่จะโชว์ชื่อยาวๆ หรือ Null
     root_name_map = df_master_filtered.set_index('SKU')['ชื่อสินค้า'].to_dict()
     
     # สร้างคอลัมน์ SKU_Main ใหม่ ให้เป็นตัวแม่ (SP051) เพื่อใช้ Group
     df_merged['SKU_Main'] = df_merged['SKU_Root']
     
-    # อัปเดตชื่อสินค้าให้เป็นชื่อของตัวแม่
-    df_merged['Display_Name'] = df_merged['SKU_Main'].map(root_name_map).fillna(df_merged['ชื่อสินค้า'])
-    # ถ้ายังไม่มีชื่อ (NaN) ให้ใช้ชื่อเดิมไปก่อน
-    if 'ชื่อสินค้า_y' in df_merged.columns: 
-        df_merged['Display_Name'] = df_merged['Display_Name'].fillna(df_merged['ชื่อสินค้า_y'])
+    # อัปเดตชื่อสินค้าให้เป็นชื่อของตัวแม่ โดยใช้ map
+    # ตรงนี้ปลอดภัยแล้วเพราะเราจัดการคอลัมน์ 'ชื่อสินค้า' ไว้ด้านบนแล้ว
+    df_merged['Display_Name'] = df_merged['SKU_Main'].map(root_name_map)
+    df_merged['Display_Name'] = df_merged['Display_Name'].fillna(df_merged['ชื่อสินค้า'])
+    
+    # เอาชื่อที่ได้มาใช้จริง
     df_merged['ชื่อสินค้า'] = df_merged['Display_Name'].fillna(df_merged['SKU_Main'])
 
     # --- 6. AGGREGATE TO ORDER LEVEL ---
