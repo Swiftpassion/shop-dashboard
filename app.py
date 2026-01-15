@@ -2030,6 +2030,5 @@ try:
                     
                     st.success("✅ บันทึกข้อมูลเรียบร้อยแล้ว!")
                     st.cache_data.clear() # ล้าง Cache
-                    
             except Exception as e:
                 st.error(f"❌ เกิดข้อผิดพลาดในการบันทึก: {e}")
