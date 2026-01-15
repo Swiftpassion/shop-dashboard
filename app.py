@@ -462,6 +462,11 @@ def process_data():
     # --- 1. PREPARE MASTER ITEM ---
     if not df_master.empty:
         df_master.columns = df_master.columns.astype(str).str.strip()
+        
+        # [แก้ไข] เพิ่มการเปลี่ยนชื่อคอลัมน์จาก 'ทุน' เป็น 'ต้นทุน' อัตโนมัติ
+        if 'ทุน' in df_master.columns:
+            df_master.rename(columns={'ทุน': 'ต้นทุน'}, inplace=True)
+            
         if 'ชื่อสินค้า' not in df_master.columns:
             if len(df_master.columns) >= 2:
                 col_b = df_master.columns[1]
@@ -469,7 +474,6 @@ def process_data():
             else:
                 df_master['ชื่อสินค้า'] = df_master['SKU'] if 'SKU' in df_master.columns else "Unknown"
         
-        # New Type handling
         if 'Type' not in df_master.columns:
             df_master['Type'] = 'กลุ่ม ปกติ'
         df_master['Type'] = df_master['Type'].fillna('กลุ่ม ปกติ').astype(str).str.strip()
@@ -489,33 +493,9 @@ def process_data():
     df['Date'] = df['เวลาสั่งซื้อ'].apply(safe_date)
     df = df.dropna(subset=['Date'])
     
-    # Extract SKU
     df['SKU_Main'] = df['รูปแบบสินค้า'].astype(str).str.split('-').str[0].str.strip()
 
-# --- 3. MERGE WITH MASTER ITEM (SMART HYBRID: Exact + Fallback) ---
-    master_cols = ['SKU', 'ชื่อสินค้า', 'Type', 'ต้นทุน', 'ราคากล่อง', 'ค่าส่งเฉลี่ย',
-                   'ค่าคอมมิชชั่น Admin', 'ค่าคอมมิชชั่น Telesale',
-                   'J&T Express', 'Flash Express', 'ThailandPost', 
-                   'DHL_1', 'LEX TH', 'SPX Express',
-                   'Express Delivery - ส่งด่วน', 'Standard Delivery - ส่งธรรมดาในประเทศ']
-    
-    master_cols = [c for c in master_cols if c in df_master.columns]
-    # เตรียม Master สำหรับ Lookup
-    df_master_filtered = df_master[master_cols].drop_duplicates('SKU')
-
-    # 1. เตรียม Key สำหรับค้นหา
-    df['SKU_Exact'] = df['รูปแบบสินค้า'].astype(str).str.strip()  # ชื่อเต็ม (เช่น SP051-6mm)
-    df['SKU_Root'] = df['SKU_Exact'].str.split('-').str[0].str.strip() # ชื่อย่อ (เช่น SP051)
-
-    # 2. Lookup รอบที่ 1: แบบตรงตัวเป๊ะๆ (Prioritize Exact Match)
-    #    (สำหรับสินค้าที่แยกไซส์แล้วราคาไม่เท่ากัน)
-    df_merged = pd.merge(df, df_master_filtered, left_on='SKU_Exact', right_on='SKU', how='left')
-
-    # จัดการชื่อคอลัมน์หลัง Merge รอบแรก
-    if 'ชื่อสินค้า_y' in df_merged.columns: df_merged.rename(columns={'ชื่อสินค้า_y': 'ชื่อสินค้า_Master'}, inplace=True)
-    if 'ชื่อสินค้า_x' in df_merged.columns: df_merged.rename(columns={'ชื่อสินค้า_x': 'ชื่อสินค้า'}, inplace=True)
-
-# --- 3. MERGE WITH MASTER ITEM (SUPER SMART: Remove All Spaces) ---
+    # --- 3. MERGE WITH MASTER ITEM ---
     master_cols = ['SKU', 'ชื่อสินค้า', 'Type', 'ต้นทุน', 'ราคากล่อง', 'ค่าส่งเฉลี่ย',
                    'ค่าคอมมิชชั่น Admin', 'ค่าคอมมิชชั่น Telesale',
                    'J&T Express', 'Flash Express', 'ThailandPost', 
@@ -525,48 +505,31 @@ def process_data():
     master_cols = [c for c in master_cols if c in df_master.columns]
     df_master_filtered = df_master[master_cols].drop_duplicates('SKU')
 
-    # === [CORE LOGIC] สร้าง Key สำหรับเทียบแบบ "ไร้ช่องว่าง" (Normalize Key) ===
-    # 1. ฝั่งไฟล์ขาย (Transaction)
     df['SKU_Raw'] = df['รูปแบบสินค้า'].astype(str).str.strip()
-    # ตัดช่องว่างทุกตัวออก (เช่น "SP097-สีดำ 1 ขวด" -> "SP097-สีดำ1ขวด")
     df['SKU_Norm'] = df['SKU_Raw'].str.replace(' ', '', regex=False)
-    # เตรียม Root Key แบบไร้ช่องว่างด้วย (เผื่อใช้ Fallback)
     df['SKU_Norm_Root'] = df['SKU_Norm'].str.split('-').str[0]
 
-    # 2. ฝั่ง Master Item
-    # สร้างคอลัมน์ SKU_Norm ใน Master เหมือนกัน เพื่อให้คุยภาษาเดียวกัน
     df_master_filtered['SKU_Norm'] = df_master_filtered['SKU'].astype(str).str.strip().str.replace(' ', '', regex=False)
-
-    # === [STEP 1] เทียบแบบละเอียด (Exact Match - Normalized) ===
-    # ใช้ SKU_Norm ชนกัน (ตัดปัญหาวรรคหน้า วรรคหลัง วรรคกลาง)
     df_merged = pd.merge(df, df_master_filtered, on='SKU_Norm', how='left')
 
-    # จัดการชื่อคอลัมน์ชนกัน
     if 'SKU_x' in df_merged.columns: df_merged.rename(columns={'SKU_x': 'SKU_Original'}, inplace=True)
     if 'SKU_y' in df_merged.columns: df_merged.rename(columns={'SKU_y': 'SKU_Master'}, inplace=True)
     if 'ชื่อสินค้า_y' in df_merged.columns: df_merged.rename(columns={'ชื่อสินค้า_y': 'ชื่อสินค้า_Master'}, inplace=True)
     if 'ชื่อสินค้า_x' in df_merged.columns: df_merged.rename(columns={'ชื่อสินค้า_x': 'ชื่อสินค้า'}, inplace=True)
 
-    # === [STEP 2] เทียบแบบตัวแม่ (Root Match - Fallback) ===
-    # กรณี Step 1 หาไม่เจอ (เช่น สินค้าใหม่ หรือตั้งชื่อไม่ตรงกันเลยจริงๆ) ให้ลองเทียบด้วยตัวแม่
-    # เตรียม Master สำหรับ Root Lookup (ใช้ SKU_Norm เป็น Key)
+    # Fallback Logic
     df_master_root = df_master_filtered.copy()
-    
-    # Merge เอาข้อมูลตัวแม่มาสำรองไว้
     df_root_lookup = pd.merge(df[['SKU_Norm_Root']], df_master_root, left_on='SKU_Norm_Root', right_on='SKU_Norm', how='left')
     
     cols_to_fill = ['ต้นทุน', 'ราคากล่อง', 'ค่าส่งเฉลี่ย', 
                     'ค่าคอมมิชชั่น Admin', 'ค่าคอมมิชชั่น Telesale', 'Type']
 
-    # ลูปเติมค่าจากตัวแม่ ถ้าตัวลูกหาไม่เจอ
     for col in cols_to_fill:
         if col in df_merged.columns and col in df_root_lookup.columns:
             df_merged[col] = df_merged[col].combine_first(df_root_lookup[col])
         elif col not in df_merged.columns and col in df_root_lookup.columns:
              df_merged[col] = df_root_lookup[col]
 
-    # === [STEP 3] จัดการชื่อสินค้า (Display Name Logic) ===
-    # Logic: ชื่อจาก Master(ลูก) -> ชื่อจาก Master(แม่) -> ชื่อจากไฟล์ขาย
     root_name_map = df_master_filtered.set_index('SKU_Norm')['ชื่อสินค้า'].to_dict()
     df_merged['Name_Root'] = df_merged['SKU_Norm_Root'].map(root_name_map)
     
@@ -575,7 +538,7 @@ def process_data():
     else:
         df_merged['ชื่อสินค้า'] = df_merged['Name_Root'].combine_first(df_merged['ชื่อสินค้า'])
 
-    # --- 4. CALCULATE LINE LEVEL COSTS ---
+    # --- 4. CALCULATE COST ---
     numeric_cols = ['จำนวน', 'รายละเอียดยอดที่ชำระแล้ว', 'ต้นทุน', 'ราคากล่อง', 'ค่าส่งเฉลี่ย']
     for col in numeric_cols:
         if col in df_merged.columns:
@@ -585,7 +548,6 @@ def process_data():
     df_merged['BOX_COST_PER_LINE'] = df_merged['ราคากล่อง'].fillna(0)
     df_merged['DELIV_COST_PER_LINE'] = df_merged['ค่าส่งเฉลี่ย'].fillna(0)
 
-    # Dynamic Shipping %
     def get_shipping_percent(row):
         courier = str(row.get('บริษัทขนส่ง', '')).strip()
         normalized_courier = normalize_courier_name(courier)
@@ -595,7 +557,6 @@ def process_data():
 
     df_merged['SHIP_PERCENT'] = df_merged.apply(get_shipping_percent, axis=1)
 
-    # COD Cost
     def calculate_cod_cost(row):
         payment = str(row.get('วิธีการชำระเงิน', '')).lower()
         is_cod = any(cod_term in payment for cod_term in ['cod', 'ปลายทาง'])
@@ -605,7 +566,6 @@ def process_data():
 
     df_merged['CAL_COD_COST'] = df_merged.apply(calculate_cod_cost, axis=1)
 
-    # Commission
     def calculate_role(row):
         work_type = str(row.get('ประเภทการทำงาน', '')).lower()
         creator = str(row.get('ผู้สร้างคำสั่งซื้อ', '')).lower()
@@ -623,14 +583,10 @@ def process_data():
     df_merged['CAL_COM_TELESALE'] = np.where((df_merged['Calculated_Role'] == 'Telesale'), 
                                              df_merged['รายละเอียดยอดที่ชำระแล้ว'] * com_tele, 0)
 
-    # --- 5. PREPARE FOR GROUPING ---
-    # ใช้ SKU_Norm_Root (ตัวแม่) ในการรวมกลุ่มรายงาน
     df_merged['SKU_Main'] = df_merged['SKU_Norm_Root']
-    
-    # เอาชื่อสินค้าที่ Mapping สมบูรณ์แล้วมาเตรียมแสดงผล
     df_merged['Display_Name'] = df_merged['ชื่อสินค้า']
 
-    # --- 6. AGGREGATE TO ORDER LEVEL ---
+    # --- AGGREGATE ---
     order_agg = {
         'Date': 'first',
         'SKU_Main': 'first',
@@ -649,7 +605,7 @@ def process_data():
     df_order = df_merged.groupby('หมายเลขคำสั่งซื้อออนไลน์').agg(order_agg).reset_index()
     df_order.rename(columns={'BOX_COST_PER_LINE': 'BOX_COST', 'DELIV_COST_PER_LINE': 'DELIV_COST'}, inplace=True)
 
-    # --- 7. PREPARE ADS DATA ---
+    # --- ADS ---
     df_ads_agg = pd.DataFrame(columns=['Date', 'SKU_Main', 'Ads_Amount'])
     if not df_ads_raw.empty:
         col_cost = next((c for c in ['จำนวนเงินที่ใช้จ่ายไป (THB)', 'Cost', 'Amount'] if c in df_ads_raw.columns), None)
@@ -660,14 +616,12 @@ def process_data():
             df_ads_raw['Date'] = df_ads_raw[col_date].apply(safe_date)
             df_ads_raw = df_ads_raw.dropna(subset=['Date'])
             df_ads_raw[col_cost] = df_ads_raw[col_cost].apply(safe_float)
-            # ดึง SKU จากชื่อแคมเปญ และทำ Normalize เหมือนกันเพื่อให้ชนกันเจอ
             df_ads_raw['SKU_Extracted'] = df_ads_raw[col_camp].astype(str).str.extract(r'\[(.*?)\]')
-            # ตัดช่องว่างในชื่อแคมเปญด้วย เพื่อให้ชนกับ SKU_Main ได้
             df_ads_raw['SKU_Main'] = df_ads_raw['SKU_Extracted'].str.replace(' ', '', regex=False)
             
             df_ads_agg = df_ads_raw.groupby(['Date', 'SKU_Main'])[col_cost].sum().reset_index(name='Ads_Amount')
 
-    # --- 8. AGGREGATE TO DAILY LEVEL ---
+    # --- FINAL DAILY AGG ---
     daily_agg = {
         'ชื่อสินค้า': 'first',
         'จำนวนออเดอร์': 'count',
@@ -685,19 +639,15 @@ def process_data():
     df_order_renamed = df_order.rename(columns={'หมายเลขคำสั่งซื้อออนไลน์': 'จำนวนออเดอร์'})
     df_daily = df_order_renamed.groupby(['Date', 'SKU_Main']).agg(daily_agg).reset_index()
 
-    # --- 9. MERGE ADS ---
     if not df_ads_agg.empty:
         df_daily = pd.merge(df_daily, df_ads_agg, on=['Date', 'SKU_Main'], how='outer')
     else: df_daily['Ads_Amount'] = 0
 
     df_daily = df_daily.fillna(0)
-
-    # Final Calcs
     df_daily['Other_Costs'] = df_daily['BOX_COST'] + df_daily['DELIV_COST'] + df_daily['CAL_COD_COST'] + df_daily['CAL_COM_ADMIN'] + df_daily['CAL_COM_TELESALE']
     df_daily['Total_Cost'] = df_daily['CAL_COST'] + df_daily['Other_Costs'] + df_daily['Ads_Amount']
     df_daily['Net_Profit'] = df_daily['รายละเอียดยอดที่ชำระแล้ว'] - df_daily['Total_Cost']
 
-    # Date Components
     df_daily['Date'] = pd.to_datetime(df_daily['Date'])
     df_daily['Year'] = df_daily['Date'].dt.year
     df_daily['Month_Num'] = df_daily['Date'].dt.month
@@ -705,15 +655,12 @@ def process_data():
     df_daily['Day'] = df_daily['Date'].dt.day
     df_daily['Date'] = df_daily['Date'].dt.date 
 
-    if not df_fix_cost.empty and 'เดือน' in df_fix_cost.columns: df_fix_cost['Key'] = df_fix_cost['เดือน'].astype(str).str.strip() + "-" + df_fix_cost['ปี'].astype(str)
-
     # --- MAPPING ---
     sku_map = df_daily.groupby('SKU_Main')['ชื่อสินค้า'].last().to_dict()
     master_skus_set = set()
     if not df_master.empty and 'SKU' in df_master.columns:
         master_skus_set = set(df_master['SKU'].astype(str).str.strip().str.replace(' ', '', regex=False))
         if 'ชื่อสินค้า' in df_master.columns:
-            # สร้าง map โดยใช้ SKU แบบไม่มีช่องว่าง
             temp_master = df_master.copy()
             temp_master['SKU_Norm'] = temp_master['SKU'].astype(str).str.strip().str.replace(' ', '', regex=False)
             sku_map.update(temp_master.set_index('SKU_Norm')['ชื่อสินค้า'].to_dict())
@@ -723,7 +670,6 @@ def process_data():
 
     sku_type_map = {}
     if not df_master.empty and 'SKU' in df_master.columns and 'Type' in df_master.columns:
-         # สร้าง map โดยใช้ SKU แบบไม่มีช่องว่าง
         temp_master = df_master.copy()
         temp_master['SKU_Norm'] = temp_master['SKU'].astype(str).str.strip().str.replace(' ', '', regex=False)
         sku_type_map = temp_master.set_index('SKU_Norm')['Type'].to_dict()
@@ -1958,18 +1904,15 @@ try:
         st.altair_chart(chart_year, use_container_width=True)
 
     
-    # --- PAGE 7: MASTER_ITEM (NEW UI) ---
     elif selected_page == "🔧 MASTER_ITEM":
         st.markdown('<div class="header-bar"><div class="header-title"><i class="fas fa-tools"></i> จัดการ Master Item (แก้ไขต้นทุน/ราคา)</div></div>', unsafe_allow_html=True)
         
-        # --- 1. ฟังก์ชันเชื่อมต่อ Google Sheet ---
         def get_master_worksheet():
             creds = get_drive_service()
             gc = gspread.authorize(creds)
             sh = gc.open_by_url(SHEET_MASTER_URL) 
             return sh.worksheet("MASTER_ITEM")
 
-        # --- 2. โหลดข้อมูลมาแสดง ---
         try:
             ws = get_master_worksheet()
             data = ws.get_all_records()
@@ -1978,9 +1921,12 @@ try:
             st.error(f"⚠️ ไม่สามารถโหลดข้อมูลจาก Google Sheet ได้: {e}")
             st.stop()
 
-        # --- 3. จัดเรียงคอลัมน์ (เอาทุนมาไว้หน้าสุด) ---
+        # [แก้ไข] ตรวจสอบว่ามีคอลัมน์ 'ทุน' หรือ 'ต้นทุน'
+        cost_col_name = 'ทุน' if 'ทุน' in df_master_edit.columns else 'ต้นทุน'
+
+        # จัดเรียงคอลัมน์
         target_columns_order = [
-            'SKU', 'ชื่อสินค้า', 'ทุน', 'ราคากล่อง', 'ค่าส่งเฉลี่ย', 
+            'SKU', 'ชื่อสินค้า', cost_col_name, 'ราคากล่อง', 'ค่าส่งเฉลี่ย', 
             'ค่าคอมมิชชั่น Admin', 'ค่าคอมมิชชั่น Telesale', 
             'J&T Express', 'Flash Express', 'ThailandPost', 'LEX TH', 'SPX Express', 
             'Express Delivery - ส่งด่วน', 'DHL_1', 'Standard Delivery - ส่งธรรมดาในประเทศ', 
@@ -1990,17 +1936,12 @@ try:
         other_cols = [c for c in df_master_edit.columns if c not in available_cols]
         df_editor_view = df_master_edit[available_cols + other_cols].copy()
 
-        # --- [ส่วนที่แก้ไข] : ย้ายปุ่มบันทึกมาไว้บรรทัดเดียวกับคำแนะนำ ---
         c_info, c_btn = st.columns([3.5, 1.5]) 
-
-        with c_info:
-            st.info("💡 **คำแนะนำ:** แก้ไขข้อมูลในตารางด้านล่าง แล้วกดปุ่ม **'บันทึกข้อมูล'** ทางขวามือ ➔")
-        
+        with c_info: st.info("💡 แก้ไขข้อมูลในตาราง แล้วกดปุ่มบันทึกทางขวามือ ➔")
         with c_btn:
             st.markdown('<div style="margin-top: 0px;"></div>', unsafe_allow_html=True)
             click_save = st.button("💾 บันทึกข้อมูลลง Google Sheet", type="primary", use_container_width=True)
 
-        # --- 4. แสดงตาราง Editor ---
         edited_df = st.data_editor(
             df_editor_view,
             num_rows="dynamic", 
@@ -2008,27 +1949,19 @@ try:
             height=600,
             column_config={
                 "SKU": st.column_config.TextColumn(disabled=False),
-                "ทุน": st.column_config.NumberColumn(format="%.2f", help="ต้นทุนสินค้าต่อชิ้น"),
+                cost_col_name: st.column_config.NumberColumn(label=f"{cost_col_name} (Cost)", format="%.2f"),
                 "ราคากล่อง": st.column_config.NumberColumn(format="%.2f"),
-                "ค่าส่งเฉลี่ย": st.column_config.NumberColumn(format="%.2f"),
-                "ค่าคอมมิชชั่น Admin": st.column_config.NumberColumn(format="%.4f"),
-                "ค่าคอมมิชชั่น Telesale": st.column_config.NumberColumn(format="%.4f"),
             }
         )
 
-        # --- 5. Logic การบันทึก ---
         if click_save:
             try:
-                with st.spinner("⏳ กำลังบันทึกข้อมูล... กรุณารอสักครู่"):
-                    # แปลงข้อมูลเตรียมบันทึก
+                with st.spinner("⏳ กำลังบันทึกข้อมูล..."):
                     save_df = edited_df.fillna("")
                     vals = [save_df.columns.values.tolist()] + save_df.values.tolist()
-                    
-                    # อัปเดตลง Sheet
                     ws.clear()
                     ws.update(range_name='A1', values=vals)
-                    
-                    st.success("✅ บันทึกข้อมูลเรียบร้อยแล้ว!")
-                    st.cache_data.clear() # ล้าง Cache
+                    st.success("✅ บันทึกข้อมูลเรียบร้อย!")
+                    st.cache_data.clear() # ล้าง Cache เพื่อให้หน้าอื่นเห็นค่าใหม่ทันที
             except Exception as e:
-                st.error(f"❌ เกิดข้อผิดพลาดในการบันทึก: {e}")
+                st.error(f"❌ เกิดข้อผิดพลาด: {e}")
