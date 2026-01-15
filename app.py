@@ -1957,11 +1957,17 @@ try:
         if click_save:
             try:
                 with st.spinner("⏳ กำลังบันทึกข้อมูล..."):
+                    # แปลงข้อมูลเตรียมบันทึก
                     save_df = edited_df.fillna("")
                     vals = [save_df.columns.values.tolist()] + save_df.values.tolist()
+                    
+                    # อัปเดตลง Sheet
                     ws.clear()
                     ws.update(range_name='A1', values=vals)
-                    st.success("✅ บันทึกข้อมูลเรียบร้อย!")
-                    st.cache_data.clear() # ล้าง Cache เพื่อให้หน้าอื่นเห็นค่าใหม่ทันที
-            except Exception as e:
+                    
+                    st.success("✅ บันทึกข้อมูลเรียบร้อยแล้ว!")
+                    st.cache_data.clear() # ล้าง Cache
+            
+            # ห้ามลบบรรทัดนี้ และต้องย่อหน้าให้ตรงกับ try ด้านบน
+            except Exception as e: 
                 st.error(f"❌ เกิดข้อผิดพลาด: {e}")
