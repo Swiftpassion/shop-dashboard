@@ -1901,7 +1901,7 @@ try:
 
         st.altair_chart(chart_year, use_container_width=True)
 
-    # --- PAGE 7: MASTER_ITEM (FIXED & REFACTORED) ---
+    # --- PAGE 7: MASTER_ITEM (FIXED) ---
     elif selected_page == "🔧 MASTER_ITEM":
         st.markdown('<div class="header-bar"><div class="header-title"><i class="fas fa-tools"></i> จัดการ Master Item (แก้ไขต้นทุน/เรทค่าใช้จ่ายต่างๆ)</div></div>', unsafe_allow_html=True)
         
@@ -1921,12 +1921,13 @@ try:
         if ws:
             try:
                 data = ws.get_all_records()
+                # 1. สร้าง DataFrame
                 df_master_edit = pd.DataFrame(data)
 
-                # ตรวจสอบชื่อคอลัมน์ต้นทุน (บางทีเป็น 'ทุน' หรือ 'ต้นทุน')
+                # 2. ตรวจสอบชื่อคอลัมน์ต้นทุน
                 cost_col_name = 'ทุน' if 'ทุน' in df_master_edit.columns else 'ต้นทุน'
 
-                # กำหนดลำดับคอลัมน์ที่จะแสดง
+                # 3. กำหนดลำดับคอลัมน์
                 target_columns_order = [
                     'SKU', 'ชื่อสินค้า', cost_col_name, 'ราคากล่อง', 'ค่าส่งเฉลี่ย', 
                     'ค่าคอมมิชชั่น Admin', 'ค่าคอมมิชชั่น Telesale', 
@@ -1935,11 +1936,21 @@ try:
                     'Type'
                 ]
                 
-                # กรองเฉพาะคอลัมน์ที่มีอยู่จริง
                 available_cols = [c for c in target_columns_order if c in df_master_edit.columns]
                 other_cols = [c for c in df_master_edit.columns if c not in available_cols]
                 
                 df_editor_view = df_master_edit[available_cols + other_cols].copy()
+
+                # --- [จุดแก้ไขสำคัญ] แปลงข้อมูลตัวเลขให้เป็น Float จริงๆ ก่อนส่งเข้า Editor ---
+                cols_to_convert = [cost_col_name, 'ราคากล่อง', 'ค่าส่งเฉลี่ย', 
+                                   'ค่าคอมมิชชั่น Admin', 'ค่าคอมมิชชั่น Telesale',
+                                   'J&T Express', 'Flash Express', 'ThailandPost', 'LEX TH', 'SPX Express',
+                                   'Express Delivery - ส่งด่วน', 'DHL_1', 'Standard Delivery - ส่งธรรมดาในประเทศ']
+                
+                for col in cols_to_convert:
+                    if col in df_editor_view.columns:
+                        # แปลงเป็นตัวเลข ถ้าไม่ใช่ตัวเลขให้เป็น NaN (เพื่อให้ Editor เข้าใจว่าเป็น NumberColumn)
+                        df_editor_view[col] = pd.to_numeric(df_editor_view[col], errors='coerce')
 
                 # Layout ปุ่มบันทึก
                 c_info, c_btn = st.columns([3.5, 1.5]) 
@@ -1955,11 +1966,13 @@ try:
                     num_rows="dynamic", 
                     use_container_width=True,
                     height=600,
+                    key="master_editor_key", # [สำคัญ] ใส่ key เพื่อกัน Table reset
                     column_config={
                         "SKU": st.column_config.TextColumn(disabled=False),
                         cost_col_name: st.column_config.NumberColumn(label=f"💰 {cost_col_name}", format="%.2f"),
                         "ราคากล่อง": st.column_config.NumberColumn(format="%.2f"),
                         "ค่าส่งเฉลี่ย": st.column_config.NumberColumn(format="%.2f"),
+                        # สามารถเพิ่ม NumberColumn ให้คอลัมน์อื่นๆ ได้ที่นี่
                     }
                 )
 
@@ -1967,12 +1980,14 @@ try:
                 if click_save:
                     try:
                         with st.spinner("⏳ กำลังบันทึกข้อมูล..."):
-                            # 1. Prepare data
-                            save_df = edited_df.fillna("")
-                            # Convert to list of lists (include header)
-                            vals = [save_df.columns.values.tolist()] + save_df.values.tolist()
+                            # 1. Prepare data (แปลง NaN กลับเป็น Empty String หรือ 0 ก่อนบันทึก)
+                            save_df = edited_df.fillna("") 
                             
-                            # 2. Update Sheet
+                            # 2. Convert to list of lists (include header)
+                            # ต้องแปลงเป็น String หรือ Type ที่ Google Sheets รับได้ง่ายๆ
+                            vals = [save_df.columns.values.tolist()] + save_df.astype(str).values.tolist()
+                            
+                            # 3. Update Sheet
                             ws.clear()
                             ws.update(range_name='A1', values=vals)
                             
