@@ -29,9 +29,12 @@ COLOR_NEGATIVE = "#FF0000"
 st.set_page_config(page_title="Shop Analytics Dashboard", layout="wide", page_icon="📊")
 
 # ==========================================
-# 0. LOGIN SYSTEM (BEAUTIFUL & COMPACT VERSION)
+# 0. LOGIN SYSTEM (REMEMBER ME VERSION)
 # ==========================================
-if 'logged_in' not in st.session_state:
+# เช็ค URL ว่าเคย Login สำเร็จหรือยัง (เพื่อให้รีเฟรชแล้วไม่ต้องกรอกใหม่)
+if "auth" in st.query_params and st.query_params["auth"] == "success":
+    st.session_state.logged_in = True
+elif 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
 def check_login():
@@ -39,74 +42,21 @@ def check_login():
     if password == "Mos2025":
         st.session_state.logged_in = True
         st.session_state.login_error = None
+        # สั่งจำค่า Login ไว้บน URL Browser
+        st.query_params["auth"] = "success"
     else:
         st.session_state.login_error = "⚠️ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่"
 
 if not st.session_state.logged_in:
-    # --- CSS Styling (ปรับแต่งความสวยงาม) ---
+    # ... (ส่วน CSS และ HTML เดิม ไม่ต้องแก้) ...
+    # คงโค้ดส่วนแสดงผลหน้า Login ไว้เหมือนเดิมด้านล่างนี้ได้เลยครับ
     st.markdown("""
         <style>
-            /* ปรับช่องกรอกรหัสผ่าน */
-            .stTextInput input {
-                color: #ffffff !important;
-                background-color: #1e1e1e !important; /* พื้นหลังเข้ม */
-                border: 1px solid #444 !important;
-                border-radius: 8px !important;
-                padding: 12px !important;
-                font-size: 16px !important;
-            }
-            .stTextInput input:focus {
-                border-color: #6c5ce7 !important;
-                box-shadow: 0 0 5px rgba(108, 92, 231, 0.5);
-            }
-            
-            /* ปรับปุ่มกด */
-            .stButton button {
-                width: 100%;
-                background: linear-gradient(90deg, #6c5ce7 0%, #a29bfe 100%) !important;
-                color: white !important;
-                border-radius: 8px !important;
-                border: none !important;
-                font-size: 16px !important;
-                font-weight: 600 !important;
-                padding: 12px !important;
-                margin-top: 10px;
-                transition: all 0.3s ease;
-            }
-            .stButton button:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 10px rgba(108, 92, 231, 0.4);
-            }
-
-            /* Header จัดกึ่งกลาง */
-            .login-header {
-                font-size: 26px;
-                font-weight: 700;
-                text-align: center;
-                margin-bottom: 5px;
-                color: white;
-                font-family: 'Prompt', sans-serif;
-            }
-            .login-sub {
-                font-size: 14px;
-                text-align: center;
-                color: #aaa;
-                margin-bottom: 25px;
-                font-family: 'Sarabun', sans-serif;
-            }
-
-            /* กล่องแจ้งเตือน Error แบบสวย (Custom) */
-            .custom-error {
-                background-color: #ff4d4d20; /* สีแดงจางๆ โปร่งใส */
-                border: 1px solid #ff4d4d;
-                color: #ff4d4d;
-                padding: 10px;
-                border-radius: 8px;
-                text-align: center;
-                font-size: 14px;
-                margin-top: 10px;
-                margin-bottom: 10px;
-            }
+            .stTextInput input { color: #ffffff !important; background-color: #1e1e1e !important; border: 1px solid #444 !important; border-radius: 8px !important; padding: 12px !important; font-size: 16px !important; }
+            .stButton button { width: 100%; background: linear-gradient(90deg, #6c5ce7 0%, #a29bfe 100%) !important; color: white !important; border-radius: 8px !important; border: none !important; margin-top: 10px; }
+            .login-header { font-size: 26px; font-weight: 700; text-align: center; color: white; margin-bottom: 5px; }
+            .login-sub { font-size: 14px; text-align: center; color: #aaa; margin-bottom: 25px; }
+            .custom-error { background-color: #ff4d4d20; border: 1px solid #ff4d4d; color: #ff4d4d; padding: 10px; border-radius: 8px; text-align: center; margin: 10px 0; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -342,9 +292,9 @@ st.markdown("""
 # ==========================================
 # 2. SETTINGS & HELPERS
 # ==========================================
-FOLDER_ID_DATA = "1ciI_X2m8pVcsjRsPuUf5sg--6uPSPPDp"
-FOLDER_ID_ADS = "1ZE76TXNA_vNeXjhAZfLgBQQGIV0GY7w8"
-SHEET_MASTER_URL = "https://docs.google.com/spreadsheets/d/1Q3akHm1GKkDI2eilGfujsd9pO7aOjJvyYJNuXd98lzo/edit"
+FOLDER_ID_DATA = "1ciI_X2m8pVcsjRsPuUf5sg--6uPSPPDp"  # ไฟล์ยอดขาย JST
+FOLDER_ID_ADS = "1ZE76TXNA_vNeXjhAZfLgBQQGIV0GY7w8"   # ไฟล์ค่า ADS
+SHEET_MASTER_URL = "https://docs.google.com/spreadsheets/d/1Q3akHm1GKkDI2eilGfujsd9pO7aOjJvyYJNuXd98lzo/edit?gid=0#gid=0" # ชีทตั้งค่าทุน
 
 def safe_float(val):
     if pd.isna(val) or val == "" or val is None: return 0.0
@@ -838,11 +788,62 @@ try:
 
     # --- [ส่วนที่เพิ่ม] ปุ่ม REFRESH (SIDEBAR) ---
     with st.sidebar:
-        st.header("⚙️ จัดการข้อมูล")
-        st.write("กดปุ่มด้านล่างเพื่อดึงข้อมูลใหม่จาก Google Drive")
-        if st.button("🔄 อัปเดตข้อมูลล่าสุด", type="primary", use_container_width=True):
+        # 1. ส่วน User และปุ่มควบคุมระบบ
+        st.markdown(f"**👤 ผู้ใช้งาน:** Admin") # (สามารถเปลี่ยนเป็นชื่อ User จริงถ้ามีระบบดึงชื่อ)
+        
+        if st.button("🚪 ออกจากระบบ", use_container_width=True):
+             st.session_state.logged_in = False
+             st.query_params.clear()  # <--- เพิ่มบรรทัดนี้เพื่อล้างความจำ
+             st.rerun()
+
+        if st.button("🔄 รีเฟรชข้อมูลล่าสุด", type="primary", use_container_width=True):
             st.cache_data.clear()
             st.rerun()
+        
+        st.markdown("---") # เส้นขีดคั่น
+
+        # 2. หมวดเมนูจัดการไฟล์
+        st.markdown("### 📂 เมนูจัดการไฟล์")
+        
+        # ปุ่ม: ไฟล์ยอดขาย JST
+        st.link_button(
+            "📁 ไฟล์ยอดขาย JST (Drive)", 
+            "https://drive.google.com/drive/folders/1ciI_X2m8pVcsjRsPuUf5sg--6uPSPPDp", 
+            use_container_width=True
+        )
+        
+        # ปุ่ม: ไฟล์ค่า ADS (เพิ่มใหม่)
+        st.link_button(
+            "📁 ไฟล์ค่า ADS", 
+            "https://drive.google.com/drive/folders/1ZE76TXNA_vNeXjhAZfLgBQQGIV0GY7w8", 
+            use_container_width=True
+        )
+
+        # ปุ่ม: ไฟล์คลังสินค้า (ถ้ามีลิ้งค์เฉพาะให้แก้ตรง url ครับ อันนี้ผมใส่ Google Drive หน้าหลักไว้ก่อน)
+        st.link_button(
+            "📦 ไฟล์คลังสินค้าคงเหลือ JST (Drive)", 
+            "https://drive.google.com/drive/u/0/", 
+            use_container_width=True
+        )
+
+        st.markdown("---") # เส้นขีดคั่น
+
+        # 3. หมวดตั้งค่าระบบ
+        st.markdown("### ⚙️ ตั้งค่าระบบ")
+        
+        # ปุ่ม: ชีทตั้งค่าทุนสินค้า / พนักงาน
+        st.link_button(
+            "📊 ชีทตั้งค่าทุนสินค้า / พนักงาน", 
+            SHEET_MASTER_URL, 
+            use_container_width=True
+        )
+        
+        # ปุ่ม: เพิ่ม SKU / Master (ใช้ลิงก์เดียวกันกับ Master)
+        st.link_button(
+            "🔗 เพิ่ม SKU / Master", 
+            SHEET_MASTER_URL, 
+            use_container_width=True
+        )
     # --------------------------------------------
 
     page_options = ["📊 REPORT_MONTH", "📢 REPORT_ADS", "📅 REPORT_DAILY", "📈 PRODUCT GRAPH", "📈 YEARLY P&L", "📅 MONTHLY P&L", "💰 COMMISSION"]
