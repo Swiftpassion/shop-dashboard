@@ -1903,7 +1903,7 @@ try:
 
     # --- PAGE 7: MASTER_ITEM (FIXED & REFACTORED) ---
     elif selected_page == "🔧 MASTER_ITEM":
-        st.markdown('<div class="header-bar"><div class="header-title"><i class="fas fa-tools"></i> จัดการ Master Item (แก้ไขต้นทุน/ราคา)</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="header-bar"><div class="header-title"><i class="fas fa-tools"></i> จัดการ Master Item (แก้ไขต้นทุน/เรทค่าใช้จ่ายต่างๆ)</div></div>', unsafe_allow_html=True)
         
         # Helper function to connect to Google Sheet
         def get_master_worksheet():
@@ -1913,7 +1913,7 @@ try:
                 sh = gc.open_by_url(SHEET_MASTER_URL) 
                 return sh.worksheet("MASTER_ITEM")
             except Exception as e:
-                st.error(f"⚠️ ไม่สามารถเชื่อมต่อ Google Sheet: {e}")
+                st.error(f"⚠️ ไม่สามารถเชื่อมต่อ MASTER_ITEM: {e}")
                 return None
 
         ws = get_master_worksheet()
@@ -1947,7 +1947,7 @@ try:
                     st.info("💡 แก้ไขข้อมูลในตารางด้านล่าง แล้วกดปุ่มบันทึกทางขวามือ ➔")
                 with c_btn:
                     st.markdown('<div style="margin-top: 0px;"></div>', unsafe_allow_html=True)
-                    click_save = st.button("💾 บันทึกข้อมูลลง Google Sheet", type="primary", use_container_width=True)
+                    click_save = st.button("💾 กดเพื่ออัพเดทข้อมูล", type="primary", use_container_width=True)
 
                 # ตาราง Data Editor
                 edited_df = st.data_editor(
