@@ -1901,7 +1901,7 @@ try:
 
         st.altair_chart(chart_year, use_container_width=True)
 
-    # --- PAGE 7: MASTER_ITEM (แบบพิมพ์ % ได้โดยตรง) ---
+    # --- PAGE 7: MASTER_ITEM (UI ปรับความสูงตารางได้) ---
     elif selected_page == "🔧 MASTER_ITEM":
         st.markdown('<div class="header-bar"><div class="header-title"><i class="fas fa-tools"></i> จัดการ Master Item (แก้ไขต้นทุน/เรทค่าใช้จ่าย)</div></div>', unsafe_allow_html=True)
         
@@ -1922,14 +1922,10 @@ try:
                 data = ws.get_all_records()
                 df_master_edit = pd.DataFrame(data)
 
-                # ตรวจสอบชื่อคอลัมน์ต้นทุน
                 cost_col_name = 'ทุน' if 'ทุน' in df_master_edit.columns else 'ต้นทุน'
 
                 # 1. แบ่งกลุ่มคอลัมน์
-                # กลุ่มที่เป็นตัวเลขเงิน (บาท)
                 cols_money = [cost_col_name, 'ราคากล่อง', 'ค่าส่งเฉลี่ย']
-                
-                # กลุ่มที่เป็น % (Rate)
                 cols_percent = [
                     'ค่าคอมมิชชั่น Admin', 'ค่าคอมมิชชั่น Telesale',
                     'J&T Express', 'Flash Express', 'ThailandPost', 
@@ -1937,49 +1933,48 @@ try:
                     'DHL_1', 'Standard Delivery - ส่งธรรมดาในประเทศ'
                 ]
 
-                # กำหนดลำดับแสดงผล
                 target_columns_order = ['SKU', 'ชื่อสินค้า'] + cols_money + ['Type'] + cols_percent
-                
-                # กรองเอาเฉพาะคอลัมน์ที่มีจริง
                 available_cols = [c for c in target_columns_order if c in df_master_edit.columns]
                 other_cols = [c for c in df_master_edit.columns if c not in available_cols]
                 
                 df_editor_view = df_master_edit[available_cols + other_cols].copy()
 
-                # --- 2. เตรียมข้อมูล (Data Preparation) ---
-                
-                # 2.1 แปลงกลุ่มเงิน (Money) ให้เป็นตัวเลข Float เพื่อให้คำนวณ/เรียงลำดับได้
+                # --- 2. เตรียมข้อมูล ---
                 for col in cols_money:
                     if col in df_editor_view.columns:
                         df_editor_view[col] = pd.to_numeric(df_editor_view[col], errors='coerce').fillna(0.0)
 
-                # 2.2 [สำคัญ] แปลงกลุ่ม % (Percent) ให้เป็น String (ข้อความ) เพื่อให้พิมพ์ "0.50%" ได้
                 for col in cols_percent:
                     if col in df_editor_view.columns:
                         df_editor_view[col] = df_editor_view[col].astype(str)
 
-                # Layout Info
-                c_info, c_btn = st.columns([3.5, 1.5]) 
+                # --- UI CONTROLS ---
+                c_info, c_slider, c_btn = st.columns([2.5, 1.5, 1]) 
+                
                 with c_info: 
-                    st.info("💡 **กลุ่มค่าคอม/ขนส่ง:** สามารถพิมพ์ **%** ต่อท้ายได้เลย (เช่น `0.50%`, `1.5%`) ระบบจะคำนวณให้อัตโนมัติ")
+                    st.info("💡 พิมพ์ **%** ต่อท้ายได้เลย (เช่น `0.5%`)")
+                
+                with c_slider:
+                    # [NEW] สไลด์เดอร์ปรับความสูงตาราง (Default 1200px สำหรับจอแนวตั้ง)
+                    table_height = st.slider("↕️ ปรับความสูงตาราง", min_value=600, max_value=2500, value=1200, step=100)
+                
                 with c_btn:
                     st.markdown('<div style="margin-top: 0px;"></div>', unsafe_allow_html=True)
                     click_save = st.button("💾 บันทึกการแก้ไข", type="primary", use_container_width=True)
 
-                # --- 3. ตั้งค่าการแสดงผล (Column Config) ---
+                # --- 3. ตั้งค่าการแสดงผล ---
                 my_column_config = {
                     "SKU": st.column_config.TextColumn(disabled=False),
-                    cost_col_name: st.column_config.NumberColumn(label=f"💰 {cost_col_name} (บาท)", format="%.2f"),
-                    "ราคากล่อง": st.column_config.NumberColumn(label="📦 ราคากล่อง (บาท)", format="%.2f"),
-                    "ค่าส่งเฉลี่ย": st.column_config.NumberColumn(label="🚚 ค่าส่งเฉลี่ย (บาท)", format="%.2f"),
+                    cost_col_name: st.column_config.NumberColumn(label=f"💰 {cost_col_name}", format="%.2f"),
+                    "ราคากล่อง": st.column_config.NumberColumn(label="📦 ราคากล่อง", format="%.2f"),
+                    "ค่าส่งเฉลี่ย": st.column_config.NumberColumn(label="🚚 ค่าส่งเฉลี่ย", format="%.2f"),
                 }
 
-                # ตั้งค่าคอลัมน์ % ให้เป็น TextColumn (พิมพ์อิสระ)
                 for p_col in cols_percent:
                     if p_col in df_editor_view.columns:
                         my_column_config[p_col] = st.column_config.TextColumn(
                             label=f"{p_col}",
-                            help="พิมพ์เลขพร้อมเครื่องหมาย % ได้เลย เช่น 0.50%"
+                            width="medium" # ปรับความกว้างคอลัมน์ให้อ่านง่าย
                         )
 
                 # แสดงตาราง
@@ -1987,8 +1982,8 @@ try:
                     df_editor_view,
                     num_rows="dynamic", 
                     use_container_width=True,
-                    height=600,
-                    key="master_editor_key_text_v1",
+                    height=table_height, # <--- ใช้ค่าจาก Slider ตรงนี้
+                    key="master_editor_vertical_v1",
                     column_config=my_column_config
                 )
 
@@ -1997,16 +1992,11 @@ try:
                     try:
                         with st.spinner("⏳ กำลังบันทึกข้อมูล..."):
                             save_df = edited_df.fillna("") 
-                            
-                            # แปลงทุกอย่างเป็น String ก่อนส่งขึ้น Google Sheet เพื่อความชัวร์
                             vals = [save_df.columns.values.tolist()] + save_df.astype(str).values.tolist()
-                            
                             ws.clear()
                             ws.update(range_name='A1', values=vals)
-                            
                             st.success("✅ บันทึกข้อมูลเรียบร้อยแล้ว!")
                             st.cache_data.clear() 
-
                     except Exception as e:
                         st.error(f"❌ เกิดข้อผิดพลาดขณะบันทึก: {e}")
 
