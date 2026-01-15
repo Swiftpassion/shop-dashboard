@@ -1903,71 +1903,89 @@ try:
 
         st.altair_chart(chart_year, use_container_width=True)
 
-    
+    # --- PAGE 7: MASTER_ITEM (FIXED & REFACTORED) ---
     elif selected_page == "🔧 MASTER_ITEM":
         st.markdown('<div class="header-bar"><div class="header-title"><i class="fas fa-tools"></i> จัดการ Master Item (แก้ไขต้นทุน/ราคา)</div></div>', unsafe_allow_html=True)
         
+        # Helper function to connect to Google Sheet
         def get_master_worksheet():
-            creds = get_drive_service()
-            gc = gspread.authorize(creds)
-            sh = gc.open_by_url(SHEET_MASTER_URL) 
-            return sh.worksheet("MASTER_ITEM")
-
-        try:
-            ws = get_master_worksheet()
-            data = ws.get_all_records()
-            df_master_edit = pd.DataFrame(data)
-        except Exception as e:
-            st.error(f"⚠️ ไม่สามารถโหลดข้อมูลจาก Google Sheet ได้: {e}")
-            st.stop()
-
-        # [แก้ไข] ตรวจสอบว่ามีคอลัมน์ 'ทุน' หรือ 'ต้นทุน'
-        cost_col_name = 'ทุน' if 'ทุน' in df_master_edit.columns else 'ต้นทุน'
-
-        # จัดเรียงคอลัมน์
-        target_columns_order = [
-            'SKU', 'ชื่อสินค้า', cost_col_name, 'ราคากล่อง', 'ค่าส่งเฉลี่ย', 
-            'ค่าคอมมิชชั่น Admin', 'ค่าคอมมิชชั่น Telesale', 
-            'J&T Express', 'Flash Express', 'ThailandPost', 'LEX TH', 'SPX Express', 
-            'Express Delivery - ส่งด่วน', 'DHL_1', 'Standard Delivery - ส่งธรรมดาในประเทศ', 
-            'Type'
-        ]
-        available_cols = [c for c in target_columns_order if c in df_master_edit.columns]
-        other_cols = [c for c in df_master_edit.columns if c not in available_cols]
-        df_editor_view = df_master_edit[available_cols + other_cols].copy()
-
-        c_info, c_btn = st.columns([3.5, 1.5]) 
-        with c_info: st.info("💡 แก้ไขข้อมูลในตาราง แล้วกดปุ่มบันทึกทางขวามือ ➔")
-        with c_btn:
-            st.markdown('<div style="margin-top: 0px;"></div>', unsafe_allow_html=True)
-            click_save = st.button("💾 บันทึกข้อมูลลง Google Sheet", type="primary", use_container_width=True)
-
-        edited_df = st.data_editor(
-            df_editor_view,
-            num_rows="dynamic", 
-            use_container_width=True,
-            height=600,
-            column_config={
-                "SKU": st.column_config.TextColumn(disabled=False),
-                cost_col_name: st.column_config.NumberColumn(label=f"{cost_col_name} (Cost)", format="%.2f"),
-                "ราคากล่อง": st.column_config.NumberColumn(format="%.2f"),
-            }
-        )
-
-        if click_save:
             try:
-                with st.spinner("⏳ กำลังบันทึกข้อมูล..."):
-                    # แปลงข้อมูลเตรียมบันทึก
-                    save_df = edited_df.fillna("")
-                    vals = [save_df.columns.values.tolist()] + save_df.values.tolist()
-                    
-                    # อัปเดตลง Sheet
-                    ws.clear()
-                    ws.update(range_name='A1', values=vals)
-                    
-                    st.success("✅ บันทึกข้อมูลเรียบร้อยแล้ว!")
-                    st.cache_data.clear() # ล้าง Cache
-            
-            # ห้ามลบบรรทัดนี้ และต้องย่อหน้าให้ตรงกับ try ด้านบน
-            except Exception as e: 
-                st.error(f"❌ เกิดข้อผิดพลาด: {e}")
+                creds = get_drive_service()
+                gc = gspread.authorize(creds)
+                sh = gc.open_by_url(SHEET_MASTER_URL) 
+                return sh.worksheet("MASTER_ITEM")
+            except Exception as e:
+                st.error(f"⚠️ ไม่สามารถเชื่อมต่อ Google Sheet: {e}")
+                return None
+
+        ws = get_master_worksheet()
+        
+        if ws:
+            try:
+                data = ws.get_all_records()
+                df_master_edit = pd.DataFrame(data)
+
+                # ตรวจสอบชื่อคอลัมน์ต้นทุน (บางทีเป็น 'ทุน' หรือ 'ต้นทุน')
+                cost_col_name = 'ทุน' if 'ทุน' in df_master_edit.columns else 'ต้นทุน'
+
+                # กำหนดลำดับคอลัมน์ที่จะแสดง
+                target_columns_order = [
+                    'SKU', 'ชื่อสินค้า', cost_col_name, 'ราคากล่อง', 'ค่าส่งเฉลี่ย', 
+                    'ค่าคอมมิชชั่น Admin', 'ค่าคอมมิชชั่น Telesale', 
+                    'J&T Express', 'Flash Express', 'ThailandPost', 'LEX TH', 'SPX Express', 
+                    'Express Delivery - ส่งด่วน', 'DHL_1', 'Standard Delivery - ส่งธรรมดาในประเทศ', 
+                    'Type'
+                ]
+                
+                # กรองเฉพาะคอลัมน์ที่มีอยู่จริง
+                available_cols = [c for c in target_columns_order if c in df_master_edit.columns]
+                other_cols = [c for c in df_master_edit.columns if c not in available_cols]
+                
+                df_editor_view = df_master_edit[available_cols + other_cols].copy()
+
+                # Layout ปุ่มบันทึก
+                c_info, c_btn = st.columns([3.5, 1.5]) 
+                with c_info: 
+                    st.info("💡 แก้ไขข้อมูลในตารางด้านล่าง แล้วกดปุ่มบันทึกทางขวามือ ➔")
+                with c_btn:
+                    st.markdown('<div style="margin-top: 0px;"></div>', unsafe_allow_html=True)
+                    click_save = st.button("💾 บันทึกข้อมูลลง Google Sheet", type="primary", use_container_width=True)
+
+                # ตาราง Data Editor
+                edited_df = st.data_editor(
+                    df_editor_view,
+                    num_rows="dynamic", 
+                    use_container_width=True,
+                    height=600,
+                    column_config={
+                        "SKU": st.column_config.TextColumn(disabled=False),
+                        cost_col_name: st.column_config.NumberColumn(label=f"💰 {cost_col_name}", format="%.2f"),
+                        "ราคากล่อง": st.column_config.NumberColumn(format="%.2f"),
+                        "ค่าส่งเฉลี่ย": st.column_config.NumberColumn(format="%.2f"),
+                    }
+                )
+
+                # ส่วนบันทึกข้อมูล (Save Logic)
+                if click_save:
+                    try:
+                        with st.spinner("⏳ กำลังบันทึกข้อมูล..."):
+                            # 1. Prepare data
+                            save_df = edited_df.fillna("")
+                            # Convert to list of lists (include header)
+                            vals = [save_df.columns.values.tolist()] + save_df.values.tolist()
+                            
+                            # 2. Update Sheet
+                            ws.clear()
+                            ws.update(range_name='A1', values=vals)
+                            
+                            st.success("✅ บันทึกข้อมูลเรียบร้อยแล้ว!")
+                            st.cache_data.clear() # Clear cache to refresh data
+
+                    except Exception as e:
+                        st.error(f"❌ เกิดข้อผิดพลาดขณะบันทึก: {e}")
+
+            except Exception as e:
+                st.error(f"❌ เกิดข้อผิดพลาดในการโหลดข้อมูล: {e}")
+
+except Exception as e:
+    st.error(f"Application Error: {e}")
